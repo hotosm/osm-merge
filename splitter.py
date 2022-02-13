@@ -28,37 +28,38 @@ from sys import argv
 import getopt
 from osmwriter import OsmFile
 
-# default values for command line options
-options = dict()
-options['infile'] = None
-options['outdir'] = "/tmp"
-options['boundary'] = None
-
-def usage(argv):
-    out = """
-    help(-h)     Get command line options
-    verbose(-v)  Enable verbose output
-    infile(-i)   Input data file in any OGR supported format OR
-    database(-d) Input database to split
-    project(-p)  Tasking Manager project ID to get boundaries
-    outdir(-o)   Output directory for output files (default %s/tmp)
-    boundary(-b) Specify a multipolygon as a boundaries, one file for each polygon
-    """ % (options['outdir'])
-    print(out)
-    quit()
-
-#if len(argv) <= 1:
-if len(argv) < 1:
-    usage(argv)
-
 try:
-    (opts, val) = getopt.getopt(argv[1:], "h,v,i:,o:,s:,b:",
-        ["help", "verbose", "infile", "outdir", "size", "boundary"])
+    (opts, val) = getopt.getopt(argv[1:], "h,v,i:,d:,p:,o:,b:",
+        ["help", "verbose", "infile", "database", "project", "outdir", "boundary"])
 except getopt.GetoptError as e:
     logging.error('%r' % e)
     usage(argv)
     quit()
  
+# default values for command line options
+options = dict()
+options['infile'] = None
+options['database'] = None
+options['project'] = None
+options['boundary'] = None
+options['outdir'] = "/tmp"
+
+def usage(argv):
+    out = """
+    --help(-h)     Get command line options
+    --verbose(-v)  Enable verbose output
+    --infile(-i)   Input data file in any OGR supported format OR
+    --database(-d) Input database to split
+    --project(-p)  Tasking Manager project ID to get boundaries
+    --outdir(-o)   Output directory for output files (default \"%s\")
+    --boundary(-b) Specify a multipolygon as a boundaries, one file for each polygon
+    """ % (options['outdir'])
+    print(out)
+    quit()
+
+if len(argv) <= 1:
+    usage(argv)
+
 for (opt, val) in opts:
     if opt == '--help' or opt == '-h':
         usage(argv)
@@ -66,6 +67,10 @@ for (opt, val) in opts:
         options['infile'] = val
     elif opt == "--outdir" or opt == '-o':
         options['outdir'] = val
+    elif opt == "--project" or opt == '-p':
+        options['project'] = val
+    elif opt == "--database" or opt == '-d':
+        options['database'] = val
     elif opt == "--boundary" or opt == '-b':
         options['boundary'] = val
     
@@ -83,14 +88,14 @@ layer = infile.GetLayer()
 featureCount = layer.GetFeatureCount()
 print("Found %d" % featureCount)
 
-osm = OsmFile(options)
+# osm = OsmFile(options)
 
 for feature in layer:
     bld = dict()
     geom = feature.GetGeometryRef()
-    bld['wkb'] = geom.ExportToWkt()
-    bld['building'] = 'yes'
-    txt = osm.createWay(bld)
-    osm.writeOSM(txt)
+#    bld['wkb'] = geom.ExportToWkt()
+#    bld['building'] = 'yes'
+#    txt = osm.createWay(bld)
+#    osm.writeOSM(txt)
 
-osm.footer()
+# osm.footer()
