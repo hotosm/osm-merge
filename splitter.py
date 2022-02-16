@@ -64,7 +64,7 @@ def writeData(file = None, buildings = None):
     layer = outfile.CreateLayer("footprints", geom_type=ogr.wkbPolygon)
 
     # spin = PixelSpinner('Processing...')
-    import epdb; epdb.st()
+    # import epdb; epdb.st()
     for poly in buildings:
         # spin.next()
         layer.CreateFeature(poly)
@@ -136,7 +136,7 @@ if options['boundary'] is not None:
     infile = ogr.Open(options['infile'])
     layer = infile.GetLayer()
 
-    # Create a Polygon from the extent tuple
+    # Create a bounding box. since we want a rectangular area to extract to fit a monitor window
     ring = ogr.Geometry(ogr.wkbLinearRing)
     extent = blayer.GetExtent()
     ring.AddPoint(extent[0],extent[2])
@@ -148,26 +148,19 @@ if options['boundary'] is not None:
     poly.AddGeometry(ring)
     print("%d features in %s" % (layer.GetFeatureCount(), options['infile']))
 
-    print("Extracting features within the boundary, please wait...")
-    layer.SetSpatialFilter(poly)
-
-    # wkt = "POLYGON ((20.08484443554 5.28903721725,20.26867520555 5.28903721725,20.26867520555 5.43783487479,20.08484443554 5.43783487479,20.08484443554 5.28903721725))"
-    # layer.SetSpatialFilter(ogr.CreateGeometryFromWkt(wkt))
-
-    print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
     if (layerdef.GetFieldCount() == 1):
+        print("Extracting features within the boundary, please wait...")
+        layer.SetSpatialFilter(poly)
+        print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
         writeData("tmproject-" + str(project_id) + ".geojson", layer)
     else:
         i = 0
         feature = layer.GetNextFeature()
-        while feature is not None:
-            if project_boundary.Within(feature.GetGeometryRef()):
-                print("Is in boundary!")
-            else:
-                print("Is not in boundary!")
+        for feature in blayer:
             task_id = feature.GetField(1)
-            geom = feature.GetGeometryRef()
-            writeData("tmproject-" + str(project_id) + "--task-" + task_id + ".geojson", layer)
-            feature = None
-            i += 1
-        print("%d features in %s after filtering" % (i, options['infile']))
+            task_boundary = feature.GetGeometryRef()
+            print("Extracting features within the boundary, please wait...")
+            layer.SetSpatialFilter(task_boundary)
+            print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
+            if layer.GetFeatureCount() > 0:
+                writeData("tmproject-" + str(project_id) + "-task-" + str(task_id) + ".geojson", layer)
