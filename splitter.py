@@ -31,8 +31,8 @@ from progress.spinner import PixelSpinner
 
 # Process command line arguments
 try:
-    (opts, val) = getopt.getopt(argv[1:], "h,v,i:,d:,p:,o:,b:",
-        ["help", "verbose", "infile", "database", "project", "outdir", "boundary"])
+    (opts, val) = getopt.getopt(argv[1:], "h,v,i:,d:,p:,o:,b:,t:",
+        ["help", "verbose", "infile", "database", "project", "outdir", "boundary", "tmdatabase"])
 except getopt.GetoptError as e:
     logging.error('%r' % e)
     usage(argv)
@@ -41,10 +41,12 @@ except getopt.GetoptError as e:
 # default values for command line options
 options = dict()
 options['infile'] = None
-options['database'] = None
+options['tmdb'] = None
+options['buildings'] = None
 options['project'] = None
 options['boundary'] = None
 options['outdir'] = "/tmp"
+project_id = None
 
 def writeData(file = None, buildings = None):
     if file is None:
@@ -64,7 +66,6 @@ def writeData(file = None, buildings = None):
     layer = outfile.CreateLayer("footprints", geom_type=ogr.wkbPolygon)
 
     # spin = PixelSpinner('Processing...')
-    # import epdb; epdb.st()
     for poly in buildings:
         # spin.next()
         layer.CreateFeature(poly)
@@ -76,7 +77,8 @@ def usage(argv):
     --help(-h)     Get command line options
     --verbose(-v)  Enable verbose output
     --infile(-i)   Input data file in any OGR supported format OR
-    --database(-d) Input database to split
+    --tmdatabase(-t) Tasking Manager database to split
+    --buildings(-b) Building footprint database to split
     --project(-p)  Tasking Manager project ID to get boundaries
     --outdir(-o)   Output directory for output files (default \"%s\")
     --boundary(-b) Specify a multipolygon as a boundaries, one file for each polygon
@@ -96,71 +98,78 @@ for (opt, val) in opts:
         options['outdir'] = val
     elif opt == "--project" or opt == '-p':
         options['project'] = val
-    elif opt == "--database" or opt == '-d':
-        options['database'] = val
+    elif opt == "--tmdatabase" or opt == '-t':
+        options['tmdb'] = val
+    elif opt == "--tmdatabase" or opt == '-t':
+        options['buildings'] = val
+    elif opt == "--rmdatabase" or opt == '-t':
+        options['tmdb'] = val
     elif opt == "--boundary" or opt == '-b':
         options['boundary'] = val
     
 
-if options['infile'] is None and options['database'] is None:
+if options['infile'] is None and options['buildings'] is None:
     logging.error("You need to specify an input file or database name!")
     usage(argv)
    
-# Read file of any format
-# filespec = "/play/MapData/Countries/Uganda/test.geojson"
-
 project_boundary = ogr.Geometry(ogr.wkbPolygon)
 task_boundary = ogr.Geometry(ogr.wkbPolygon)
 
 # The boundary is a multipolygon, usually a Tasking Manager project boundary,
 # or all the task boundaries in thie project. It has one layer which is
-# called sql_statement.
-project_id = None
+# called tmproject.
+if options['tmdb'] is not None:
+    # dburl = "PG: host=%s dbname=%s user=%s password=%s" % (databaseServer,databaseName,databaseUser,databasePW)
+    dburl = "PG: dbname=tmsnap"
+    bounds = ogr.Open(dburl)
+    blayer = bounds.ExecuteSQL("SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['project']))
+    # import epdb; epdb.st()
+
 if options['boundary'] is not None:
     logging.info("Opening boundary file %s" % options['boundary'])
     bounds = ogr.Open(options['boundary'])
     blayer = bounds.GetLayer("tmproject")
     print("%d Boundaries in %s" % (blayer.GetFeatureCount(), options['boundary']))
-    layerdef = blayer.GetLayerDefn()
-    print("Field Count: %d" % layerdef.GetFieldCount())
-    # for i in range(layerdef.GetFieldCount()):
-    #     print(layerdef.GetFieldDefn(i).GetName())
     project_id = blayer.GetFeature(0).GetField(0)
 
-    feature = blayer.GetFeature(0)
-    project_boundary = feature.GetGeometryRef()
+layerdef = blayer.GetLayerDefn()
+print("Field Count: %d" % layerdef.GetFieldCount())
 
-    # The input file is GeoJson format, and has one layer, which is the name of the country.
-    # It consiste of only polygons of building footprints.
-    logging.info("Opening footprints file %s, please wait..." % options['infile'])
-    infile = ogr.Open(options['infile'])
-    layer = infile.GetLayer()
+feature = blayer.GetFeature(0)
+project_boundary = feature.GetGeometryRef()
 
-    # Create a bounding box. since we want a rectangular area to extract to fit a monitor window
-    ring = ogr.Geometry(ogr.wkbLinearRing)
-    extent = blayer.GetExtent()
-    ring.AddPoint(extent[0],extent[2])
-    ring.AddPoint(extent[1], extent[2])
-    ring.AddPoint(extent[1], extent[3])
-    ring.AddPoint(extent[0], extent[3])
-    ring.AddPoint(extent[0],extent[2])
-    poly = ogr.Geometry(ogr.wkbPolygon)
-    poly.AddGeometry(ring)
-    print("%d features in %s" % (layer.GetFeatureCount(), options['infile']))
+# The input file is GeoJson format, and has one layer, which is the name of the country.
+# It consists of only polygons of building footprints.
+logging.info("Opening footprints file %s, please wait..." % options['infile'])
 
-    if (layerdef.GetFieldCount() == 1):
+infile = ogr.Open(options['infile'])
+layer = infile.GetLayer()
+
+# Create a bounding box. since we want a rectangular area to extract to fit a monitor window
+ring = ogr.Geometry(ogr.wkbLinearRing)
+extent = blayer.GetExtent()
+ring.AddPoint(extent[0],extent[2])
+ring.AddPoint(extent[1], extent[2])
+ring.AddPoint(extent[1], extent[3])
+ring.AddPoint(extent[0], extent[3])
+ring.AddPoint(extent[0],extent[2])
+poly = ogr.Geometry(ogr.wkbPolygon)
+poly.AddGeometry(ring)
+print("%d features in %s" % (layer.GetFeatureCount(), options['infile']))
+
+if (layerdef.GetFieldCount() == 1):
+    print("Extracting features within the boundary, please wait...")
+    layer.SetSpatialFilter(poly)
+    print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
+    writeData("tmproject-" + str(project_id) + ".geojson", layer)
+else:
+    i = 0
+    feature = layer.GetNextFeature()
+    for feature in blayer:
+        task_id = feature.GetField(1)
+        task_boundary = feature.GetGeometryRef()
         print("Extracting features within the boundary, please wait...")
-        layer.SetSpatialFilter(poly)
+        layer.SetSpatialFilter(task_boundary)
         print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
-        writeData("tmproject-" + str(project_id) + ".geojson", layer)
-    else:
-        i = 0
-        feature = layer.GetNextFeature()
-        for feature in blayer:
-            task_id = feature.GetField(1)
-            task_boundary = feature.GetGeometryRef()
-            print("Extracting features within the boundary, please wait...")
-            layer.SetSpatialFilter(task_boundary)
-            print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
-            if layer.GetFeatureCount() > 0:
-                writeData("tmproject-" + str(project_id) + "-task-" + str(task_id) + ".geojson", layer)
+        if layer.GetFeatureCount() > 0:
+            writeData("tmproject-" + str(project_id) + "-task-" + str(task_id) + ".geojson", layer)
