@@ -31,8 +31,8 @@ from progress.spinner import PixelSpinner
 
 # Process command line arguments
 try:
-    (opts, val) = getopt.getopt(argv[1:], "h,v,i:,d:,p:,o:,b:,t:",
-        ["help", "verbose", "infile", "database", "project", "outdir", "boundary", "tmdatabase"])
+    (opts, val) = getopt.getopt(argv[1:], "h,v,i:,d:,p:,o:,b:,t:,s",
+        ["help", "verbose", "infile", "database", "project", "outdir", "boundary", "tmdatabase", "splittask"])
 except getopt.GetoptError as e:
     logging.error('%r' % e)
     usage(argv)
@@ -40,6 +40,7 @@ except getopt.GetoptError as e:
  
 # default values for command line options
 options = dict()
+options['tasks'] = False
 options['infile'] = None
 options['tmdb'] = None
 options['buildings'] = None
@@ -78,6 +79,7 @@ def usage(argv):
     --verbose(-v)  Enable verbose output
     --infile(-i)   Input data file in any OGR supported format OR
     --tmdatabase(-t) Tasking Manager database to split
+    --splittasks(-s) When using the Tasking Manager database, split into tasks
     --buildings(-b) Building footprint database to split
     --project(-p)  Tasking Manager project ID to get boundaries
     --outdir(-o)   Output directory for output files (default \"%s\")
@@ -94,6 +96,8 @@ for (opt, val) in opts:
         usage(argv)
     elif opt == "--infile" or opt == '-i':
         options['infile'] = val
+    elif opt == "--splittask" or opt == '-s':
+        options['tasks'] = True
     elif opt == "--outdir" or opt == '-o':
         options['outdir'] = val
     elif opt == "--project" or opt == '-p':
@@ -122,7 +126,13 @@ if options['tmdb'] is not None:
     # dburl = "PG: host=%s dbname=%s user=%s password=%s" % (databaseServer,databaseName,databaseUser,databasePW)
     dburl = "PG: dbname=tmsnap"
     bounds = ogr.Open(dburl)
-    blayer = bounds.ExecuteSQL("SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['project']))
+    if options['tasks']:
+        sql = "SELECT projects.id AS pid,tasks.id AS tid,ST_AsText(tasks.geometry) FROM tasks,projects WHERE tasks.project_id=" + str(options['project']) + " AND projects.id=" + str(options['project'])
+    else:
+        sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['project'])
+    print(sql)
+    blayer = bounds.ExecuteSQL(sql)
+    project_id = options['project']
     # import epdb; epdb.st()
 
 if options['boundary'] is not None:
