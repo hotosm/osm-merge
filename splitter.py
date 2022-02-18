@@ -104,7 +104,7 @@ for (opt, val) in opts:
         options['project'] = val
     elif opt == "--tmdatabase" or opt == '-t':
         options['tmdb'] = val
-    elif opt == "--tmdatabase" or opt == '-t':
+    elif opt == "--buildings" or opt == '-b':
         options['buildings'] = val
     elif opt == "--rmdatabase" or opt == '-t':
         options['tmdb'] = val
@@ -130,7 +130,6 @@ if options['tmdb'] is not None:
         sql = "SELECT projects.id AS pid,tasks.id AS tid,ST_AsText(tasks.geometry) FROM tasks,projects WHERE tasks.project_id=" + str(options['project']) + " AND projects.id=" + str(options['project'])
     else:
         sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['project'])
-    print(sql)
     blayer = bounds.ExecuteSQL(sql)
     project_id = options['project']
     # import epdb; epdb.st()
@@ -148,13 +147,6 @@ print("Field Count: %d" % layerdef.GetFieldCount())
 feature = blayer.GetFeature(0)
 project_boundary = feature.GetGeometryRef()
 
-# The input file is GeoJson format, and has one layer, which is the name of the country.
-# It consists of only polygons of building footprints.
-logging.info("Opening footprints file %s, please wait..." % options['infile'])
-
-infile = ogr.Open(options['infile'])
-layer = infile.GetLayer()
-
 # Create a bounding box. since we want a rectangular area to extract to fit a monitor window
 ring = ogr.Geometry(ogr.wkbLinearRing)
 extent = blayer.GetExtent()
@@ -165,6 +157,21 @@ ring.AddPoint(extent[0], extent[3])
 ring.AddPoint(extent[0],extent[2])
 poly = ogr.Geometry(ogr.wkbPolygon)
 poly.AddGeometry(ring)
+
+# The input file is GeoJson format, and has one layer, which is the name of the country.
+# It consists of only polygons of building footprints.
+
+if options['infile']:
+    logging.info("Opening footprints file %s, please wait..." % options['infile'])
+    infile = ogr.Open(options['infile'])
+    layer = infile.GetLayer()
+elif options['buildings']:
+    logging.info("Opening footprints database %s, please wait..." % options['buildings'])
+    dburl = "PG: dbname=tmsnap"
+    buildings = ogr.Open(dburl)
+    sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['project'])
+    layer = buildings.ExecuteSQL(sql)
+
 print("%d features in %s" % (layer.GetFeatureCount(), options['infile']))
 
 if (layerdef.GetFieldCount() == 1):
