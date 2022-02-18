@@ -1,3 +1,4 @@
 logging
-getopt
-
+gdal
+shapely
+progress
