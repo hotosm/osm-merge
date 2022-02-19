@@ -20,20 +20,29 @@
 import logging
 import getopt
 from sys import argv
-
+# import underpass
+import os
+from osgeo import ogr
+# from geojson import Feature, Polygon, LineString, MultiLineString
+# from progress.bar import Bar, PixelBar
+from progress.spinner import PixelSpinner
 
 options = dict()
-options["schema"] = "ogr2ogr";
-options["database"] = None;
-options["infile"] = None;
+options["schema"] = "pgsnapshot";
+options["osmin"] = None;
+options["bldin"] = None;
+options["tmin"] = None;
+options["tmproj"] = None;
 
 def usage():
     out = """
-    --help(-h)       Get command line options
-    --verbose(-v)    Enable verbose output
-    --database(-d)   Database URL (host= user= password=)"
-    --infile(-i)     Input data file
-    --schema(-s)     Database schema (pgsnapshot, ogr2ogr, osm2pgsql) defaults to \"%s\"
+    --help(-h)      Get command line options
+    --tmin(-t)      file or Tasking Manazger database URL (host@user:password/database)"
+    --osmin(-o)     OSM Database URL (host@user:password/database)"
+    --bldin(-b)     Building Database URL (host@user:password/database)"
+    --project(-p)   Tasking Manager project ID to get boundary from a database
+    --boundary(-b)  Specify a polygon as a boundary
+    --schema(-s)    OSM database schema (pgsnapshot, ogr2ogr, osm2pgsql) defaults to \"%s\"
     """ % (options['schema'])
     print(out)
     quit()
@@ -42,8 +51,8 @@ if len(argv) <= 1:
     usage()
 
 try:
-    (opts, val) = getopt.getopt(argv[1:], "h,v,d:,i:,s:",
-        ["help", "verbose", "database", "infile", "schema"])
+    (opts, val) = getopt.getopt(argv[1:], "h,t:,o:,b:,p:,b:,s:",
+        ["help", "tmin", "osmin", "bldin", "project", "boundary", "schema"])
 except getopt.GetoptError as e:
     logging.error('%r' % e)
     usage(argv)
@@ -52,13 +61,63 @@ except getopt.GetoptError as e:
 for (opt, val) in opts:
     if opt == '--help' or opt == '-h':
         usage()
-    elif opt == "--database" or opt == '-d':
-        options['database'] = val
+    elif opt == "--osmin" or opt == '-o':
+        options['osmin'] = val
+    elif opt == "--project" or opt == '-p':
+        options['tmproj'] = val
+    elif opt == "--tmin" or opt == '-t':
+        options['tmin'] = val
+    elif opt == "--boundary" or opt == '-b':
+        options['boundary'] = val
+    elif opt == "--buildings" or opt == '-b':
+        options['bldin'] = val
     elif opt == "--schema" or opt == '-s':
         options['schema'] = val
-    elif opt == "--infile" or opt == '-i':
-        options['infile'] = val
 
-if options['infile'] is None and options['database'] is None:
-    usage()
+#if options['osmdb'] is None and options['blddb'] is None and options['tmdb']:
+#    usage()
+
+#
+# Get the project boundary from the Tasking Manager database
+#
+
+def getProjectBoundary():
+    # FIXME: handle actual URL, don't assume localhost auth
+    if options['tmproj'] is not None:
+        connect = "PG: dbname=" + options['tmin']
+        tmin = ogr.Open(connect)
+    else:
+        tmin = ogr.Open(options['tmin'])
+
+    if options['tmproj'] is not None:
+        sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['tmproj'])
+        layer = tmin.ExecuteSQL(sql)
+        print(sql)
+    elif options['tmin'] is not None:
+        layer = tmin.GetLayer("tmproject")
+    else:
+        logging.error("Need to specify input data!")
+    if layer is None:
+        logging.error("No such project in the Tasking Manager database")
+        return None
+
+    # Create a bounding box. since we want a rectangular area to extract to fit a monitor window
+    ring = ogr.Geometry(ogr.wkbLinearRing)
+    extent = layer.GetExtent()
+    ring.AddPoint(extent[0],extent[2])
+    ring.AddPoint(extent[1], extent[2])
+    ring.AddPoint(extent[1], extent[3])
+    ring.AddPoint(extent[0], extent[3])
+    ring.AddPoint(extent[0],extent[2])
+    poly = ogr.Geometry(ogr.wkbPolygon)
+    poly.AddGeometry(ring)
+
+    return poly
+
+#
+#
+#
+# Get the boundary of the data to process
+boundary = getProjectBoundary()
+print(boundary)
 
