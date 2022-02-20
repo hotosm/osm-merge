@@ -26,64 +26,56 @@ import logging
 from sys import argv
 import getopt
 import os
+import sys
 from progress.spinner import PixelSpinner
+import hotstuff
 
 
 # Process command line arguments
-try:
-    (opts, val) = getopt.getopt(argv[1:], "h,v,i:,d:,p:,o:,b:,t:,s",
-        ["help", "verbose", "infile", "database", "project", "outdir", "boundary", "tmdatabase", "splittask"])
-except getopt.GetoptError as e:
-    logging.error('%r' % e)
-    usage(argv)
-    quit()
- 
 # default values for command line options
 options = dict()
 options['tasks'] = False
-options['infile'] = None
-options['tmdb'] = None
-options['buildings'] = None
+options['tmin'] = None
+options['osmin'] = None
+options['admin_level'] = 4
+options['data'] = None
 options['project'] = None
 options['boundary'] = None
 options['outdir'] = "/tmp"
 project_id = None
 
-def writeData(file = None, buildings = None):
-    if file is None:
-        logging.error("Supply a filespec!")
-        return
-    if buildings.GetFeatureCount() == 0:
-        logging.error("Building data is empty!!")
-        return
-
-    # drv = ogr.GetDriverByName('ESRI Shapefile')
-    drv = ogr.GetDriverByName("GeoJSON")
-    # Delete the output file if it exists
-    if os.path.exists(file):
-        drv.DeleteDataSource(file)
-
-    outfile  = drv.CreateDataSource(file)
-    layer = outfile.CreateLayer("footprints", geom_type=ogr.wkbPolygon)
-
-    # spin = PixelSpinner('Processing...')
-    for poly in buildings:
-        # spin.next()
-        layer.CreateFeature(poly)
-
-    outfile.Destroy()
-
 def usage(argv):
     out = """
-    --help(-h)     Get command line options
-    --verbose(-v)  Enable verbose output
-    --infile(-i)   Input data file in any OGR supported format OR
-    --tmdatabase(-t) Tasking Manager database to split
+    --help(-h)       Get command line options
+    --verbose(-v)    Enable verbose output
+    --boundary(-b)   Specify a multipolygon for boundaries, one file for each polygon
+    --tmin(-t)       Tasking Manager database to get boundaries
+    --project(-p)    Tasking Manager project ID to get boundaries from database
     --splittasks(-s) When using the Tasking Manager database, split into tasks
-    --buildings(-b) Building footprint database to split
-    --project(-p)  Tasking Manager project ID to get boundaries
-    --outdir(-o)   Output directory for output files (default \"%s\")
-    --boundary(-b) Specify a multipolygon as a boundaries, one file for each polygon
+    --osmin(-x)      OSM XML or OSM database to get boundaries
+    --admin(-a)      When using the OSM database, this is the admin_level
+    --data(-d)       Data source to split
+    --outdir(-o)     Output directory for output files (default \"%s\")
+
+    Since the data files are huge, a boundary is used to extract a subset of the data.
+    This can be from the Tasking Manager database, administrative boundaries in
+    an OSM database, or a disk file. One output file for each polygon in the boundary
+    is created.
+
+    Examples:
+    The command: splitter.py -b 8345-project.geojson -i kenya.geojsonl
+    creates *tmproject-8345.geojson*
+
+    The command:  splitter.py -b 8345-tasks.geojson -i kenya.geojsonl
+    creates *tmproject-8345-task-[0-9]+.geojson*
+
+    The command: splitter.py -p 8345 -t tmsnap -i kenya.geojsonl
+    creates *tmproject-8345.geojson*, by getting the boundary from a database
+
+    The command:
+    splitter.py -p 8345 -t tmsnap -s -i kenya.geojsonl
+    creates *tmproject-8345-task-[0-9]+.geojson*, by getting the task boundaries from a database
+
     """ % (options['outdir'])
     print(out)
     quit()
@@ -91,11 +83,22 @@ def usage(argv):
 if len(argv) <= 1:
     usage(argv)
 
+try:
+    (opts, val) = getopt.getopt(argv[1:], "h,v,b:,t:,p:,s,x:,a:,d:,o:",
+                                ["help", "verbose", "boundary", "tmin", "project", "splittask", "osmin", "admin_level", "data", "outdir"])
+except getopt.GetoptError as e:
+    logging.error('%r' % e)
+    usage(argv)
+    quit()
+
 for (opt, val) in opts:
     if opt == '--help' or opt == '-h':
         usage(argv)
-    elif opt == "--infile" or opt == '-i':
-        options['infile'] = val
+    elif opt == "--osmin" or opt == '-x':
+        options['osmin'] = val
+    elif opt == "--verbose" or opt == '-v':
+        # logging.basicConfig(filename='splitter.log',level=logging.DEBUG)
+        logging.basicConfig(stream = sys.stdout,level=logging.DEBUG)
     elif opt == "--splittask" or opt == '-s':
         options['tasks'] = True
     elif opt == "--outdir" or opt == '-o':
@@ -104,89 +107,49 @@ for (opt, val) in opts:
         options['project'] = val
     elif opt == "--tmdatabase" or opt == '-t':
         options['tmdb'] = val
-    elif opt == "--buildings" or opt == '-b':
-        options['buildings'] = val
-    elif opt == "--rmdatabase" or opt == '-t':
-        options['tmdb'] = val
+    elif opt == "--data" or opt == '-d':
+        options['data'] = val
+    elif opt == "--tmin" or opt == '-t':
+        options['tmin'] = val
+    elif opt == "--admin" or opt == '-a':
+        options['admin'] = val
     elif opt == "--boundary" or opt == '-b':
         options['boundary'] = val
-    
 
-if options['infile'] is None and options['buildings'] is None:
+
+if options['tmin'] is None and options['data'] is None:
     logging.error("You need to specify an input file or database name!")
     usage(argv)
    
-project_boundary = ogr.Geometry(ogr.wkbPolygon)
-task_boundary = ogr.Geometry(ogr.wkbPolygon)
+# project_boundary = ogr.Geometry(ogr.wkbPolygon)
 
-# The boundary is a multipolygon, usually a Tasking Manager project boundary,
-# or all the task boundaries in thie project. It has one layer which is
-# called tmproject.
-if options['tmdb'] is not None:
-    # dburl = "PG: host=%s dbname=%s user=%s password=%s" % (databaseServer,databaseName,databaseUser,databasePW)
-    dburl = "PG: dbname=tmsnap"
-    bounds = ogr.Open(dburl)
-    if options['tasks']:
-        sql = "SELECT projects.id AS pid,tasks.id AS tid,ST_AsText(tasks.geometry) FROM tasks,projects WHERE tasks.project_id=" + str(options['project']) + " AND projects.id=" + str(options['project'])
+# The input file or database for the data to split
+if options['data']:
+    data = options['data']
+    if data[0:3] == "pg:":
+        logging.info("Opening database %s, please wait..." % data[3:])
+        connect = "PG: dbname=" + data[3:]
+        data = ogr.Open(connect)
     else:
-        sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['project'])
-    blayer = bounds.ExecuteSQL(sql)
-    project_id = options['project']
-    # import epdb; epdb.st()
+        logging.info("Opening data file %s, please wait..." % data)
+        data = ogr.Open(data)
+    layer = data.GetLayer()
+    logging.debug("%d features in %s" % (layer.GetFeatureCount(), options['data']))
 
-if options['boundary'] is not None:
-    logging.info("Opening boundary file %s" % options['boundary'])
-    bounds = ogr.Open(options['boundary'])
-    blayer = bounds.GetLayer("tmproject")
-    print("%d Boundaries in %s" % (blayer.GetFeatureCount(), options['boundary']))
-    project_id = blayer.GetFeature(0).GetField(0)
+boundary = hotstuff.getProjectBoundary(options)
+print(boundary.GetGeometryCount())
 
-layerdef = blayer.GetLayerDefn()
-print("Field Count: %d" % layerdef.GetFieldCount())
+logging.info("Extracting features within the boundary, please wait...")
 
-feature = blayer.GetFeature(0)
-project_boundary = feature.GetGeometryRef()
-
-# Create a bounding box. since we want a rectangular area to extract to fit a monitor window
-ring = ogr.Geometry(ogr.wkbLinearRing)
-extent = blayer.GetExtent()
-ring.AddPoint(extent[0],extent[2])
-ring.AddPoint(extent[1], extent[2])
-ring.AddPoint(extent[1], extent[3])
-ring.AddPoint(extent[0], extent[3])
-ring.AddPoint(extent[0],extent[2])
-poly = ogr.Geometry(ogr.wkbPolygon)
-poly.AddGeometry(ring)
-
-# The input file is GeoJson format, and has one layer, which is the name of the country.
-# It consists of only polygons of building footprints.
-
-if options['infile']:
-    logging.info("Opening footprints file %s, please wait..." % options['infile'])
-    infile = ogr.Open(options['infile'])
-    layer = infile.GetLayer()
-elif options['buildings']:
-    logging.info("Opening footprints database %s, please wait..." % options['buildings'])
-    dburl = "PG: dbname=tmsnap"
-    buildings = ogr.Open(dburl)
-    sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(options['project'])
-    layer = buildings.ExecuteSQL(sql)
-
-print("%d features in %s" % (layer.GetFeatureCount(), options['infile']))
-
-if (layerdef.GetFieldCount() == 1):
-    print("Extracting features within the boundary, please wait...")
+index = 0
+for poly in boundary:
+    # print(poly)
+    layer.ResetReading()
+    # logging.debug("%d features before filtering" % layer.GetFeatureCount())
     layer.SetSpatialFilter(poly)
-    print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
-    writeData("tmproject-" + str(project_id) + ".geojson", layer)
-else:
-    i = 0
-    feature = layer.GetNextFeature()
-    for feature in blayer:
-        task_id = feature.GetField(1)
-        task_boundary = feature.GetGeometryRef()
-        print("Extracting features within the boundary, please wait...")
-        layer.SetSpatialFilter(task_boundary)
-        print("%d features in %s after filtering" % (layer.GetFeatureCount(), options['infile']))
-        if layer.GetFeatureCount() > 0:
-            writeData("tmproject-" + str(project_id) + "-task-" + str(task_id) + ".geojson", layer)
+    # logging.debug("%d features after filtering" % layer.GetFeatureCount())
+    if options['project'] is not None and layer.GetFeatureCount() > 0:
+        hotstuff.writeData("tmproject-" + str(options['project']) + ".geojson", layer)
+    elif layer.GetFeatureCount() > 0:
+        hotstuff.writeLayer("tmproject-" + str(index) + ".geojson", layer)
+        index += 1
