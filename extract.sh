@@ -30,4 +30,5 @@ ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:4326" -progress -overwrite -f "GeoJSON" 
 rm -f ${project}-tasks.geojson
 ogr2ogr -s_srs "EPSG:4326" -t_srs "EPSG:4326" -progress -overwrite -f "GeoJSON" ${project}-tasks.geojson PG:"dbname=tmsnap" -nln "tmproject" -sql "SELECT projects.id AS pid,tasks.id AS tid,ST_AsText(tasks.geometry) FROM tasks,projects WHERE tasks.project_id=${project} AND projects.id=${project}"
 
-# ogr2ogr -t_srs "EPSG:4326" -progress -overwrite -f "GeoJSON" regions.geojson PG:"dbname=Nigeria" -sql "SELECT name,wkb_geometry FROM multipolygons WHERE boundary='administrative' AND admin_level='4'"
+# This uses the propsed schema for raw data
+# ogr2ogr -t_srs "EPSG:4326" -progress -overwrite -f "GeoJSON" regions.geojson PG:"dbname=kenya" -nlt POLYGON -sql "SELECT tags->'name',ST_MakePolygon(ST_AddPoint(geom, ST_StartPoint(geom))) FROM ways_line WHERE tags->>'admin_level'='4' and tags->>'name' IS NOT NULL"
