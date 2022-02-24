@@ -81,7 +81,6 @@ def getProjectBoundary(options=None):
         return None
 
     data = list()
-    admin = dict()
     tmin = options['tmin']
     osmin = options['osmin']
     bound = options['boundary']
@@ -143,6 +142,7 @@ def getProjectBoundary(options=None):
     elif bound is not None:
         logging.debug("%d features in %s" % (layer.GetFeatureCount(), bound))
     for poly in layer:
+        admin = dict()
         boundary = makeBoundary(poly.GetGeometryRef())
         # print(boundary)
         admin['id'] = poly.GetField(0)
