@@ -41,7 +41,7 @@ options['admin_level'] = 4
 options['data'] = None
 options['project'] = None
 options['boundary'] = None
-options['outdir'] = "/tmp"
+options['outdir'] = "/tmp/tmproject-"
 project_id = None
 
 def usage(argv):
@@ -105,8 +105,6 @@ for (opt, val) in opts:
         options['outdir'] = val
     elif opt == "--project" or opt == '-p':
         options['project'] = val
-    elif opt == "--tmdatabase" or opt == '-t':
-        options['tmdb'] = val
     elif opt == "--data" or opt == '-d':
         options['data'] = val
     elif opt == "--tmin" or opt == '-t':
@@ -116,12 +114,18 @@ for (opt, val) in opts:
     elif opt == "--boundary" or opt == '-b':
         options['boundary'] = val
 
-
 if options['tmin'] is None and options['data'] is None:
     logging.error("You need to specify an input file or database name!")
     usage(argv)
    
 # project_boundary = ogr.Geometry(ogr.wkbPolygon)
+
+# Boundary file of polygons
+boundary = hotstuff.getProjectBoundary(options)
+if boundary is not None:
+    logging.debug(boundary.GetGeometryCount())
+else:
+    logging.error("Unable to get boundary from %s" % options['boundary'])
 
 # The input file or database for the data to split
 if options['data']:
@@ -136,20 +140,23 @@ if options['data']:
     layer = data.GetLayer()
     logging.debug("%d features in %s" % (layer.GetFeatureCount(), options['data']))
 
-boundary = hotstuff.getProjectBoundary(options)
-print(boundary.GetGeometryCount())
-
 logging.info("Extracting features within the boundary, please wait...")
 
 index = 0
 for poly in boundary:
     # print(poly)
     layer.ResetReading()
-    # logging.debug("%d features before filtering" % layer.GetFeatureCount())
+    logging.debug("%d features before filtering" % layer.GetFeatureCount())
     layer.SetSpatialFilter(poly)
-    # logging.debug("%d features after filtering" % layer.GetFeatureCount())
+    logging.debug("%d features after filtering" % layer.GetFeatureCount())
     if options['project'] is not None and layer.GetFeatureCount() > 0:
-        hotstuff.writeData("tmproject-" + str(options['project']) + ".geojson", layer)
+        out = options['outdir'] + str(options['project']) + ".geojson"
+        logging.info("Writing file %s" % out)
+        hotstuff.writeLayer(out, layer)
     elif layer.GetFeatureCount() > 0:
-        hotstuff.writeLayer("tmproject-" + str(index) + ".geojson", layer)
+        out = options['outdir'] + str(index) + ".geojson"
         index += 1
+        logging.info("Writing file %s" % out)
+        hotstuff.writeLayer(out, layer)
+    else:
+        logging.error("No data to write!")
