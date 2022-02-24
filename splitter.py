@@ -27,6 +27,7 @@ from sys import argv
 import getopt
 import os
 import sys
+import epdb
 from progress.spinner import PixelSpinner
 import hotstuff
 
@@ -121,11 +122,10 @@ if options['tmin'] is None and options['data'] is None:
 # project_boundary = ogr.Geometry(ogr.wkbPolygon)
 
 # Boundary file of polygons
-boundary = hotstuff.getProjectBoundary(options)
-if boundary is not None:
-    logging.debug(boundary.GetGeometryCount())
-else:
+row = hotstuff.getProjectBoundary(options)
+if len(row) == 0:
     logging.error("Unable to get boundary from %s" % options['boundary'])
+    quit()
 
 # The input file or database for the data to split
 if options['data']:
@@ -143,19 +143,19 @@ if options['data']:
 logging.info("Extracting features within the boundary, please wait...")
 
 index = 0
-for poly in boundary:
-    # print(poly)
+for poly in row:
     layer.ResetReading()
     logging.debug("%d features before filtering" % layer.GetFeatureCount())
-    layer.SetSpatialFilter(poly)
-    logging.debug("%d features after filtering" % layer.GetFeatureCount())
+    layer.SetSpatialFilter(poly['boundary'])
+    logging.error("%d features after filtering" % layer.GetFeatureCount())
     if options['project'] is not None and layer.GetFeatureCount() > 0:
         out = options['outdir'] + str(options['project']) + ".geojson"
         logging.info("Writing file %s" % out)
         hotstuff.writeLayer(out, layer)
     elif layer.GetFeatureCount() > 0:
-        out = options['outdir'] + str(index) + ".geojson"
-        index += 1
+        out = options['outdir'] + str(poly['X']) + "_" + str(poly['Y']) + ".geojson"
+        # out = options['outdir'] + str(index) + ".geojson"
+        # index += 1
         logging.info("Writing file %s" % out)
         hotstuff.writeLayer(out, layer)
     else:
