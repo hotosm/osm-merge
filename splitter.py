@@ -34,15 +34,10 @@ import hotstuff
 
 # Process command line arguments
 # default values for command line options
-options = dict()
-options['tasks'] = False
-options['tmin'] = None
-options['osmin'] = None
-options['admin_level'] = 4
-options['data'] = None
-options['project'] = None
-options['boundary'] = None
-options['outdir'] = "/tmp/tmproject-"
+
+# All command line options
+options = hotstuff.CommonOptions(argv)
+
 project_id = None
 
 def usage(argv):
@@ -81,45 +76,48 @@ def usage(argv):
     print(out)
     quit()
 
-if len(argv) <= 1:
-    usage(argv)
+# if len(argv) <= 1:
+#     usage(argv)
 
-try:
-    (opts, val) = getopt.getopt(argv[1:], "h,v,b:,t:,p:,s,x:,a:,d:,o:",
-                                ["help", "verbose", "boundary", "tmin", "project", "splittask", "osmin", "admin_level", "data", "outdir"])
-except getopt.GetoptError as e:
-    logging.error('%r' % e)
-    usage(argv)
-    quit()
+# try:
+#     (opts, val) = getopt.getopt(argv[1:], "h,v,b:,t:,p:,s,x:,a:,d:,o:",
+#                                 ["help", "verbose", "boundary", "tmin", "project", "splittask", "osmin", "admin_level", "data", "outdir"])
+# except getopt.GetoptError as e:
+#     logging.error('%r' % e)
+#     usage(argv)
+#     quit()
 
-for (opt, val) in opts:
-    if opt == '--help' or opt == '-h':
-        usage(argv)
-    elif opt == "--osmin" or opt == '-x':
-        options['osmin'] = val
-    elif opt == "--verbose" or opt == '-v':
-        # logging.basicConfig(filename='splitter.log',level=logging.DEBUG)
-        logging.basicConfig(stream = sys.stdout,level=logging.DEBUG)
-    elif opt == "--splittask" or opt == '-s':
-        options['tasks'] = True
-    elif opt == "--outdir" or opt == '-o':
-        options['outdir'] = val
-    elif opt == "--project" or opt == '-p':
-        options['project'] = val
-    elif opt == "--data" or opt == '-d':
-        options['data'] = val
-    elif opt == "--tmin" or opt == '-t':
-        options['tmin'] = val
-    elif opt == "--admin" or opt == '-a':
-        options['admin'] = val
-    elif opt == "--boundary" or opt == '-b':
-        options['boundary'] = val
+# for (opt, val) in opts:
+#     if opt == '--help' or opt == '-h':
+#         usage(argv)
+#     elif opt == "--osmin" or opt == '-x':
+#         options['osmin'] = val
+#     elif opt == "--verbose" or opt == '-v':
+#         # logging.basicConfig(filename='splitter.log',level=logging.DEBUG)
+#         logging.basicConfig(stream = sys.stdout,level=logging.DEBUG)
+#     elif opt == "--splittask" or opt == '-s':
+#         options['tasks'] = True
+#     elif opt == "--outdir" or opt == '-o':
+#         options['outdir'] = val
+#     elif opt == "--project" or opt == '-p':
+#         options['project'] = val
+#     elif opt == "--data" or opt == '-d':
+#         options['data'] = val
+#     elif opt == "--tmin" or opt == '-t':
+#         options['tmin'] = val
+#     elif opt == "--admin" or opt == '-a':
+#         options['admin'] = val
+#     elif opt == "--boundary" or opt == '-b':
+#         options['boundary'] = val
 
-if options['tmin'] is None and options['data'] is None:
-    logging.error("You need to specify an input file or database name!")
-    usage(argv)
+# if options['tmin'] is None and options['data'] is None:
+#     logging.error("You need to specify an input file or database name!")
+#     usage(argv)
    
 # project_boundary = ogr.Geometry(ogr.wkbPolygon)
+
+# All command line options
+options = hotstuff.CommonOptions(argv)
 
 # Boundary file of polygons
 row = hotstuff.getProjectBoundary(options)
@@ -128,17 +126,17 @@ if len(row) == 0:
     quit()
 
 # The input file or database for the data to split
-if options['data']:
-    data = options['data']
+if options.get('footprints'):
+    data = options.get('footprints')
     if data[0:3] == "pg:":
         logging.info("Opening database %s, please wait..." % data[3:])
         connect = "PG: dbname=" + data[3:]
-        data = ogr.Open(connect)
+        tmp = ogr.Open(connect)
     else:
         logging.info("Opening data file %s, please wait..." % data)
-        data = ogr.Open(data)
-    layer = data.GetLayer()
-    logging.debug("%d features in %s" % (layer.GetFeatureCount(), options['data']))
+        tmp = ogr.Open(data)
+    layer = tmp.GetLayer()
+    logging.debug("%d features in %s" % (layer.GetFeatureCount(), data))
 
 logging.info("Extracting features within the boundary, please wait...")
 
@@ -148,12 +146,15 @@ for poly in row:
     logging.debug("%d features before filtering" % layer.GetFeatureCount())
     layer.SetSpatialFilter(poly['boundary'])
     logging.error("%d features after filtering" % layer.GetFeatureCount())
-    if options['project'] is not None and layer.GetFeatureCount() > 0:
-        out = options['outdir'] + str(options['project']) + ".geojson"
+    if options.get('project') is not None and layer.GetFeatureCount() > 0:
+        out = options['outdir'] + str(options.get('project')) + ".geojson"
         logging.info("Writing file %s" % out)
         hotstuff.writeLayer(out, layer)
     elif layer.GetFeatureCount() > 0:
-        out = options['outdir'] + str(poly['X']) + "_" + str(poly['Y']) + ".geojson"
+        if 'X' in poly and 'Y' in poly:
+            out = options.get('outdir') + str(poly['X']) + "_" + str(poly['Y']) + ".geojson"
+        else:
+            out = options.get('outdir') +"0.geojson"
         # out = options['outdir'] + str(index) + ".geojson"
         # index += 1
         logging.info("Writing file %s" % out)

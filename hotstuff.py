@@ -24,8 +24,102 @@ from sys import argv
 import os
 import sys
 from osgeo import ogr
+import urllib.request
 # from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
+
+
+
+class CommonOptions(object):
+    def __init__(self, argv=list()):
+        self.options = dict()
+        self.options["admin"] = 4  # The admin_level used when querying an OSM  database
+        self.options["osmdata"] = None  # Raw OSM data imported with osm2pgsql
+        self.options["footprints"] = None  # building footprints imported with ogr2ogr
+        self.options["boundary"] = None    # The bouldary used for filtering the data
+        # Tasking Manager options
+        self.options["tmdata"] = None  # Tasking Manager database
+        self.options["project"] = None  # Tasking Manmager project ID
+        self.options["tasks"] = False   # When querying a TM database, get all tasks
+        # database machine options, assumes a local database that the currently logged in user
+        # can acess with no password
+        self.options["dbhost"] = "localhost"
+        self.options["dbuser"] = None
+        self.options["dbpass"] = None
+        self.options['outdir'] = "/tmp/tmproject-"
+        self.options["schema"] = "pgsnapshot";
+        # FIXME: only use staging for testing, since our test projects aren't in
+        # the production system
+        self.options["tmhost"] = "tasking-manager-staging-api.hotosm.org"
+        #    options["tmhost"] = "tasking-manager-tm4-production-api.hotosm.org"
+
+        if len(argv) <= 1:
+            self.usage()
+
+        try:
+            (opts, val) = getopt.getopt(argv[1:], "h,v,t:,b:,x:,f:,p:,s:,d:,u:,w:,a:o:",
+                                        ["help", "verbose", "tmdata", "boundary", "osmdata",
+                                         "footprints", "project", "schema", "dbhost", "dbuser",
+                                         "dbpass", "adminlevel", "outdir"])
+        except getopt.GetoptError as e:
+            logging.error('%r' % e)
+            self.usage(argv)
+            quit()
+
+        for (opt, val) in opts:
+            if opt == '--help' or opt == '-h':
+                self.usage()
+            elif opt == "--verbose" or opt == '-v':
+                # Stream to the terminal for now
+                # logging.basicConfig(filename='conflator.log',stream = sys.stdout,level=logging.DEBUG)
+                logging.basicConfig(stream = sys.stdout,level=logging.DEBUG)
+            elif opt == "--project" or opt == '-p':
+                self.options['project'] = val
+            elif opt == "--osmdata" or opt == '-x':
+                self.options['osmdata'] = val
+            elif opt == "--tmdata" or opt == '-t':
+                self.options['tmdata'] = val
+            elif opt == "--boundary" or opt == '-b':
+                self.options['boundary'] = val
+            elif opt == "--outdir" or opt == '-o':
+                self.options['prefix'] = val
+            elif opt == "--dbhost" or opt == '-d':
+                self.options['dbhost'] = val
+            elif opt == "--user" or opt == '-u':
+                self.options['dbuser'] = val
+            elif opt == "--dbpass" or opt == '-w':
+                self.options['dbpass'] = val
+            elif opt == "--footprints" or opt == '-f':
+                self.options['footprints'] = val
+            elif opt == "--schema" or opt == '-s':
+                self.options['schema'] = val
+
+    def get(self, arg):
+        if arg in self.options:
+            return self.options[arg]
+        else:
+            logging.error("")
+            return None
+
+    def usage(self):
+        out = """
+        --help(-h)       Get command line options
+        --verbose(-v)    Enable verbose output
+        --boundary(-b)   Specify a multipolygon for boundaries, one file for each polygon
+        --tmdata(-t)     Tasking Manager database to get boundaries if no boundary file
+                         prefix with pg: for database usage, http for REST API
+        --project(-p)    Tasking Manager project ID to get boundaries from database
+        --splittasks     When using the Tasking Manager database, split into tasks
+        --osmdata(-x)    OSM XML/PBF or OSM database to get boundaries (prefix with pg: if database)
+        --admin(-a)      When querying the OSM database, this is the admin_level, (defaults to %d)
+        --outdir(-o)     Output file prefix for output files (default \"%s\")
+        --footprints(-f) File or building footprints Database URL (prefix with pg: if database)
+        --schema         OSM database schema (pgsnapshot, ogr2ogr, osm2pgsql) defaults to \"%s\"
+        --dbhost(-d)     Database host, defaults to \"localhost\"
+        --dbuser(-u)     Database user, defaults to current user
+        --dbpass(-w)     Database user, defaults to no password needed
+        """ % (self.options['admin'], self.options['outdir'], self.options['schema'])
+        return out
 
 
 def writeLayer(file=None, layer=None):
@@ -76,29 +170,39 @@ def getProjectBoundary(options=None):
     """Get the project boundary from the Tasking Manager database. or from a data file
     that has been downloaded from the Tasking Manager"""
     # FIXME: handle actual URL, don't assume localhost auth
-    if len(options) is None:
+    if options is None:
         logging.error("Need to pass in the options")
         return None
 
     data = list()
-    tmin = options['tmin']
-    osmin = options['osmin']
-    bound = options['boundary']
-    tasks = options['tasks']
-    project = options['project']
+    tmdb = options.get('tmdata')
+    osmdata = options.get('osmdata')
+    bound = options.get('boundary')
+    tasks = options.get('tasks')
+    project = options.get('project')
+    dbhost = options.get('dbhost')
+
     layer = None
     multi = ogr.Geometry(ogr.wkbMultiPolygon)
     # Use Tasking Manager data for the boundary.
-    if tmin is not None:
-        if tmin[0:3] == "pg:" and project is None:
+    if tmdb is not None:
+        if tmdb[0:3] == "pg:" and project is None:
             logging.error("Need to specify a project ID when using the TM database")
             return None
 
+        if tmdb[0:4] == "http":
+            if tasts:
+                request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/8612/tasks/?as_file=false"
+            else:
+                request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/8613/queries/aoi/?as_file=false"
+
         # Use TM data for the boundary or boundaries
-        if tmin[0:3] == "pg:":
+        if tmdb[0:3] == "pg:":
             if options['project'] is not None:
-                logging.info("Opening TM database connection to: %s for %r" % (tmin[3:], project))
-                connect = "PG: dbname=" + tmin[3:]
+                logging.info("Opening TM database connection to: %s for %r" % (tmdb[3:], project))
+                connect = "PG: dbname=" + tmdb[3:]
+                if dbhost != "localhost":
+                    connect += " host=" + dbhost
                 tmp = ogr.Open(connect)
                 if tasks:
                     sql = "SELECT projects.id AS pid,tasks.id AS tid,tasks.x,tasks,y AS tid,ST_AsText(tasks.geometry) FROM tasks,projects WHERE tasks.project_id=" + str(project) + " AND projects.id=" + str(project)
@@ -107,16 +211,17 @@ def getProjectBoundary(options=None):
                     sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(project)
                     print(sql)
                     layer = tmp.ExecuteSQL(sql)
-        else:
-            logging.info("Opening TM project boundary file: %s" % tmin)
-            layer = tmp.GetLayer()
 
     # Use OSM postgres database for the boundaries. The default is admin_level 4, which
     # is regions. Regions or counties are a good size for data processing.
-    if osmin is not None:
-        if osmin[0:3] == "pg:":
-            connect = "PG: dbname=" + osmin[3:]
+    if osmdata is not None and bound is None:
+        if osmdata[0:3] == "pg:":
+            connect = "PG: dbname=" + osmdata[3:]
+            if dbhost != "localhost":
+                connect += " host=" + dbhost
             tmp = ogr.Open(connect)
+            if tmp is None:
+                logging.error("Couldn't open %s" % osmdata)
             # Default osm2pgsql schema
             # sql = "SELECT name,wkb_geometry FROM multipolygons WHERE boundary='administrative' AND admin_level=" + str(options['admin'])
             # Modified schema using raw.lua
@@ -124,32 +229,38 @@ def getProjectBoundary(options=None):
             print(sql)
             layer = tmp.ExecuteSQL(sql)
         else:
-            logging.info("Opening OSM project boundary file: %s" % osmin)
-            tmp = ogr.Open(osmin)
+            logging.info("Opening OSM project boundary file: %s" % osmdata)
+            tmp = ogr.Open(osmdata)
+            if tmp is None:
+                logging.error("Couldn't open %s" % osmdata)
+                return None
             layer = tmp.GetLayer()
 
     if bound is not None:
-        logging.info("Opening OSM project boundary file: %s" % osmin)
+        logging.info("Opening boundary file: %s" % bound)
         tmp = ogr.Open(bound)
+        if tmp is None:
+            logging.error("Couldn't open %s" % bound)
+            return None
         layer = tmp.GetLayer()
 
     if layer is None:
         logging.error("No such project in the Tasking Manager database")
         return None
 
-    if osmin is not None:
-        logging.debug("%d features in %s" % (layer.GetFeatureCount(), osmin))
-    elif bound is not None:
+    if osmdata is not None and bound is None:
+        logging.debug("%d features in %s" % (layer.GetFeatureCount(), osmdata))
+    if bound is not None:
         logging.debug("%d features in %s" % (layer.GetFeatureCount(), bound))
     for poly in layer:
         admin = dict()
         boundary = makeBoundary(poly.GetGeometryRef())
         # print(boundary)
-        admin['id'] = poly.GetField(0)
-        admin['X'] = poly.GetField(1)
-        admin['Y'] = poly.GetField(2)
+        if boundary.GetGeometryCount() > 1:
+            admin['id'] = poly.GetField(0)
+            admin['X'] = poly.GetField(1)
+            admin['Y'] = poly.GetField(2)
         admin['boundary'] = boundary
         data.append(admin)
-        #multi.AddGeometry(boundary)
 
     return data
