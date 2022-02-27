@@ -46,7 +46,7 @@ class CommonOptions(object):
         self.options["dbhost"] = "localhost"
         self.options["dbuser"] = None
         self.options["dbpass"] = None
-        self.options['outdir'] = "/tmp/tmproject-"
+        self.options['prefix'] = "/tmp/tmproject-"
         self.options["schema"] = "pgsnapshot";
         # FIXME: only use staging for testing, since our test projects aren't in
         # the production system
@@ -256,6 +256,9 @@ def getProjectBoundary(options=None):
         admin = dict()
         boundary = makeBoundary(poly.GetGeometryRef())
         # print(boundary)
+        index = poly.GetFieldIndex('name')
+        if index >= 0:
+            admin['name'] = poly.GetField(index)
         if boundary.GetGeometryCount() > 1:
             admin['id'] = poly.GetField(0)
             admin['X'] = poly.GetField(1)

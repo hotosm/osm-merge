@@ -153,6 +153,8 @@ for poly in row:
     elif layer.GetFeatureCount() > 0:
         if 'X' in poly and 'Y' in poly:
             out = options.get('outdir') + str(poly['X']) + "_" + str(poly['Y']) + ".geojson"
+        elif 'name' in poly:
+            out = options.get('outdir') + poly['name'] + ".geojson"
         else:
             out = options.get('outdir') +"0.geojson"
         # out = options['outdir'] + str(index) + ".geojson"
