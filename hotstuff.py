@@ -24,9 +24,10 @@ from sys import argv
 import os
 import sys
 from osgeo import ogr
-import urllib.request
 # from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
+import urllib.request
+from urllib.parse import urlparse
 
 
 
@@ -60,7 +61,7 @@ class CommonOptions(object):
             (opts, val) = getopt.getopt(argv[1:], "h,v,t:,b:,x:,f:,p:,s:,d:,u:,w:,a:o:",
                                         ["help", "verbose", "tmdata", "boundary", "osmdata",
                                          "footprints", "project", "schema", "dbhost", "dbuser",
-                                         "dbpass", "adminlevel", "outdir"])
+                                         "dbpass", "adminlevel", "outdir", "splittasks"])
         except getopt.GetoptError as e:
             logging.error('%r' % e)
             self.usage(argv)
@@ -83,6 +84,8 @@ class CommonOptions(object):
                 self.options['boundary'] = val
             elif opt == "--outdir" or opt == '-o':
                 self.options['prefix'] = val
+            elif opt == "--splittasks":
+                self.options['tasks'] = True
             elif opt == "--dbhost" or opt == '-d':
                 self.options['dbhost'] = val
             elif opt == "--user" or opt == '-u':
@@ -118,7 +121,7 @@ class CommonOptions(object):
         --dbhost(-d)     Database host, defaults to \"localhost\"
         --dbuser(-u)     Database user, defaults to current user
         --dbpass(-w)     Database user, defaults to no password needed
-        """ % (self.options['admin'], self.options['outdir'], self.options['schema'])
+        """ % (self.options['admin'], self.options['prefix'], self.options['schema'])
         return out
 
 
@@ -190,12 +193,6 @@ def getProjectBoundary(options=None):
             logging.error("Need to specify a project ID when using the TM database")
             return None
 
-        if tmdb[0:4] == "http":
-            if tasts:
-                request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/8612/tasks/?as_file=false"
-            else:
-                request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/8613/queries/aoi/?as_file=false"
-
         # Use TM data for the boundary or boundaries
         if tmdb[0:3] == "pg:":
             if options['project'] is not None:
@@ -211,6 +208,18 @@ def getProjectBoundary(options=None):
                     sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(project)
                     print(sql)
                     layer = tmp.ExecuteSQL(sql)
+    elif project is not None:
+        if tasks:
+            request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/%s/tasks/?as_file=false" % project
+        else:
+            request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/%s/queries/aoi/?as_file=false" % project
+        print(request)
+        headers = dict()
+        headers['Content-Type'] = 'application/x-www-form-urlencodebd'
+        req = urllib.request.Request(request, headers=headers)
+        x = urllib.request.urlopen(req)
+        output = x.read().decode('utf-8')
+        logging.debug("FIXME: %r" % output)
 
     # Use OSM postgres database for the boundaries. The default is admin_level 4, which
     # is regions. Regions or counties are a good size for data processing.
