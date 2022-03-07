@@ -69,7 +69,8 @@ class CommonOptions(object):
 
         for (opt, val) in opts:
             if opt == '--help' or opt == '-h':
-                self.usage()
+                print(self.usage())
+                quit()
             elif opt == "--verbose" or opt == '-v':
                 # Stream to the terminal for now
                 # logging.basicConfig(filename='conflator.log',stream = sys.stdout,level=logging.DEBUG)
@@ -211,19 +212,25 @@ def getProjectBoundary(options=None):
     elif project is not None:
         if tasks:
             request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/%s/tasks/?as_file=false" % project
+            outfile = "%s-tasks.geojson" % project
         else:
             request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/%s/queries/aoi/?as_file=false" % project
-        print(request)
+            outfile = "%s-project.geojson" % project
         headers = dict()
         headers['Content-Type'] = 'application/x-www-form-urlencodebd'
         req = urllib.request.Request(request, headers=headers)
         x = urllib.request.urlopen(req)
         output = x.read().decode('utf-8')
         logging.debug("FIXME: %r" % output)
+        tmp = open(outfile, "w")
+        tmp.write(output)
+        tmp.close()
+        tmp = ogr.Open(outfile)
+        layer = tmp.GetLayer()
 
     # Use OSM postgres database for the boundaries. The default is admin_level 4, which
     # is regions. Regions or counties are a good size for data processing.
-    if osmdata is not None and bound is None:
+    if osmdata is not None and bound is None and project is None:
         if osmdata[0:3] == "pg:":
             connect = "PG: dbname=" + osmdata[3:]
             if dbhost != "localhost":
@@ -276,3 +283,13 @@ def getProjectBoundary(options=None):
         data.append(admin)
 
     return data
+
+def makeFeature(id, fields, msgeom):
+    feature = ogr.Feature(fields)
+    feature.SetField("id", id)
+    id += 1
+    feature.SetField("building", "yes")
+    feature.SetField("source", "bing")
+    #feature.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
+    feature.SetGeometry(msgeom)
+    return feature
