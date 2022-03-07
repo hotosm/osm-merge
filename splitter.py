@@ -72,7 +72,7 @@ def usage(argv):
     splitter.py -p 8345 -t tmsnap -s -i kenya.geojsonl
     creates *tmproject-8345-task-[0-9]+.geojson*, by getting the task boundaries from a database
 
-    """ % (options['outdir'])
+    """ % (options['prefix'])
     print(out)
     quit()
 
@@ -119,9 +119,11 @@ def usage(argv):
 # All command line options
 options = hotstuff.CommonOptions(argv)
 
+dbhost = options.get('dbhost')
+
 # Boundary file of polygons
 row = hotstuff.getProjectBoundary(options)
-if len(row) == 0:
+if row is None:
     logging.error("Unable to get boundary from %s" % options['boundary'])
     quit()
 
@@ -131,6 +133,8 @@ if options.get('footprints'):
     if data[0:3] == "pg:":
         logging.info("Opening database %s, please wait..." % data[3:])
         connect = "PG: dbname=" + data[3:]
+        if dbhost != "localhost":
+            connect += " host=" + dbhost
         tmp = ogr.Open(connect)
     else:
         logging.info("Opening data file %s, please wait..." % data)
@@ -152,12 +156,12 @@ for poly in row:
         hotstuff.writeLayer(out, layer)
     elif layer.GetFeatureCount() > 0:
         if 'X' in poly and 'Y' in poly:
-            out = options.get('outdir') + str(poly['X']) + "_" + str(poly['Y']) + ".geojson"
+            out = options.get('prefix') + str(poly['X']) + "_" + str(poly['Y']) + ".geojson"
         elif 'name' in poly:
-            out = options.get('outdir') + poly['name'] + ".geojson"
+            out = options.get('prefix') + poly['name'] + ".geojson"
         else:
-            out = options.get('outdir') +"0.geojson"
-        # out = options['outdir'] + str(index) + ".geojson"
+            out = options.get('prefix') +"0.geojson"
+        # out = options['prefix'] + str(index) + ".geojson"
         # index += 1
         logging.info("Writing file %s" % out)
         hotstuff.writeLayer(out, layer)
