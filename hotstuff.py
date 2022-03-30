@@ -30,7 +30,6 @@ import urllib.request
 from urllib.parse import urlparse
 
 
-
 class CommonOptions(object):
     def __init__(self, argv=list()):
         self.options = dict()
@@ -51,8 +50,8 @@ class CommonOptions(object):
         self.options["schema"] = "pgsnapshot";
         # FIXME: only use staging for testing, since our test projects aren't in
         # the production system
-        self.options["tmhost"] = "tasking-manager-staging-api.hotosm.org"
-        #    options["tmhost"] = "tasking-manager-tm4-production-api.hotosm.org"
+        # self.options["tmhost"] = "tasking-manager-staging-api.hotosm.org"
+        self.options["tmhost"] = "https://tasking-manager-tm4-production-api.hotosm.org"
 
         if len(argv) <= 1:
             self.usage()
@@ -185,6 +184,7 @@ def getProjectBoundary(options=None):
     tasks = options.get('tasks')
     project = options.get('project')
     dbhost = options.get('dbhost')
+    tmhost = options.get("tmhost")
 
     layer = None
     multi = ogr.Geometry(ogr.wkbMultiPolygon)
@@ -211,10 +211,10 @@ def getProjectBoundary(options=None):
                     layer = tmp.ExecuteSQL(sql)
     elif project is not None:
         if tasks:
-            request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/%s/tasks/?as_file=false" % project
+            request = tmhost + "/api/v2/projects/%s/tasks/?as_file=false" % project
             outfile = "%s-tasks.geojson" % project
         else:
-            request = "https://tasking-manager-staging-api.hotosm.org/api/v2/projects/%s/queries/aoi/?as_file=false" % project
+            request = tmhost + "/api/v2/projects/%s/queries/aoi/?as_file=false" % project
             outfile = "%s-project.geojson" % project
         headers = dict()
         headers['Content-Type'] = 'application/x-www-form-urlencodebd'
