@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Copyright (c) 2022 Humanitarian OpenStreetMap Team
+#
+# This program is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 #
 # This script creates the smaller data files used for more efficient conflation.
 #
@@ -7,16 +22,32 @@ if test x"$1" = x; then
     echo "ERROR: please specify the country name, which should match the database name"
     exit
 fi
-country="$1"
-# dbs=$(psql -l | grep ${country}_foot | tr -s ' ' | cut -d ' ' -f 2)
+
+if test x"$1" = x; then
+    echo "Guessing the probable country name ?..."
+    country=$(basename $PWD | tr "[:upper:]" "[:lower:]")
+    echo -n "Is ${country} correct ? y to continue "
+    read answer
+    if test x"${answer}" != x"y"; then
+	echo "ERROR: please specify the country name, which should match the database name"
+	exit
+    fi
+else
+    country="$1"
+fi
+echo "Processing country \"${country}\""
+
+echo -n "Checking to see if the footprint data is in a database..."
 exists=$(psql -l | grep -c ${country}_foot)
 
 dbname=""
 if expr "${exists}" = 1 > /dev/null; then
+    echo " yes \"${country}_foot\" exists"
     dbname=${country}_foot
 fi
 
-echo "Processing country ${country}"
+# the conflator program should be in your path
+PATH="/data/conflator.git:${PATH}"
 
 # OSM buildings are in a database
 if test ! -e  ${country}-osm.geojson; then
@@ -35,6 +66,6 @@ fi
 #
 for project in *-project.geojson; do
     id=$(echo ${project} | cut -d '-' -f 1)
-    echo ogr2ogr -progress -f "GeoJSON" -clipsrc ${id}-project.geojson ${id}-osm.geojson ${country}-osm.geojson 
-    echo ogr2ogr -progress -f "GeoJSON" -clipsrc ${id}-project.geojson ${id}-ms.geojson ${country}-ms.geojson 
+    ogr2ogr -progress -f "GeoJSON" -clipsrc ${id}-project.geojson ${id}-osm.geojson ${country}-osm.geojson
+    ogr2ogr -progress -f "GeoJSON" -clipsrc ${id}-project.geojson ${id}-ms.geojson ${country}-ms.geojson
 done
