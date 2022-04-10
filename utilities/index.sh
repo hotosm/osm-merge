@@ -22,63 +22,14 @@ outfile="index.html"
 
 header()
 {
-    local title=$(basename $PWD)
-    cat <<EOF >> ${outfile}
+    local title="$1"
+    cat <<EOF > ${outfile}
 <html>
 <head>
 <title>${title}</title>
 </head>
   <h2 align=center>${title}</h2>
 EOF
-}
-
-mapdir()
-{
-    local path="$1"
-    local idx=0
-    local out=""
-    
-    for file in $(find ${path} -name \*.osm\* -o -name \*.kmz) ; do
-	local name="$(basename ${file})"
-	# if test x"${file}" = x"*.kmz"; then
-	#    local out="no data..."
-	#    break
-	# fi
-	local size="$(stat -c '%s' ${file} ; return $?)"
-	if test $? -eq 1; then
-	    continue
-	fi
-	if test ${size} -eq 0; then
-	    continue
-	fi
-	local megs="$(expr ${size} / 1024)"
-	if test ${megs} -eq 0; then
-	    megs="${size}B"
-	else
-	    megs="${megs}M"
-	fi
-	local file=$(echo ${file} | grep -o "/[A-Za-z]*/${name}" | cut -d '/' -f 2-3)
-	local index=""
-	if test -e ${path}/index.html; then
-	    local index=index.html
-	fi
-	if test ${idx} -eq 0; then
-	    local out="<a href=${file}>${name} (${megs})</a>"
-	else
-	    local out="${out}, <a href=${file}>${name} (${megs})</a>"
-	fi
-	if test x"${name}" = x"*.bz2"; then
-	    local out="<i>No road or trail data</i>."
-	fi
-	idx=$(expr ${idx} + 1)
-    done
-
-    echo ${out}
-    if test x"${out}" = x; then
-	return 1
-    else
-	return 0
-    fi
 }
 
 entry()
@@ -97,17 +48,16 @@ entry()
     fi
     local path=$(basename $(dirname $PWD))
     path+="/$(basename $PWD)"
-
     cat <<EOF >> ${outfile}
 <ul>
 <li>Project ${id}
 <ul>
-<li><a href=${path}/${id}-osm.geojson>${id}-osm.geojson</a> (${osmsize} buildings)
-<li><a href=${path}/${id}-ms.geojson>${id}-ms.geojson</a> (${mssize} buildings)
+<li><a href=${id}-osm.geojson>${id}-osm.geojson</a> (${osmsize} buildings)
+<li><a href=${id}-ms.geojson>${id}-ms.geojson</a> (${mssize} buildings)
 EOF
     if test -e ${id}-buildings.geojson; then
 	size=$(grep type -c ${id}-ms.geojson)
-	echo "<li><a href=${path}/${id}-buildings.geojson>${id}-buildings.geojson</a> (${size} buildings)" >> ${outfile}
+	echo "<li><a href=${id}-buildings.geojson>${id}-buildings.geojson</a> (${size} buildings)" >> ${outfile}
     fi
     cat <<EOF >> ${outfile}    
 </ul>
@@ -130,7 +80,7 @@ direntry()
 
     local name=$(echo ${file} | cut -d '-' -f 1)
     cat <<EOF >> ${outfile}
-    <li><a href=${path}/${file}>Project ${name}</a> (${size}, ${file})
+    <li><a href=${file}>Project ${name}</a> (${size}, ${file})
 EOF
 }
 
@@ -151,7 +101,10 @@ footer()
 EOF
 }
 
-echo "<h2>Tasking Manager Project Boundaries</h2>" >> ${outfile}
+country="$(basename $PWD)"
+header "Tasking Manager Projects in ${country}"
+
+echo "<h2>Tasking Manager Project Boundaries for ${country}</h2>" >> ${outfile}
 for project in *-project.geojson; do
     id=$(echo ${project} | cut -d '-' -f 1)
     direntry ${project}
