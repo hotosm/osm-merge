@@ -56,7 +56,7 @@ entry()
 <li><a href=${id}-ms.geojson>${id}-ms.geojson</a> (${mssize} buildings)
 EOF
     if test -e ${id}-buildings.geojson; then
-	size=$(grep type -c ${id}-ms.geojson)
+	size=$(grep type -c ${id}-buildings.geojson)
 	echo "<li><a href=${id}-buildings.geojson>${id}-buildings.geojson</a> (${size} buildings)" >> ${outfile}
     fi
     cat <<EOF >> ${outfile}    
