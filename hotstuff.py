@@ -1,21 +1,19 @@
 #!/usr/bin/python3
-#
+
 # Copyright (c) 2022 Humanitarian OpenStreetMap Team
 #
-# This file is part of Conflator.
-#
-#     Underpass is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-#
-#     Underpass is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
+# This program is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
 import getopt
@@ -221,7 +219,7 @@ def getProjectBoundary(options=None):
         req = urllib.request.Request(request, headers=headers)
         x = urllib.request.urlopen(req)
         output = x.read().decode('utf-8')
-        logging.debug("FIXME: %r" % output)
+        # logging.debug("FIXME: %r" % output)
         tmp = open(outfile, "w")
         tmp.write(output)
         tmp.close()
@@ -271,7 +269,7 @@ def getProjectBoundary(options=None):
     for poly in layer:
         admin = dict()
         boundary = makeBoundary(poly.GetGeometryRef())
-        # print(boundary)
+        # print("POLY: %r" % poly.GetGeometryRef().GetGeometryCount())
         index = poly.GetFieldIndex('name')
         if index >= 0:
             admin['name'] = poly.GetField(index)
@@ -284,12 +282,11 @@ def getProjectBoundary(options=None):
 
     return data
 
-def makeFeature(id, fields, msgeom):
+def makeFeature(id, fields, geom):
     feature = ogr.Feature(fields)
     feature.SetField("id", id)
-    id += 1
     feature.SetField("building", "yes")
     feature.SetField("source", "bing")
     #feature.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
-    feature.SetGeometry(msgeom)
+    feature.SetGeometry(geom)
     return feature
