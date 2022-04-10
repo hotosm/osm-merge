@@ -34,7 +34,7 @@ database directly.
 
 ## Examples
 
-Use 2 disk files, *8345-project.geojson* is a boundary downloaded from
+Uses 2 disk files, *8345-project.geojson* is a boundary downloaded from
 the Tasking Manager, or manually extracted from the database. There is
 a simple utility script **extract.sh** which takes a project ID, and
 uses it to produce two output files. One is the project boundary
