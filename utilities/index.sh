@@ -50,7 +50,7 @@ entry()
     path+="/$(basename $PWD)"
     cat <<EOF >> ${outfile}
 <ul>
-<li>Project ${id}
+<li>Project ${id}: ${names[${id}]}"
 <ul>
 <li><a href=${id}-osm.geojson>${id}-osm.geojson</a> (${osmsize} buildings)
 <li><a href=${id}-ms.geojson>${id}-ms.geojson</a> (${mssize} buildings)
@@ -80,7 +80,7 @@ direntry()
 
     local name=$(echo ${file} | cut -d '-' -f 1)
     cat <<EOF >> ${outfile}
-    <li><a href=${file}>Project ${name}</a> (${size}, ${file})
+    <li><a href=${file}>Project ${name}</a> (${size}), ${names[${id}]}
 EOF
 }
 
@@ -101,6 +101,18 @@ footer()
 EOF
 }
 
+declare -A names
+
+for project in *-project.geojson; do
+    id=$(echo ${project} | cut -d '-' -f 1)
+    wget https://tasking-manager-tm4-production-api.hotosm.org/api/v2/projects/${id}/queries/summary/ -O ${id}-tmp
+    name=$(grep -o '"name": "[^"]*' ${id}-tmp | grep -o '[^"]*$' | grep "^Imagery" | cut -d '-' -f 2)
+    echo "FIXME: $name"
+    names[${id}]="${name}"
+    rm -f ${id}-tmp
+done
+
+# declare -p names
 country="$(basename $PWD)"
 header "Tasking Manager Projects in ${country}"
 
