@@ -69,3 +69,15 @@ buildings from the footprint file that are not already in OSM. This
 file is *12345-buildings.geojson*.
 
 > PATH/clipsrc.sh nigeria
+
+## index.sh
+
+This script generates a simple webpage to navigate all the data files,
+so they can be manually downloaded for validation. This script should
+be run in the directory with all the data files. The first section is
+just the project from the Tasking Manager, the rest are all the
+smaller files for each project. Each project has 3 generated data
+files, the two raw data files produced from the database, and the
+conflated building output.
+
+> ./index.sh
