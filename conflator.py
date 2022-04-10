@@ -1,21 +1,19 @@
 #!/usr/bin/python3
+
+# Copyright (c) 2022 Humanitarian OpenStreetMap Team
 #
-# Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+# This program is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
 #
-# This file is part of Underpass.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
 #
-#     Underpass is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-#
-#     Underpass is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
 import getopt
@@ -73,7 +71,7 @@ if footprints[0:3] == "pg:":
     connect = "PG: dbname=" + footprints[3:]
     if options.get('dbhost') != "localhost":
         connect += " host=" + options.get('dbhost')
-        bldin = ogr.Open(connect)
+    bldin = ogr.Open(connect)
 else:
     logging.info("Opening buildings data file: %s" % footprints)
     bldin = ogr.Open(footprints)
@@ -97,11 +95,12 @@ if osmdata[0:3] == "pg:":
     connect = "PG: dbname=" + osmdata[3:]
     if options.get('dbhost') != "localhost":
         connect += " host=" + options.get('dbhost')
-        osmin = ogr.Open(connect)
+    osmin = ogr.Open(connect)
+    osm = osmin.GetLayerByName("ways_poly")
 else:
     logging.info("Opening OSM data file: %s" % osmdata)
     osmin = ogr.Open(osmdata)
-osm = osmin.GetLayer()
+    osm = osmin.GetLayer()
 if osm:
     logging.info("%d OSM Features in %s" % (osm.GetFeatureCount(), osmdata))
 else:
@@ -113,9 +112,9 @@ bfields = buildings.GetLayerDefn()
 if rows:
     timer.start()
     osm.ResetReading()
-    # FIXME: This drops most of the buildings for some reason
-    #osm.SetAttributeFilter("tags->>\'building\'=\'yes\'")
     osm.SetSpatialFilter(rows[0]['boundary'])
+    if osmdata[0:3] == "pg:":
+        osm.SetAttributeFilter("tags->>'building' IS NOT NULL")
     timer.stop()
     logging.debug("%d OSM features after filtering" % (osm.GetFeatureCount()))
 
@@ -141,24 +140,23 @@ outlayer.CreateField(src)
 status = ogr.FieldDefn("status", ogr.OFTString)
 outlayer.CreateField(status)
 
-# logging.info("Looking for unique buildings")
-# timer.start()
-# lyr1 = buildings
-# lyr2 = osm
-# lyr = lyr1.SymDifference(lyr2, outlayer)
-# logging.debug("%d features in output dataset" % lyr.GetFeatureCount())
-# timer.stop()
+# for foo in osm:
+#     feature = hotstuff.makeFeature(foo.GetFID(), fields, foo.GetGeometryRef())
+#     outlayer.CreateFeature(feature)
+#     feature.Destroy()
+# logging.info("Wrote output file \'%s\'" % file)
+# outfile.Destroy()
 # quit()
 
-if rows:
-    # timer.start()
-    sql = "SELECT geom FROM ways_poly WHERE tags->>\'building\' IS NOT NULL and ST_Within(geom, ST_GeomFromEWKT(\'SRID=4326;%s\'))" % rows[0]['boundary'].ExportToWkt()
-    print(sql)
-    layer1 = osmin.ExecuteSQL(sql)
-    # layer1 = osm
-    # layer1.SetSpatialFilter(rows[0]['boundary'])
-    logging.debug("%d features in output dataset" % layer1.GetFeatureCount())
-    # timer.stop()
+# if rows:
+#     # timer.start()
+#     sql = "SELECT geom, osm_id FROM ways_poly WHERE tags->>\'building\' IS NOT NULL and ST_Within(geom, ST_GeomFromEWKT(\'SRID=4326;%s\'))" % rows[0]['boundary'].ExportToWkt()
+#     print(sql)
+#     layer1 = osmin.ExecuteSQL(sql)
+#     # layer1 = osm
+#     # layer1.SetSpatialFilter(rows[0]['boundary'])
+#     logging.debug("%d features in osm dataset" % layer1.GetFeatureCount())
+#     # timer.stop()
 
 # There is no boundary file, which is used to conflate two small datasets that have
 # already been created with the same boundary
@@ -172,51 +170,53 @@ if rows:
 #     timer.stop()
 #     quit()
 
-#epdb.st()
-# bar = PixelSpinner('Processing...', max=layer1.GetFeatureCount())
 bar = Bar('Processing...', max=buildings.GetFeatureCount())
 
-id = 1
-counter = 0
+timer.start()
 for msbld in buildings:
+    # msbld.DumpReadable()
     bar.next()
-    counter += 1
     msgeom = msbld.GetGeometryRef()
-    mswkt = msgeom.ExportToWkt()
+    # mswkt = msgeom.ExportToWkt()
     dup = False
     for osmbld in osm:
         # print(osmbld.GetGeometryRef().ExportToWkt())
+        # osmgeom = hotstuff.makeBoundary(osmbld.GetGeometryRef())
         osmgeom = osmbld.GetGeometryRef()
         intersect = osmgeom.Intersects(msgeom)
-        touches = osmgeom.Touches(msgeom)
         overlap = osmgeom.Overlaps(msgeom)
-
-        # print("GDAL: %r, %r, %r" % (intersect, touches, overlap))
-        if intersect or overlap or touches:
-            #         index = osmbld.GetFieldIndex('osm_id')
-            # msbld.DumpReadable()
-            logging.debug("Found intersecting buildings: %r" % counter)
-            dup = True
-        mscnt = msgeom.Centroid()
-        osmcnt = osmgeom.Centroid()
-        hit1 = osmgeom.Contains(mscnt)
-        hit2 = msgeom.Contains(osmcnt)
-        if hit1 and hit2:
-            print("Found duplicate buildings %r, %r, %r" % (hit1, hit2, counter))
+        # print("GDAL: %r, %r" % (intersect, overlap))
+        if intersect or overlap:
+            # logging.debug("Found intersecting buildings: %r (%r)" % (msbld.GetFID(),
+            #                                                         osmbld.GetField(0)))
             dup = True
             break
-    # If we have a duplicate, don't write anything to the outlayer
-    if dup:
-        continue
+        mscnt = msgeom.Centroid()
+        osmcnt = osmgeom.Centroid()
+        hit1 = osmgeom.Within(mscnt)
+        hit2 = msgeom.Within(osmcnt)
+        dist = mscnt.Distance(osmcnt)
+        # print("HITS: %r, %r, %r vs %r, %r" % (hit1, hit2, msbld.GetFID(), osmbld.GetField(0), dist))
+        if hit1 or hit2:
+        #if dist < 0.04:
+            dup = True
+            logging.debug("Found duplicate buildings %r, %r: %r vs %r (%r)" % (hit1, hit2,
+                                            msbld.GetFID(), osmbld.GetField(0), dist))
+            # if msbld.GetFID() == 8080571:
+            #     # msbld.DumpReadable()
+            #     # osmbld.DumpReadable()
+            #     epdb.st()
+            break
 
-    logging.debug("New building ID: %s" % id)
-    feature = hotstuff.makeFeature(id, fields, msgeom)
-    outlayer.CreateFeature(feature)
-    feature.Destroy()
-    id += 1
+    #    if not intersect and not overlap and not hit1 and not hit2:
+    if not dup:
+        dup = False
+        # logging.debug("New building ID: %s" % msbld.GetFID())
+        feature = hotstuff.makeFeature(msbld.GetFID(), fields, msgeom)
+        outlayer.CreateFeature(feature)
+        feature.Destroy()
 
+timer.stop()
 logging.info("Wrote output file \'%s\'" % file)
 
 outfile.Destroy()
-#buildings.Destroy()
-#osm.Destroy()
