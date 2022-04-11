@@ -77,13 +77,27 @@ looking at satellite imagery, since there are often remote
 buildings. The tags can be searched for ehen editing the data to
 visually determine whether it's a real building or not.
 
-# Output files
+# Input Files
+
+While the [conflator.py](conflator.md) program works equally as well
+using a database or disk files, disk files are more convienient for
+validating the conflation results. Once all the Tasking Manager
+project boundaries are downloaded using the [splitter.py](splitter.md)
+program, these utilities are oriented towards batch processing an entire
+directory of data files, which needs to be done after updating any of
+the raw data sources. This processing is handled by a few
+[utilities](utilities.md), which produce two files used for input to
+the conflator program. The are *123435*-osm.geojson*, and
+*12345-ms.geojson". One just contains the OSM buildings, and the other
+the building footprint file.
+
+# Output Files
 
 As the data files are huge, it's necessary to conflate buildings with
 a subset of all the data. Commonly county administrative boundaries
-are a good dize. These can be extract from OSM itself, or an external
-data file of boundaries. The initial set of output files are the
-building data chopped up into regionaly boundaries.
+are a good size. These can be extract from OSM itself, or an external
+data file of boundaries. The initial set of output files is the
+building data chopped up into regional boundaries.
 
 After conflation, another output file is created with the new
 buildings that are not duplicates of existing OSM data. This is much
