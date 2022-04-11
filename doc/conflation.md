@@ -13,15 +13,16 @@ For raw OSM data, the existing country data is downloaded from [GeoFabrik](
 https://download.geofabrik.de/index.html), and imported using a
 modified schaeme for osm2pgsql.
 
- osm2pgsql --create -d nigeria --extra-attributes --output=flex --style /data/raw.lua nigeria-latest-internal.osm.pbf
+> osm2pgsql --create -d nigeria --extra-attributes --output=flex --style /data/raw.lua nigeria-latest-internal.osm.pbf
 
 Once the data is imported, do this to improve performance.
- cluster ways_poly using ways_poly_geom_idx;
- create index on ways_poly using gin(tags);
+> cluster ways_poly using ways_poly_geom_idx;
+
+> create index on ways_poly using gin(tags);
 
 The building footprint data file is imported into Postgres using [ogr2ogr](https://gdal.org/programs/ogr2ogr.html).
 
- ogr2ogr -skipfailures -progress -overwrite -f PostgreSQL PG:dbname=nigeria_foot -nlt POLYGON nigeria.geojsonl -lco COLUMN_TYPES=other_tags=hstore
+> ogr2ogr -skipfailures -progress -overwrite -f PostgreSQL PG:dbname=nigeria_foot -nlt POLYGON nigeria.geojsonl -lco COLUMN_TYPES=other_tags=hstore
 
 ## Checks Made
 
