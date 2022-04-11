@@ -18,6 +18,12 @@
 # This script conflates all the files in this sub directory
 #
 
+# By default process all the projects
+projects=$(ls *-project.geojson)
+if test x"${2}" != x; then
+    projects="${2}-project.geojson"
+fi
+
 if test x"$1" = x; then
     echo "Guessing the probable country name ?..."
     country=$(basename $PWD | tr "[:upper:]" "[:lower:]")
@@ -47,7 +53,7 @@ PATH="/data/conflator.git:${PATH}"
 #
 # Each Tasking Manager project is a single file
 #
-for project in *-project.geojson; do
+for project in ${projects}; do
     id=$(echo ${project} | cut -d '-' -f 1)
     if test ! -e ${id}-osm.geojson &&  test ! -e ${id}-ms.geojson; then
 	echo "ERROR: Data files ${id}-*.geojson don't exist! Run ./clipsrc first to produce them"

@@ -37,6 +37,12 @@ else
 fi
 echo "Processing country \"${country}\""
 
+# By default process all the projects
+projects=$(ls *-project.geojson)
+if test x"${2}" != x; then
+    projects="${2}-project.geojson"
+fi
+
 echo -n "Checking to see if the footprint data is in a database..."
 exists=$(psql -l | grep -c ${country}_foot)
 
@@ -64,7 +70,7 @@ fi
 #
 # Each Tasking Manager project is a single file
 #
-for project in *-project.geojson; do
+for project in ${projects}; do
     id=$(echo ${project} | cut -d '-' -f 1)
     ogr2ogr -progress -f "GeoJSON" -clipsrc ${id}-project.geojson ${id}-osm.geojson ${country}-osm.geojson
     ogr2ogr -progress -f "GeoJSON" -clipsrc ${id}-project.geojson ${id}-ms.geojson ${country}-ms.geojson
