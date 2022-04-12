@@ -1,4 +1,4 @@
-# Splitter.py
+# Splitter Program
 
 Splitter is a utility to chop up large files into smaller, more
 manageable sizes. While it would be possible to do this with other

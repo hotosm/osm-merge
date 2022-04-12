@@ -1,4 +1,4 @@
-# Conflator.py
+# Conflator Program
 
 Conflator is a program that conflates building footprint data with
 OpenStreetMap data to remove duplicates. The result of the conflation
