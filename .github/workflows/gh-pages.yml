@@ -6,19 +6,20 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest      
-    steps:
-      - uses: actions/checkout@v2
+  name: Build HTML files
+  runs-on: ubuntu-latest
+
+  steps:
+    - uses: actions/checkout@v2
       - name: Doxygen Action
         uses: mattnotmitt/doxygen-action@v1.1.0
         with:
           doxyfile-path: ./docs/Doxyfile
           working-directory: .
 
-    - name: Deploy HTML
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./html
-        publish_branch: gh-pages
+      - name: Deploy HTML
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./html
+          publish_branch: gh-pages
