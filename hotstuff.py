@@ -306,7 +306,7 @@ def conflate(buildings, osm, spin):
         spin.next()
         msgeom = msbld.GetGeometryRef()
         dup = False
-        timer.start()
+        # timer.start()
         # import epdb ; epdb.st()
         for osmbld in osm:
             osmgeom = osmbld.GetGeometryRef()
@@ -314,16 +314,16 @@ def conflate(buildings, osm, spin):
             overlap = osmgeom.Overlaps(msgeom)
             # print("GDAL: %r, %r" % (intersect, overlap))
             if intersect or overlap:
-                logging.debug("Found intersecting buildings: %r (%r)" % (msbld.GetFID(), osmbld.GetField(0)))
+                # logging.debug("Found intersecting buildings: %r (%r)" % (msbld.GetFID(), osmbld.GetField(0)))
                 dup = True
-                #break
+                break
             mscnt = msgeom.Centroid()
             osmcnt = osmgeom.Centroid()
             hit1 = osmgeom.Within(mscnt)
             hit2 = msgeom.Within(osmcnt)
             dist = mscnt.Distance(osmcnt)
-            # print("HITS: %r vs %r, %r" % (msbld.GetFID(), osmbld.GetField(0), dist))
-            if (hit1 or hit2) or dist < 1.0e-08:
+            # if (hit1 or hit2) dist < 1.0e-08:
+            if (hit1 or hit2) or dist < 2.0e-08:
                 dup = True
                 logging.debug("Found duplicate buildings %r, %r: %r vs %r (%r)" % (hit1, hit2,
                                             msbld.GetFID(), osmbld.GetField(0), dist))
@@ -332,11 +332,11 @@ def conflate(buildings, osm, spin):
             #    if not intersect and not overlap and not hit1 and not hit2:
         if not dup:
             dup = False
-            logging.debug("New building ID: %s" % msbld.GetFID())
+            # logging.debug("New building ID: %s" % msbld.GetFID())
             new.append(msbld)
             #feature = makeFeature(msbld.GetFID(), fields, msgeom)
             #outlayer.CreateFeature(feature)
             #feature.Destroy()
-        timer.stop()
+        # timer.stop()
     return new
 
