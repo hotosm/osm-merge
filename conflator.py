@@ -85,8 +85,6 @@ memdrv = ogr.GetDriverByName("MEMORY")
 msmem = memdrv.CreateDataSource('msmem')
 msmem.CopyLayer(bldin.GetLayer(), "msmem")
 buildings = msmem.GetLayer()
-
-#buildings = bldin.GetLayer()
 if buildings:
     logging.info("%d Buildings in %s" % (buildings.GetFeatureCount(), footprints))
 else:
@@ -122,8 +120,9 @@ else:
     logging.error("No features found in %s" % osmdata)
     quit()
 
-bfields = buildings.GetLayerDefn()
+# bfields = buildings.GetLayerDefn()
 
+# If a boundary was specified, use it to limit the input data
 if rows:
     timer.start()
     osm.ResetReading()
@@ -133,9 +132,7 @@ if rows:
     timer.stop()
     logging.debug("%d OSM features after filtering" % (osm.GetFeatureCount()))
 
-#osmmem = memdrv.CreateDataSource('osmmem')
-
-# Output is in memory, gets written later
+# Output is in memory, gets written later after any post processing.
 drv = ogr.GetDriverByName("MEMORY")
 
 # Driver doesn't support deleting files, so handle it ourself
@@ -157,36 +154,6 @@ outlayer.CreateField(src)
 status = ogr.FieldDefn("status", ogr.OFTString)
 outlayer.CreateField(status)
 
-# for foo in osm:
-#     feature = hotstuff.makeFeature(foo.GetFID(), fields, foo.GetGeometryRef())
-#     outlayer.CreateFeature(feature)
-#     feature.Destroy()
-# logging.info("Wrote output file \'%s\'" % file)
-# outfile.Destroy()
-# quit()
-
-# if rows:
-#     # timer.start()
-#     sql = "SELECT geom, osm_id FROM ways_poly WHERE tags->>\'building\' IS NOT NULL and ST_Within(geom, ST_GeomFromEWKT(\'SRID=4326;%s\'))" % rows[0]['boundary'].ExportToWkt()
-#     print(sql)
-#     layer1 = osmin.ExecuteSQL(sql)
-#     # layer1 = osm
-#     # layer1.SetSpatialFilter(rows[0]['boundary'])
-#     logging.debug("%d features in osm dataset" % layer1.GetFeatureCount())
-#     # timer.stop()
-
-# There is no boundary file, which is used to conflate two small datasets that have
-# already been created with the same boundary
-# if rows is None:
-#     logging.debug("Using SymDifference")
-#     timer.start()
-#     lyr = buildings.SymDifference(osm, outlayer)
-#     logging.info("Wrote output file \'%s\'" % file)
-#     # for feature in lyr:
-#     #     makeFeature(id, fields, msgeom)
-#     timer.stop()
-#     quit()
-
 bar = Bar('Processing...', max=buildings.GetFeatureCount())
 info = get_cpu_info()
 cores = info['count']
@@ -194,10 +161,12 @@ cores = info['count']
 logging.info("Writing to output file \'%s\'" % file)
 
 # Break the footprint file into chunks, one for each thread.
+# FIXME: There's gotta be a python module that does this...
 subset = list()
 sliced = list()
-chunk = 1000
+chunk =  round(buildings.GetFeatureCount()/cores)
 i = 0
+cycle = range(0, buildings.GetFeatureCount(), chunk)
 for bld in buildings:
     # print(bld.GetGeometryType())
     subset.append(bld)
@@ -207,23 +176,34 @@ for bld in buildings:
         subset = list()
     i += 1
 
+# The data in the memory layer is not thread safe, so each thread needs
+# it's own copy. Access is all read-only, but if multiple threads try
+# to read data from the same memory layer, it will conflict.
+osmchunks = list()
+os = memdrv.CreateDataSource('osmem')
+for i in range(0, cores + 1):
+    osmchunks.append(os.CopyLayer(osm, "osm1"))
+logging.debug("%d chunks" % (len(osmchunks)))
+
+# Fire up one thread for each CPU core to process the data.
 newblds = list()
 spin = PixelSpinner('Processing...')
 logging.info("processing data, please wait, this may take awhile...")
+i = 0
+futures = list()
 with concurrent.futures.ThreadPoolExecutor(max_workers = cores) as executor:
     # timer.start()
-    futures = list()
     for block in sliced:
         # memdrv = ogr.GetDriverByName("MEMORY")
-        osmem2 = memdrv.CreateDataSource('osmem2')
-        osmem2.CopyLayer(osm, "osmem")
-        future = executor.submit(hotstuff.conflate, block, osm, spin)
+        future = executor.submit(hotstuff.conflate, block, osmchunks[i], spin)
+        if i < cores:
+            i += 1
+        else:
+            i = 0
         futures.append(future)
-        # futures = {executor.submit(hotstuff.conflate, block, osm, spin): block for block in sliced}
-        # threads.append(future)
-        sleep(0.5)
     for future in concurrent.futures.as_completed(futures):
-        print("RESULT: %r vs %r" % (len(newblds), len(future.result())))
+        # print("RESULT: %r vs %r" % (len(newblds), len(future.result())))
+        futures.remove(future)
         if len(newblds) == 0:
             newblds = future.result()
         else:
@@ -231,17 +211,15 @@ with concurrent.futures.ThreadPoolExecutor(max_workers = cores) as executor:
     executor.shutdown()
     # timer.stop()
 
-file = "foo.geojson"
-if os.path.exists(file):
-    drv.DeleteDataSource(file)
+filespec = "foo.geojson"
 outdrv = ogr.GetDriverByName("GeoJson")
-outf  = outdrv.CreateDataSource(file)
+outf  = outdrv.CreateDataSource(filespec)
 outlyr = outf.CreateLayer("buildings", geom_type=ogr.wkbPolygon)
 
-logging.info("Writing to output file \'%s\', this may take awhile..." % file)
-print("RESULT: %r" % (len(newblds)))
+logging.info("Writing to output file \'%s\', this may take awhile..." % filespec)
+# print("RESULT: %r" % (len(newblds)))
 for msbld in newblds:
-    bar.next()
+    # bar.next()
     msgeom = msbld.GetGeometryRef()
     feature = hotstuff.makeFeature(msbld.GetFID(), fields, msgeom)
     outlyr.CreateFeature(feature)
