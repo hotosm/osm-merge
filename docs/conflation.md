@@ -161,6 +161,6 @@ Maxar imagery for their ML/AI model, so I start with that
 imagery. Bing should be the same imagery, but I try that next if the
 Maxar imagery isn't sufficient. After that I sometimes have to
 experiment, or use [Open Aerial Map](https://openaerialmap.org/) to
-find something better. Often utilizing multiple fuzzy imagery source
+find something better. Often utilizing multiple fuzzy imagery sources
 is necessary, while being concious of the possible false
 identification.
