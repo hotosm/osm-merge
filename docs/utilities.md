@@ -82,3 +82,26 @@ files, the two raw data files produced from the database, and the
 conflated building output.
 
 > ./index.sh
+
+## splittasks.sh
+
+This utility splits an existing data file of the results of building
+conflation into smaller pieces. If the project id is specified on the
+command line, only that project is downloaded. Otherwise the current
+directory is scanned for files using the naming convention of
+${projectid}-tasks.geojson. This then uses the X and Y coordinates of
+the task for the default zoom level  This then uses the X and Y
+coordinates of the task for the default zoom level to uniquely name
+the data file so the Tasking Manager can load it.
+
+> PATH/splittasks.sh [project ID]
+
+## getosm
+
+This utility is to download smaller data files than are available
+from GeoFabrik. It requires a boundary polygon from a Tasking Manager
+project. If the project id is specified on the command line, only that
+project is downloaded. Otherwise the current directory is scanned for
+files using the naming convention of ${projectid}-projects.geojson.
+
+> PATH/getosm.sh [project ID]
