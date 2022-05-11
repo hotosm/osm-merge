@@ -25,9 +25,12 @@ import sys
 from osgeo import ogr
 # from geojson import Feature, Polygon, LineString, MultiLineString
 from progress.bar import Bar, PixelBar
-# from progress.spinner import PixelSpinner
+from progress.spinner import PixelSpinner
 import hotstuff
 from codetiming import Timer
+import concurrent.futures
+from cpuinfo import get_cpu_info
+from time import sleep
 
 
 # All command line options
@@ -65,6 +68,7 @@ if options.get("boundary"):
 else:
     rows = None
 
+
 footprints = options.get('footprints')
 if footprints[0:3] == "pg:":
     logging.info("Opening database connection to: %s" % footprints)
@@ -75,7 +79,12 @@ if footprints[0:3] == "pg:":
 else:
     logging.info("Opening buildings data file: %s" % footprints)
     bldin = ogr.Open(footprints)
-buildings = bldin.GetLayer()
+
+# Copy the data into memory for better performance
+memdrv = ogr.GetDriverByName("MEMORY")
+msmem = memdrv.CreateDataSource('msmem')
+msmem.CopyLayer(bldin.GetLayer(), "msmem")
+buildings = msmem.GetLayer()
 if buildings:
     logging.info("%d Buildings in %s" % (buildings.GetFeatureCount(), footprints))
 else:
@@ -100,15 +109,20 @@ if osmdata[0:3] == "pg:":
 else:
     logging.info("Opening OSM data file: %s" % osmdata)
     osmin = ogr.Open(osmdata)
-    osm = osmin.GetLayer()
+
+# Copy the data into memory for better performance
+osmem = memdrv.CreateDataSource('osmem')
+osmem.CopyLayer(osmin.GetLayer(), "osmem")
+osm = osmem.GetLayer()
 if osm:
     logging.info("%d OSM Features in %s" % (osm.GetFeatureCount(), osmdata))
 else:
     logging.error("No features found in %s" % osmdata)
     quit()
 
-bfields = buildings.GetLayerDefn()
+# bfields = buildings.GetLayerDefn()
 
+# If a boundary was specified, use it to limit the input data
 if rows:
     timer.start()
     osm.ResetReading()
@@ -118,11 +132,11 @@ if rows:
     timer.stop()
     logging.debug("%d OSM features after filtering" % (osm.GetFeatureCount()))
 
-# Output is GeoJson
-drv = ogr.GetDriverByName("GeoJSON")
+# Output is in memory, gets written later after any post processing.
+drv = ogr.GetDriverByName("MEMORY")
 
 # Driver doesn't support deleting files, so handle it ourself
-file = options.get('prefix') + "-test.geojson"
+file = options.get('prefix') + "test.geojson"
 if os.path.exists(file):
     drv.DeleteDataSource(file)
 
@@ -140,83 +154,79 @@ outlayer.CreateField(src)
 status = ogr.FieldDefn("status", ogr.OFTString)
 outlayer.CreateField(status)
 
-# for foo in osm:
-#     feature = hotstuff.makeFeature(foo.GetFID(), fields, foo.GetGeometryRef())
-#     outlayer.CreateFeature(feature)
-#     feature.Destroy()
-# logging.info("Wrote output file \'%s\'" % file)
-# outfile.Destroy()
-# quit()
-
-# if rows:
-#     # timer.start()
-#     sql = "SELECT geom, osm_id FROM ways_poly WHERE tags->>\'building\' IS NOT NULL and ST_Within(geom, ST_GeomFromEWKT(\'SRID=4326;%s\'))" % rows[0]['boundary'].ExportToWkt()
-#     print(sql)
-#     layer1 = osmin.ExecuteSQL(sql)
-#     # layer1 = osm
-#     # layer1.SetSpatialFilter(rows[0]['boundary'])
-#     logging.debug("%d features in osm dataset" % layer1.GetFeatureCount())
-#     # timer.stop()
-
-# There is no boundary file, which is used to conflate two small datasets that have
-# already been created with the same boundary
-# if rows is None:
-#     logging.debug("Using SymDifference")
-#     timer.start()
-#     lyr = buildings.SymDifference(osm, outlayer)
-#     logging.info("Wrote output file \'%s\'" % file)
-#     # for feature in lyr:
-#     #     makeFeature(id, fields, msgeom)
-#     timer.stop()
-#     quit()
-
 bar = Bar('Processing...', max=buildings.GetFeatureCount())
+info = get_cpu_info()
+cores = info['count']
 
-timer.start()
-for msbld in buildings:
-    # msbld.DumpReadable()
-    bar.next()
+logging.info("Writing to output file \'%s\'" % file)
+
+# Break the footprint file into chunks, one for each thread.
+# FIXME: There's gotta be a python module that does this...
+subset = list()
+sliced = list()
+chunk =  round(buildings.GetFeatureCount()/cores)
+i = 0
+cycle = range(0, buildings.GetFeatureCount(), chunk)
+for bld in buildings:
+    # print(bld.GetGeometryType())
+    subset.append(bld)
+    if i == chunk:
+        i = 0
+        sliced.append(subset)
+        subset = list()
+    i += 1
+
+# The data in the memory layer is not thread safe, so each thread needs
+# it's own copy. Access is all read-only, but if multiple threads try
+# to read data from the same memory layer, it will conflict.
+osmchunks = list()
+os = memdrv.CreateDataSource('osmem')
+for i in range(0, cores + 1):
+    osmchunks.append(os.CopyLayer(osm, "osm1"))
+logging.debug("%d chunks" % (len(osmchunks)))
+
+# Fire up one thread for each CPU core to process the data.
+newblds = list()
+spin = PixelSpinner('Processing...')
+logging.info("processing data, please wait, this may take awhile...")
+i = 0
+futures = list()
+with concurrent.futures.ThreadPoolExecutor(max_workers = cores) as executor:
+    # timer.start()
+    for block in sliced:
+        # memdrv = ogr.GetDriverByName("MEMORY")
+        future = executor.submit(hotstuff.conflate, block, osmchunks[i], spin)
+        if i < cores:
+            i += 1
+        else:
+            i = 0
+        futures.append(future)
+    for future in concurrent.futures.as_completed(futures):
+        # print("RESULT: %r vs %r" % (len(newblds), len(future.result())))
+        futures.remove(future)
+        if len(newblds) == 0:
+            newblds = future.result()
+        else:
+            newblds += future.result()
+    executor.shutdown()
+    # timer.stop()
+
+filespec = "foo.geojson"
+outdrv = ogr.GetDriverByName("GeoJson")
+outf  = outdrv.CreateDataSource(filespec)
+outlyr = outf.CreateLayer("buildings", geom_type=ogr.wkbPolygon)
+
+logging.info("Writing to output file \'%s\', this may take awhile..." % filespec)
+# print("RESULT: %r" % (len(newblds)))
+for msbld in newblds:
+    # bar.next()
     msgeom = msbld.GetGeometryRef()
-    # mswkt = msgeom.ExportToWkt()
-    dup = False
-    for osmbld in osm:
-        # print(osmbld.GetGeometryRef().ExportToWkt())
-        # osmgeom = hotstuff.makeBoundary(osmbld.GetGeometryRef())
-        osmgeom = osmbld.GetGeometryRef()
-        intersect = osmgeom.Intersects(msgeom)
-        overlap = osmgeom.Overlaps(msgeom)
-        # print("GDAL: %r, %r" % (intersect, overlap))
-        if intersect or overlap:
-            # logging.debug("Found intersecting buildings: %r (%r)" % (msbld.GetFID(),
-            #                                                         osmbld.GetField(0)))
-            dup = True
-            break
-        mscnt = msgeom.Centroid()
-        osmcnt = osmgeom.Centroid()
-        hit1 = osmgeom.Within(mscnt)
-        hit2 = msgeom.Within(osmcnt)
-        dist = mscnt.Distance(osmcnt)
-        # print("HITS: %r, %r, %r vs %r, %r" % (hit1, hit2, msbld.GetFID(), osmbld.GetField(0), dist))
-        if hit1 or hit2:
-        #if dist < 0.04:
-            dup = True
-            logging.debug("Found duplicate buildings %r, %r: %r vs %r (%r)" % (hit1, hit2,
-                                            msbld.GetFID(), osmbld.GetField(0), dist))
-            # if msbld.GetFID() == 8080571:
-            #     # msbld.DumpReadable()
-            #     # osmbld.DumpReadable()
-            #     epdb.st()
-            break
+    feature = hotstuff.makeFeature(msbld.GetFID(), fields, msgeom)
+    outlyr.CreateFeature(feature)
+    feature.Destroy()
+outf.Destroy()
 
-    #    if not intersect and not overlap and not hit1 and not hit2:
-    if not dup:
-        dup = False
-        # logging.debug("New building ID: %s" % msbld.GetFID())
-        feature = hotstuff.makeFeature(msbld.GetFID(), fields, msgeom)
-        outlayer.CreateFeature(feature)
-        feature.Destroy()
-
-timer.stop()
+print("")
 logging.info("Wrote output file \'%s\'" % file)
 
 outfile.Destroy()
