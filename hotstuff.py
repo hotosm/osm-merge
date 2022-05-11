@@ -220,7 +220,7 @@ def getProjectBoundary(options=None):
             request = tmhost + "/api/v2/projects/%s/queries/aoi/?as_file=false" % project
             outfile = "%s-project.geojson" % project
         headers = dict()
-        headers['Content-Type'] = 'application/x-www-form-urlencodebd'
+        headers['Content-Type'] = 'accept:application/json'
         req = urllib.request.Request(request, headers=headers)
         x = urllib.request.urlopen(req)
         output = x.read().decode('utf-8')
@@ -278,7 +278,7 @@ def getProjectBoundary(options=None):
         index = poly.GetFieldIndex('name')
         if index >= 0:
             admin['name'] = poly.GetField(index)
-        if boundary.GetGeometryCount() > 1:
+        if boundary.GetGeometryCount() > 1 or poly.GetFieldCount() > 0:
             admin['id'] = poly.GetField(0)
             admin['X'] = poly.GetField(1)
             admin['Y'] = poly.GetField(2)
@@ -339,4 +339,3 @@ def conflate(buildings, osm, spin):
             #feature.Destroy()
         # timer.stop()
     return new
-
