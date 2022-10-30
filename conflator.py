@@ -109,6 +109,7 @@ if osmdata[0:3] == "pg:":
 else:
     logging.info("Opening OSM data file: %s" % osmdata)
     osmin = ogr.Open(osmdata)
+    projectid = osmdata[0:5]
 
 # Copy the data into memory for better performance
 osmem = memdrv.CreateDataSource('osmem')
@@ -211,7 +212,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers = cores) as executor:
     executor.shutdown()
     # timer.stop()
 
-filespec = "foo.geojson"
+filespec = projectid + "-buildings.geojson"
 outdrv = ogr.GetDriverByName("GeoJson")
 outf  = outdrv.CreateDataSource(filespec)
 outlyr = outf.CreateLayer("buildings", geom_type=ogr.wkbPolygon)
@@ -221,12 +222,17 @@ logging.info("Writing to output file \'%s\', this may take awhile..." % filespec
 for msbld in newblds:
     # bar.next()
     msgeom = msbld.GetGeometryRef()
+    # epdb.st()
     feature = hotstuff.makeFeature(msbld.GetFID(), fields, msgeom)
+    if hotstuff.isSquare(msgeom):
+        feature.SetField("status", "square")
+    else:
+        feature.SetField("status", "good")
     outlyr.CreateFeature(feature)
     feature.Destroy()
 outf.Destroy()
 
 print("")
-logging.info("Wrote output file \'%s\'" % file)
+logging.info("Wrote output file \'%s\'" % filespec)
 
 outfile.Destroy()
