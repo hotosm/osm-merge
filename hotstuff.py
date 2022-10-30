@@ -22,6 +22,7 @@ from sys import argv
 import os
 import sys
 import epdb
+import math
 from osgeo import ogr
 # from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
@@ -146,7 +147,7 @@ def writeLayer(file=None, layer=None):
         drv.DeleteDataSource(file)
 
     # Create the output file
-    outfile  = drv.CreateDataSource(file)
+    outfile  = drv.CreateDataSource(file.replace(" ", "_"))
     outlayer = outfile.CreateLayer("data", geom_type=ogr.wkbPolygon)
 
     # spin = PixelSpinner('Processing...')
@@ -292,10 +293,30 @@ def makeFeature(id, fields, geom):
     feature.SetField("id", id)
     feature.SetField("building", "yes")
     feature.SetField("source", "bing")
-    #feature.SetGeometry(ogr.CreateGeometryFromWkt(wkt))
     feature.SetGeometry(geom)
     return feature
 
+def isSquare(geom):
+    """Is this geometry a square ?"""
+    # Is this a rectangle or square ?
+    poly = geom.GetGeometryRef(0)
+    if poly.GetPointCount() == 5:
+        # print("----------")
+        prev = 0.0
+        for i in range(4):
+            line = ogr.Geometry(ogr.wkbLineString)
+            lat = poly.GetPoint(i)[0]
+            lon = poly.GetPoint(i)[1]
+            line.AddPoint(lat, lon)
+            lat = poly.GetPoint(i+1)[0]
+            lon = poly.GetPoint(i+1)[1]
+            line.AddPoint(lat, lon)
+            # print("LENGTH: %g" % line.Length())
+            if math.isclose(prev, line.Length(), rel_tol=1e-09, abs_tol=0.00001):
+                # print("SQUARE")
+                return True
+            prev = line.Length()
+        return False
 
 def conflate(buildings, osm, spin):
     """Conflate a building against OSM data."""
