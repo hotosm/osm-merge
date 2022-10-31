@@ -211,7 +211,7 @@ def getProjectBoundary(options=None):
                     layer = tmp.ExecuteSQL(sql)
                 else:
                     sql = "SELECT id AS pid,ST_AsText(geometry) FROM projects WHERE id=" + str(project)
-                    print(sql)
+                    # print(sql)
                     layer = tmp.ExecuteSQL(sql)
     elif project is not None:
         if tasks:
@@ -296,12 +296,19 @@ def makeFeature(id, fields, geom):
     feature.SetGeometry(geom)
     return feature
 
+def isWeird(geom):
+    """Is this geometry weird ? It's probably in a plowed field."""
+    poly = geom.GetGeometryRef(0)
+    if poly.GetPointCount() > 12:
+        return True
+    else:
+        return False
+
 def isSquare(geom):
     """Is this geometry a square ?"""
     # Is this a rectangle or square ?
     poly = geom.GetGeometryRef(0)
     if poly.GetPointCount() == 5:
-        # print("----------")
         prev = 0.0
         for i in range(4):
             line = ogr.Geometry(ogr.wkbLineString)
@@ -311,9 +318,7 @@ def isSquare(geom):
             lat = poly.GetPoint(i+1)[0]
             lon = poly.GetPoint(i+1)[1]
             line.AddPoint(lat, lon)
-            # print("LENGTH: %g" % line.Length())
             if math.isclose(prev, line.Length(), rel_tol=1e-09, abs_tol=0.00001):
-                # print("SQUARE")
                 return True
             prev = line.Length()
         return False
