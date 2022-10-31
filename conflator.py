@@ -99,6 +99,7 @@ if rows:
     timer.stop()
 
 osmdata = options.get('osmdata')
+projectid = "tmp"
 if osmdata[0:3] == "pg:":
     logging.info("Opening database connection to: %s" % osmdata)
     connect = "PG: dbname=" + osmdata[3:]
@@ -110,6 +111,10 @@ else:
     logging.info("Opening OSM data file: %s" % osmdata)
     osmin = ogr.Open(osmdata)
     projectid = osmdata[0:5]
+
+# is this a TM project ?
+if not projectid.isnumeric():
+    projectid = osmdata.replace('.geojson', '').split('-')[1]
 
 # Copy the data into memory for better performance
 osmem = memdrv.CreateDataSource('osmem')
@@ -158,8 +163,6 @@ outlayer.CreateField(status)
 bar = Bar('Processing...', max=buildings.GetFeatureCount())
 info = get_cpu_info()
 cores = info['count']
-
-logging.info("Writing to output file \'%s\'" % file)
 
 # Break the footprint file into chunks, one for each thread.
 # FIXME: There's gotta be a python module that does this...
@@ -222,10 +225,12 @@ logging.info("Writing to output file \'%s\', this may take awhile..." % filespec
 for msbld in newblds:
     # bar.next()
     msgeom = msbld.GetGeometryRef()
-    # epdb.st()
+    #epdb.st()
     feature = hotstuff.makeFeature(msbld.GetFID(), fields, msgeom)
     if hotstuff.isSquare(msgeom):
         feature.SetField("status", "square")
+    elif hotstuff.isWeird(msgeom):
+        feature.SetField("status", "weird")
     else:
         feature.SetField("status", "good")
     outlyr.CreateFeature(feature)
