@@ -23,6 +23,9 @@
 # a short distance, then the feature is flagged as a possible
 # duplicate. Anything not flagged is likely new data.
 #
+# The lack of performance is tolerable with smaller input datasets,
+# but obviously this won't scale. The conflator.py program is
+# designed for larger datasets, so if that becomes necessary.
 
 import logging
 import getopt
@@ -54,13 +57,14 @@ connect = f"host=localhost dbname={db}"
 dbshell = psycopg2.connect(connect)
 dbcursor = dbshell.cursor()
 
-tolerance = "0.1"
+# The tolerance in meters for nearby features
+tolerance = "2"
 data = geojson.load(infile)
 spin = Bar('Processing...', max=len(data['features']))
 
 print("Data file contains %d features" % len(data['features']))
-hits = False
 for feature in data['features']:
+    hits = False
     spin.next()
     tags = feature['properties']
     for tag in feature['properties']:
@@ -69,12 +73,23 @@ for feature in data['features']:
                 # print("%s = %s" % (key, value))
                 geom = feature['geometry']
                 wkt = shape(geom)
-                query = "SELECT osm_id,geom,tags,ST_Distance(geom, ST_GeomFromEWKT(\'SRID=4326;%s\')) AS diff FROM nodes WHERE ST_Distance(geom, ST_GeomFromEWKT(\'SRID=4326;%s\')) < %s AND tags->>'%s'='%s'" % (wkt.wkt, wkt.wkt, tolerance, key, value.replace("\'", "&apos;"))
-                # print(query)
+                # Use a Geography data type to get the answer in meters, which
+                # is easier to deal with than degress of the earth.
+                # query = "SELECT osm_id,geom,tags,ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;%s\')) AS diff FROM nodes WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;%s\')) < %s AND tags->>'%s'='%s'" % (wkt.wkt, wkt.wkt, tolerance, key, value.replace("\'", "&apos;"))
+                query = "SELECT osm_id,geom,tags FROM nodes WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;%s\')) < %s AND tags->>'%s'='%s'" % (wkt.wkt, tolerance, key, value.replace("\'", "&apos;"))
+                #print(query)
                 dbcursor.execute(query)
                 all = dbcursor.fetchall()
                 if len(all) > 0:
                     hits = True
+                if tag == 'amenity':
+                    # Sometimes the duplicate is a polygon, really common for parking lots.
+                    query = "SELECT osm_id,geom,tags FROM ways_poly WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;%s\')) < %s AND tags->>'%s'='%s'" % (wkt.wkt, tolerance, key, value.replace("\'", "&apos;"))
+                    #print(query)
+                    dbcursor.execute(query)
+                    all = dbcursor.fetchall()
+                    if len(all) > 0:
+                        hits = True
     # If there is feature in OSM that matches any of the tags. and is very close,
     # flag it as a possible duplicate so we can find these in JOSM.
     if hits:
