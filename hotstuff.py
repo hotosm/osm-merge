@@ -130,6 +130,7 @@ class CommonOptions(object):
 
 
 def writeLayer(file=None, layer=None):
+    """Write an OGR Layer to disk"""
     if file is None:
         logging.error("Supply a filespec!")
         return
@@ -157,6 +158,7 @@ def writeLayer(file=None, layer=None):
     outfile.Destroy()
 
 def makeBoundary(data=None):
+    """Make a bounding box for some data"""
     # Create a bounding box. since we want a rectangular area to extract
     # to fit a monitor window. Also many boundaries come as lines,
     # so close the polygon
@@ -289,6 +291,7 @@ def getProjectBoundary(options=None):
     return data
 
 def makeFeature(id, fields, geom):
+    """Make an OGR Feature"""
     feature = ogr.Feature(fields)
     feature.SetField("id", id)
     feature.SetField("building", "yes")
