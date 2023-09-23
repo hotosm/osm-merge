@@ -1,0 +1,99 @@
+[project]
+name = "conflator"
+dynamic = ["version"]
+description = "Conflate OSM data."
+authors = [
+    {name = "Rob Savoye", email = "rob.savoye@hotosm.org"},
+]
+dependencies = [
+    "geojson>=2.5.0",
+    "psycopg2>=2.9.7",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = "AGPL-3.0-only"
+keywords = ["hot", "osm", "openstreetmap"]
+classifiers = [
+    "Topic :: Utilities",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.urls]
+homepage = "https://hotosm.github.io/conflator"
+documentation = "https://hotosm.github.io/conflator"
+repository = "https://github.com/hotosm/conflator"
+
+[build-system]
+requires = ["pdm-pep517>=1.1.4"]
+build-backend = "pdm.pep517.api"
+
+[tool.pytest.ini_options]
+addopts = "-ra -q -p no:warnings"
+testpaths = [
+    "tests",
+]
+pythonpath = "conflator"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.2rc0"
+version_files = [
+    "pyproject.toml:version",
+    "conflator/__version__.py",
+]
+
+[tool.pdm]
+version = {from = "conflator/__version__.py"}
+[tool.pdm.build]
+includes = ["conflator"]
+source-includes = ["tests", "LICENSE.md", "README.md"]
+[tool.pdm.dev-dependencies]
+dev = [
+    "black>=23.7.0",
+    "commitizen>=3.6.0",
+    "pre-commit>=3.3.3",
+]
+debug = [
+    "debugpy>=1.6.7.post1",
+    "ipdb>=0.13.13",
+]
+test = [
+    "pytest>=7.4.0",
+]
+docs = [
+    "mkdocs>=1.5.2",
+    "mkdocs-material>=9.2.3",
+    "mkdocstrings-python>=1.5.2",
+    "mkdocs-exclude>=1.0.2",
+]
+
+[tool.black]
+line-length = 132
+target-versions = ["py310", "py311"]
+
+[tool.ruff]
+fix = true
+line-length = 132
+target-version = "py310"
+select = ["I", "E", "W", "D", "B", "F", "N", "Q"]
+ignore = ["N805", "B008"]
+exclude = [
+    ".git",
+    ".ruff_cache",
+    ".vscode",
+    "__pypackages__",
+    "build",
+    "dist",
+    "conflator/__version__.py",
+]
+[tool.ruff.pydocstyle]
+convention = "google"
+
+
+[project.scripts]
+# conflator = "conflator.cmd:main"
+# hot-import = "conflator.postgres:main"
+geofabrik = "conflator.geofabrik:main"
