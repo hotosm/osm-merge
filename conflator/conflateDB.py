@@ -125,7 +125,7 @@ class ConflateDB(object):
 
         # Find geometries that are an exact match, common if the same dataset is
         # imported more than once.
-        sql = "SELECT * FROM (SELECT ways_view.osm_id, tags, ROW_NUMBER() OVER(PARTITION BY geom ORDER BY ways_view.geom asc) AS Row, geom FROM ONLY ways_view) dups WHERE dups.Row > 1"
+        sql = "SELECT * FROM (SELECT ways_view.id, tags, ROW_NUMBER() OVER(PARTITION BY geom ORDER BY ways_view.geom asc) AS Row, geom FROM ONLY ways_view) dups WHERE dups.Row > 1"
         self.db.dbcursor.execute(sql)
         foo = list()
         for result in self.db.dbcursor.fetchall():
@@ -133,7 +133,7 @@ class ConflateDB(object):
             foo.append(Feature(geometry=geom, properties=result[1]))
 
         # Find interescting building polygons
-        sql = "SELECT ST_INTERSECTION(a.geom, b.geom),ST_AsText(a.geom)  FROM ways_view a, ways_view b WHERE a.osm_id != b.osm_id AND ST_INTERSECTS(a.geom, b.geom)"
+        sql = "SELECT ST_INTERSECTION(a.geom, b.geom),ST_AsText(a.geom)  FROM ways_view a, ways_view b WHERE a.id != b.id AND ST_INTERSECTS(a.geom, b.geom)"
         for result in self.db.dbcursor.fetchall():
             geom = wkb.loads(result[3])
             foo.append(Feature(geometry=geom, properties=result[1]))
@@ -143,9 +143,9 @@ class ConflateDB(object):
             uri = uriParser(dburi)
             # FIXME: fix weird issues with EWKT
             # sql = f"DROP VIEW IF EXISTS osm_view;CREATE VIEW osm_view AS SELECT * FROM dblink('dbname={uri['dbname']}', 'SELECT osm_id,geom FROM ways_poly WHERE ST_CONTAINS(ST_GeomFromEWKT(\"SRID=4326;{self.boundary}\"), geom)') AS t1(osm_id int, geom geometry)"
-            sql = f"DROP VIEW IF EXISTS osm_view;CREATE VIEW osm_view AS SELECT * FROM dblink('dbname={uri['dbname']}', 'SELECT osm_id,version,geom FROM ways_poly') AS t1(osm_id int, version int, geom geometry)"
+            sql = f"DROP VIEW IF EXISTS osm_view;CREATE VIEW osm_view AS SELECT * FROM dblink('dbname={uri['dbname']}', 'SELECT id,version,geom FROM ways_poly') AS t1(id int, version int, geom geometry)"
         self.db.dbcursor.execute(sql)
-        sql = "SELECT b.osm_id,b.version, ST_INTERSECTION(a.geom, b.geom)::geography FROM ways_view a, osm_view b WHERE a.osm_id != b.osm_id AND ST_INTERSECTS(a.geom, b.geom)"
+        sql = "SELECT b.id,b.version, ST_INTERSECTION(a.geom, b.geom)::geography FROM ways_view a, osm_view b WHERE a.id != b.osm_id AND ST_INTERSECTS(a.geom, b.geom)"
         # self.db.dbcursor.execute(sql)
         # for result in self.db.dbcursor.fetchall():
         #     geom = wkb.loads(result[3])
