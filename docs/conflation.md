@@ -1,51 +1,38 @@
-# Conflating Building Footprints
+# Conflating External Datasets
+
+This project is the merging of several programs for conflating
+external datasets with OpenStreetMap data developed at
+[HOT](https://www.hotosm.org). These were originally developed for
+large scale building imports using MS Footprints in East Africa, and
+to also work with conflating data collected with OpenDataKit for the
+[Field Mapping Tasking Manager](https://hotosm.github.io/fmtm/)
+project.
 
 ## The data files
 
-The Microsoft supplied data files [are at this
-link](https://github.com/microsoft/KenyaNigeriaBuildingFootprints) for
-Kenya and Nigeria. Files for Uganda and Tanzania [are at this
-link](https://github.com/microsoft/Uganda-Tanzania-Building-Footprints).
-These contain ML/AI derived building footprints from
-[Maxar](https://www.maxar.com/) satellite imagery. 
-
-For raw OSM data, the existing country data is downloaded from [GeoFabrik](
-https://download.geofabrik.de/index.html), and imported using a
-modified schema for osm2pgsql.
-
-> osm2pgsql --create -d nigeria --extra-attributes --output=flex --style raw.lua nigeria-latest-internal.osm.pbf
-
-The *raw.lua* script is [available
-here](https://github.com/hotosm/underpass/blob/master/raw/raw.lua). It's
-part of the [Underpass
-project](https://hotosm.github.io/underpass/index.html). It uses a
-more compressed and efficient data schema.
-
-Once the data is imported, do this to improve query performance.
-> cluster ways_poly using ways_poly_geom_idx;
-
-> create index on ways_poly using gin(tags);
-
-The building footprint data file is imported into Postgres using [ogr2ogr](https://gdal.org/programs/ogr2ogr.html).
-
-> ogr2ogr -skipfailures -progress -overwrite -f PostgreSQL PG:dbname=nigeria_foot -nlt POLYGON nigeria.geojsonl -lco COLUMN_TYPES=other_tags=hstore
-
-While any name can be used for the databases, I usually default to
+While any name can be used for the OSM database, I usually default to
 naming the [OpenStreetMap](http://download.geofabrik.de/index.html)
-database the country name as used in the data file, and then append
-*_foot* to the country name for the building footprints. The building
-footprints contain no tags, just polygons. Since only new buildings
-are in the final data file from conflation, two tags are added,
-**source=bing** and **building=yes**.
+database the country name as used in the data file. Other datasets
+have their own schema, and can be imported with
+[ogr2ogr](https://gdal.org/programs/ogr2ogr.html), or using python to
+write a custom importer.
 
-## Checks Made
+## Overture Data
 
-### Conflation
+The Overture Foundation (https://www.overturemaps.org) has been
+recently formed to build a competitor to Google Maps. The plan is to
+use OpenStreetMap (OSM) data as a baselayer, and layer other datasets
+on top. The currently available data (July 2023) has 13 different
+datasets in addition to the OSM data. It is [available
+here](https://overturemaps.org/download/). It also includes a snapshot
+of OSM data from the same time frame. Other than the OSM data and [MS
+Footprints](https://github.com/microsoft/GlobalMLBuildingFootprints),
+all the current additional data is US specific, and often contains
+multiple copies of the same dataset, but fron different organization.
 
-The primary check is identifying duplicate buildings and overlapping
-buildings. This is done by loading both data files, the building
-footprints and OpenStreetMap into Postgres. Most of the actual work us done using
-[Postgres](https://www.postgresql.org/) [OGR](https://gdal.org/api/python.html).
+The [osm-rawdata](https://hotosm.github.io/osm-rawdata/importer)
+python module has a utility that'll import the Parquet data files into
+the postgress database schema used by multiple projects.
 
 ### Duplicate Buildings
 
