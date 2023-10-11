@@ -8,14 +8,16 @@ to also work with conflating data collected with OpenDataKit for the
 [Field Mapping Tasking Manager](https://hotosm.github.io/fmtm/)
 project.
 
-## The data files
+## The Data Files
 
 While any name can be used for the OSM database, I usually default to
 naming the [OpenStreetMap](http://download.geofabrik.de/index.html)
 database the country name as used in the data file. Other datasets
 have their own schema, and can be imported with
 [ogr2ogr](https://gdal.org/programs/ogr2ogr.html), or using python to
-write a custom importer.
+write a custom importer. In that case I name the datbase after the
+dataset source. Past versions of this program could conflate between
+multiple datasets, so it's good to keep things clear.
 
 ## Overture Data
 
@@ -25,14 +27,14 @@ use OpenStreetMap (OSM) data as a baselayer, and layer other datasets
 on top. The currently available data (July 2023) has 13 different
 datasets in addition to the OSM data. It is [available
 here](https://overturemaps.org/download/). It also includes a snapshot
-of OSM data from the same time frame. Other than the OSM data and [MS
+ of OSM data from the same time frame. Other than the OSM data and [MS
 Footprints](https://github.com/microsoft/GlobalMLBuildingFootprints),
 all the current additional data is US specific, and often contains
-multiple copies of the same dataset, but fron different organization.
+multiple copies of the same dataset, but from different organization.
 
 The [osm-rawdata](https://hotosm.github.io/osm-rawdata/importer)
 python module has a utility that'll import the Parquet data files into
-the postgress database schema used by multiple projects.
+the postgress database schema used by multiple projects at HOT.
 
 ### Duplicate Buildings
 
@@ -62,68 +64,39 @@ debugging tag of *overlapping=yes*.
 There are two main issues with ML/AI derived building footprints,
 Buildings that are very close together, like the business section in
 many areas of the world, do not get marked as separate
-building. Instead the entire block of buildings is a single
-polygon. While it would be possible to automatically correct this,
-that task is not supported by this tool.
+buildings. Instead the entire block of buildings is a single
+polygon.
 
 The other problem is that as processing satellite imagery is that
 buildings are recognized by shading differences, so often features are
 flagged as buildings that don't actually exist. For example, big rocks
-in the desert, or high mountain snowfields both get marked as a
+in the desert, or haystacks in a field both get marked as a
 building. Any building in the footprints data that has no other
-buildings nerby, nor a highway or path of some kind is flagged with a
+buildings nearby, nor a highway or path of some kind is flagged with a
 debugging tag of *false=yes*. Usually this is easy to determine
 looking at satellite imagery, since there are often remote
-buildings. The tags can be searched for ehen editing the data to
+buildings. The tags can be searched for when editing the data to
 visually determine whether it's a real building or not.
-
-# Input Files
-
-While the [conflator.py](conflator.md) program works equally as well
-using a database or disk files, disk files are more convienient for
-validating the conflation results. Once all the Tasking Manager
-project boundaries are downloaded using the [splitter.py](splitter.md)
-program, these utilities are oriented towards batch processing an entire
-directory of data files, which needs to be done after updating any of
-the raw data sources. This processing is handled by a few
-[utilities](utilities.md), which produce two files used for input to
-the conflator program. The are *123435*-osm.geojson*, and
-*12345-ms.geojson". One just contains the OSM buildings, and the other
-the building footprint file.
 
 # Output Files
 
-As the country wide input data files are huge, it's necessary to
-conflate buildings with a subset of all the data. Commonly county
-administrative boundaries are a good size. These can be extract from
-OSM itself, or an external data file of boundaries. The initial set of
-output files is the building data chopped up into smaller
-files. Project boundaries can also be downloaded from the HOT [Tasking
-Manager](https://www.tasks.hotosm.org) which is common for building
-imports.
+If the data files are huge, it's necessary to conflate with a subset
+of all the data. For projects using the [Tasking
+Manager](https://tasks.hotosm.org/) or the Field
+[Mapping Tasking Manager](https://hotosm.github.io/fmtm/) you can
+download the project boundary file and use that. For other projects
+you can extract administrative bondaries from OpenStreetMap, or use
+external sources. Commonly county administrative boundaries are a good
+size. These can be extract from OSM itself, or an external data file
+of boundaries.
 
 After conflation, an output file is created with the new buildings
 that are not duplicates of existing OSM data. This is much smaller
 than the original data, but still too large for anyone having
-bandwidth issues. The utility program[splitter.py](splitter.md) takes
-a file or database that contains boundaries and produces multiple data
-files, one for each boundary. This output file is in
+bandwidth issues. This output file is in
 [GeoJson](https://geojson.org/) format, so can be edited with
 [JOSM](https://josm.openstreetmap.de) or
 [QGIS](https://www.qgis.org/en/site/)
-
-The final output files are for the Tasking Manager. This uses a file
-of the task boundaries within a project boundary. These can be
-extracted from the Tasking Manager's REST API like so:
-
-> https://tasks.hotosm.org/api/v2/projects/12315/tasks/?as_file=false
-
-The files are in GeoJson format. The splitter.py program uses the X and Y
-indexes of each task to give each output file a unique name. In the
-instructions for a Tasking Manager project, it's possible to embed the
-URL of a remote file that gets loaded into JOSM automatically when
-that task is selected to map. As this file is after conflation, it is
-relatively small.
 
 # Validating The Conflation
 
