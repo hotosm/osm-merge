@@ -78,6 +78,60 @@ looking at satellite imagery, since there are often remote
 buildings. The tags can be searched for when editing the data to
 visually determine whether it's a real building or not.
 
+# Conflating Other Than Buildings
+
+## OpenDataKit
+
+Data collected in the field using ODK Collect is a specific case. If
+using using data extracts from OpenStreetMapAs the data extract has
+the OSM ID, so it's much simpler to conflate the new tags with either
+the existing building polygon or POI. For this workflow, any tag in
+the feature from ODK will overwrite any existing values in the
+existing feature. This allows for updating the tags & values when
+ground-truthing. When the OSM XML file is loaded into JOSM, it has the
+*modified* attribute set, and the version has been incremented. In
+JOSM under the **File** menu, select the **Update Modified** menu
+item. This will sync the modified feature with current OSM. At that
+point all that needs to be done is validate the modified features, znd
+upload to OSM.
+
+When ODK Collect is used but has no data extract, conflation is more
+complicated. For this use case, a more brute force algorythm is
+used. Initially any building polygon or POI within 7 meters is found
+by querying the database. Most smartphone GPS chipsets, even on
+high-end phones, are between 4-9m off from your actual location. Once
+nearby buildings are identified, then the tags are compared to see if
+there is a match.
+
+For example, if collecting data on a restaurant, it may have a new
+name, but if the nearby building is the only one with an
+*amenity=restaurant** (or cafe, pub, etc...) it's considered a
+probable match. If there are multiple restaurants this doesn't work
+very well unless the name hasn't changed. If there are multiple
+possible features, a *fixme=* tag is added to the POI, and it has to
+be later validated manually.
+
+If a satellite imagery basemap is used in Collect, conflation is
+somewhat simpler. If the mapper has selected the center of the
+building using the basemap, conflation starts by checking for the
+building polygon in OSM that contains this location. If no building is
+found, the POI is added to the output file with a *fixme=new building*
+tag so the buildings can traced by the validator. Any tags from the
+POI are added to the new building polygon.
+
+## Points Of Interest (POI)
+
+It is common when collecting datasets from non-OSM sources each
+feature may only be single node. This may be a list of schools,
+businesses, etc... with additional information with each POI that can
+be added to the OSM building polygon (if it exists). Obviously any
+imported data must have a license acceptable for importing into OSM.
+
+Similar to how conflating ODK data when not using a data extract, the
+tags & values are compared with any nearby building. Since often these
+imports are features already in OSM with limited metadata, this adds
+more details.
+
 # Output Files
 
 If the data files are huge, it's necessary to conflate with a subset
