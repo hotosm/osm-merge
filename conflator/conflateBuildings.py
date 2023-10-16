@@ -45,10 +45,9 @@ log = logging.getLogger(__name__)
 info = get_cpu_info()
 cores = info['count']
 
-
 class ConflateBuildings(object):
     def __init__(self,
-                 dburi: str,
+                 dburi: str = None,
                  boundary: Polygon = None,
                  ):
         """
@@ -63,12 +62,14 @@ class ConflateBuildings(object):
             (ConflateDB): An instance of this object
         """
         self.postgres = list()
-        self.uri = uriParser(dburi)
-        self.db = GeoSupport(dburi)
+        self.uri = None
+        if dburi:
+            self.uri = uriParser(dburi)
+            self.db = GeoSupport(dburi)
         self.boundary = boundary
         self.view = "ways_poly"
 
-    def overlaps(self,
+    def overlapDB(self,
                 dburi: str,
                 ):
         """
@@ -157,7 +158,7 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("-d", "--dburi", required=True, help="Source Database URI")
     parser.add_argument("-o", "--osmuri", required=True, help="OSM Database URI")
-    parser.add_argument("-c", "--category", required=True, help="")
+    # parser.add_argument("-c", "--category", required=True, help="")
     parser.add_argument("-b", "--boundary", required=True,
                         help="Boundary polygon to limit the data size")
     # parser.add_argument("-o", "--outfile", help="Post conflation output file")
@@ -182,7 +183,7 @@ def main():
     else:
         poly = boundary['geometry']
     cdb = ConflateBuildings(args.dburi, poly)
-    cdb.overlaps(args.osmuri)
+    cdb.overlapDB(args.osmuri)
     # log.info(f"Wrote {args.outfile}")
 
 if __name__ == "__main__":
