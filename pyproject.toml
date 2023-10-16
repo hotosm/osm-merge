@@ -6,8 +6,13 @@ authors = [
     {name = "Rob Savoye", email = "rob.savoye@hotosm.org"},
 ]
 dependencies = [
+    "codetiming>=1.4.0",
     "geojson>=2.5.0",
+    "progress>=1.6",
     "psycopg2>=2.9.7",
+    "psycopg2_binary>=2.9.7",
+    "py_cpuinfo>=9.0.0",
+    "shapely>=2.0.1",
 ]
 requires-python = ">=3.10"
 readme = "README.md"
