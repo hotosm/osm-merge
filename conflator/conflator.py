@@ -47,12 +47,6 @@ info = get_cpu_info()
 cores = info['count']
 
 
-# def findDuplicatesDatabase(self, osm, newbld):
-#     """Find duplicate buildings between two databases"""
-#     sql = "SELECT ST_Area(ST_Transform(ST_INTERSECTION(g1.way, g2.way), 2167)),g1.osm_id,ST_Area(ST_Transform(g1.way, 2167)),g2.osm_id,ST_Area(ST_Transform(g2.way, 2167)) FROM boundary AS g1, boundary AS g2 WHERE ST_OVERLAPS(g1.way, g2.way);"
-#     pass
-
-
 class Conflator(object):
     def __init__(self,
                  source: str,
