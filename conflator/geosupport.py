@@ -49,6 +49,7 @@ class GeoSupport(object):
         """
         self.postgres = list()
         self.db = None
+        self.uri = dburi
         if dburi:
             self.db = PostgresClient(dburi)
 
@@ -135,6 +136,56 @@ class GeoSupport(object):
                     #  del self.data[self.data['features']]
 
         return new
+
+    def outputOSM(self,
+                  data: FeatureCollection,
+                  outfile: str = None,
+                  ):
+        """
+        Output in OSM XML format
+
+        Args:
+            data (FeatureCollection): The data to convert
+            outfile (str): The filespec of the OSM file
+
+        Returns:
+            (list): The OSM XML output
+        """
+        out = list()
+        osmf = OsmFile(outfile)
+        for feature in data:
+            if feature["geometry"]["type"] == "Polygon":
+                feature["refs"] = list()
+                out.append(osmf.createWay(feature, True))
+            elif feature["geometry"]["type"] == "Point":
+                out.append(osmf.createNode(feature, True))
+
+        if outfile:
+            osmf.write(out)
+            log.info(f"Wrote {outfile}")
+
+        return out
+
+    def outputJOSM(self,
+                  data: FeatureCollection,
+                  outfile: str = None,
+                  ):
+        """
+        Output in OSM XML format
+
+        Args:
+            data (FeatureCollection): The data to convert
+            outfile (str): The filespec of the GeoJson file
+
+        Returns:
+            (bool): Whether the creation of the output file worked
+        """
+        if outfile:
+            file = open(outfile, 'w')
+            geojson.dump(FeatureCollection(features), file)
+            return True
+        else:
+            return False
 
 def main():
     """This main function lets this class be run standalone by a bash script"""
