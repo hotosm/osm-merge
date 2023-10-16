@@ -35,7 +35,8 @@ from cpuinfo import get_cpu_info
 from haversine import haversine, Unit
 from thefuzz import fuzz, process
 from osm_rawdata.postgres import uriParser, DatabaseAccess
-
+# from conflator.geosupport import GeoSupport
+from geosupport import GeoSupport
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ info = get_cpu_info()
 cores = info['count']
 
 
-class ConflateDB(object):
+class ConflateBuildings(object):
     def __init__(self,
                  dburi: str,
                  boundary: Polygon = None,
@@ -62,99 +63,86 @@ class ConflateDB(object):
             (ConflateDB): An instance of this object
         """
         self.postgres = list()
-        self.db = DatabaseAccess(dburi)
+        self.uri = uriParser(dburi)
+        self.db = GeoSupport(dburi)
         self.boundary = boundary
-        if boundary:
-            self.clip(boundary, self.db)
+        self.view = "ways_poly"
 
-    def clip(self,
-             boundary: Polygon,
-             db: DatabaseAccess,
-             view: str = "ways_view",
-             ):
-        """
-        Clip a data source by a boundary
-
-        Args:
-            boundary (Polygon): The filespec of the project AOI
-            db (DatabaseAccess): A reference to the existing database connection
-            view (str): The name of the view
-
-        Returns:
-            (bool): If the region was clipped sucessfully
-        """
-        remove = list()
-        if not boundary:
-            return False
-
-        if 'features' in boundary:
-            poly = boundary['features'][0]['geometry']
-        else:
-            poly = boundary["geometry"]
-        ewkt = shape(poly)
-        self.boundary = ewkt
-
-        sql = f"DROP VIEW IF EXISTS {view};CREATE VIEW {view} AS SELECT * FROM ways_poly WHERE ST_CONTAINS(ST_GeomFromEWKT('SRID=4326;{ewkt}'), geom)"
-        db.dbcursor.execute(sql)
-
-        return True
-
-    def dump(self):
-        """Dump internal data"""
-        # print(f"There are {len(self.data)} existing features")
-        # if len(self.versions) > 0:
-        #     for k, v in self.original.items():
-        #         print(f"{k}(v{self.versions[k]}) = {v}")
-
-    def conflateBuildings(self,
-                          dburi: str = None,
-                          ):
+    def overlaps(self,
+                dburi: str,
+                ):
         """
         Conflate buildings where all the data is in the same postgres database
         using the Underpass raw data schema.
 
-        This is not fast for large areas!
-
         Args:
-            dburi (str): Optional database of OSM data
+            dburi (str): The URI for the existing OSM data
+
+        This is not fast for large areas!
         """
+        if self.boundary:
+            self.db.clipDB(self.boundary)
+
         timer = Timer(text="conflateData() took {seconds:.0f}s")
         timer.start()
-        # Find duplicate buildings between two databases
-        #sql = "SELECT ST_Area(ST_Transform(ST_INTERSECTION(g1.way, g2.way), 2167)),g1.osm_id,ST_Area(ST_Transform(g1.way, 2167)),g2.osm_id,ST_Area(ST_Transform(g2.way, 2167)) FROM boundary AS g1, boundary AS g2 WHERE ST_OVERLAPS(g1.way, g2.way);"
+        # Find duplicate buildings in the same database
+        sql = f"DROP VIEW IF EXISTS overlap_view;CREATE VIEW overlap_view AS SELECT ST_Area(ST_INTERSECTION(g1.geom::geography, g2.geom::geography)) AS area,g1.osm_id AS id1,g1.geom as geom1,g2.osm_id AS id2,g2.geom as geom2 FROM {self.view} AS g1, {self.view} AS g2 WHERE ST_OVERLAPS(g1.geom, g2.geom) AND (g1.tags->>'building' IS NOT NULL AND g2.tags->>'building' IS NOT NULL)"
+        #sql = "SELECT * FROM (SELECT ways_view.id, tags, ROW_NUMBER() OVER(PARTITION BY geom ORDER BY ways_view.geom asc) AS Row, geom FROM ONLY ways_view) dups WHERE dups.Row > 1"
+        # Make a new postgres VIEW of all overlapping or touching buildings
+        log.info(f"Looking for overlapping buildings in \"{self.uri['dbname']}\", this make take awhile...")
+        ## result = self.db.queryDB(sql)
 
-        # Find geometries that are an exact match, common if the same dataset is
-        # imported more than once.
-        sql = "SELECT * FROM (SELECT ways_view.id, tags, ROW_NUMBER() OVER(PARTITION BY geom ORDER BY ways_view.geom asc) AS Row, geom FROM ONLY ways_view) dups WHERE dups.Row > 1"
-        self.db.dbcursor.execute(sql)
-        foo = list()
-        for result in self.db.dbcursor.fetchall():
-            geom = wkb.loads(result[3])
-            foo.append(Feature(geometry=geom, properties=result[1]))
+        sql = "SELECT area,id1,geom1,id2,geom2 FROM overlap_view"
+        ## result = self.db.queryDB(sql)
+        result = list()
+        features = list()
+        for item in result:
+            # First building identified
+            entry = {'area': float(item[0]), 'id': int(item[1])}
+            geom = wkb.loads(item[2])
+            features.append(Feature(geometry=geom, properties=entry))
+            # Second building identified
+            entry['id'] = int(item[3])
+            geom = wkb.loads(item[4])
+            features.append(Feature(geometry=geom, properties=entry))
 
-        # Find interescting building polygons
-        sql = "SELECT ST_INTERSECTION(a.geom, b.geom),ST_AsText(a.geom)  FROM ways_view a, ways_view b WHERE a.id != b.id AND ST_INTERSECTS(a.geom, b.geom)"
-        for result in self.db.dbcursor.fetchall():
-            geom = wkb.loads(result[3])
-            foo.append(Feature(geometry=geom, properties=result[1]))
+        log.debug(f"{len(features)} overlapping features found")
 
-        if dburi:
-            # self.clip(self.boundary, self.db, "osm_view")
-            uri = uriParser(dburi)
-            # FIXME: fix weird issues with EWKT
-            # sql = f"DROP VIEW IF EXISTS osm_view;CREATE VIEW osm_view AS SELECT * FROM dblink('dbname={uri['dbname']}', 'SELECT osm_id,geom FROM ways_poly WHERE ST_CONTAINS(ST_GeomFromEWKT(\"SRID=4326;{self.boundary}\"), geom)') AS t1(osm_id int, geom geometry)"
-            sql = f"DROP VIEW IF EXISTS osm_view;CREATE VIEW osm_view AS SELECT * FROM dblink('dbname={uri['dbname']}', 'SELECT id,version,geom FROM ways_poly') AS t1(id int, version int, geom geometry)"
-        self.db.dbcursor.execute(sql)
-        sql = "SELECT b.id,b.version, ST_INTERSECTION(a.geom, b.geom)::geography FROM ways_view a, osm_view b WHERE a.id != b.osm_id AND ST_INTERSECTS(a.geom, b.geom)"
-        # self.db.dbcursor.execute(sql)
-        # for result in self.db.dbcursor.fetchall():
-        #     geom = wkb.loads(result[3])
-        #     foo.append(Feature(geometry=geom, properties=result[1]))
+        log.debug(f"Clipping OSM database")
+        ewkt = shape(self.boundary)
+        uri = uriParser(dburi)
+        log.debug(f"Extracting OSM subset from \"{uri['dbname']}\"")
+        sql = f"DROP VIEW IF EXISTS osm_view CASCADE;CREATE VIEW osm_view AS SELECT osm_id,tags,geom FROM dblink('dbname={uri['dbname']}', 'SELECT osm_id,tags,geom FROM ways_poly') AS t1(osm_id int, tags jsonb, geom geometry) WHERE ST_CONTAINS(ST_GeomFromEWKT('SRID=4326;{ewkt}'), geom)"
+        result = self.db.queryDB(sql)
 
+        sql = f"DROP VIEW IF EXISTS dups_view;CREATE VIEW dups_view AS SELECT ST_Area(ST_INTERSECTION(g1.geom::geography, g2.geom::geography)) AS area,g1.osm_id AS id1,g1.geom as geom1,g2.osm_id AS id2,g2.geom as geom2 FROM {self.view} AS g1, osm_view AS g2 WHERE ST_OVERLAPS(g1.geom, g2.geom) AND (g1.tags->>'building' IS NOT NULL AND g2.tags->>'building' IS NOT NULL)"
+        result = self.db.queryDB(sql)
+
+        sql = "SELECT area,id1,geom1,id2,geom2 FROM dups_view"
+        result = self.db.queryDB(sql)
+
+        log.debug(f"{len(result)} duplicates found")
+        features = list()
+        for item in result:
+            # First building identified
+            entry = {'area': float(item[0]), 'id': int(item[1])}
+            # FIXME: Do we want to filter by the size of the overlap ?
+            # It's not exactly a reliable number since buildings are
+            # different sizes.
+            # if entry['area'] < 0.04:
+            #     log.debug(f"FOO: {entry['area']}")
+            #     continue
+            geom = wkb.loads(item[2])
+            features.append(Feature(geometry=geom, properties=entry))
+            # Second building identified
+            entry['id'] = int(item[3])
+            geom = wkb.loads(item[4])
+            features.append(Feature(geometry=geom, properties=entry))
 
         # FIXME: debug only!
         bar = open("foo.geojson", 'w')
-        geojson.dump(FeatureCollection(foo), bar)
+        geojson.dump(FeatureCollection(features), bar)
+        return FeatureCollection(features)
 
 def main():
     """This main function lets this class be run standalone by a bash script"""
@@ -167,11 +155,12 @@ def main():
         """,
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
-    parser.add_argument("-d", "--dburi", required=True, help="Database URI")
+    parser.add_argument("-d", "--dburi", required=True, help="Source Database URI")
+    parser.add_argument("-o", "--osmuri", required=True, help="OSM Database URI")
     parser.add_argument("-c", "--category", required=True, help="")
     parser.add_argument("-b", "--boundary", required=True,
                         help="Boundary polygon to limit the data size")
-    parser.add_argument("-o", "--outfile", help="Post conflation output file")
+    # parser.add_argument("-o", "--outfile", help="Post conflation output file")
 
     args = parser.parse_args()
 
@@ -186,11 +175,15 @@ def main():
         ch.setFormatter(formatter)
         log.addHandler(ch)
 
-    boundary = open(args.boundary, 'r')
-    poly = geojson.load(boundary)
-    cdb = ConflateDB(args.dburi, poly)
-    cdb.conflateBuildings("colorado")
-    log.info(f"Wrote {args.outfile}")
+    file = open(args.boundary, 'r')
+    boundary = geojson.load(file)
+    if 'features' in boundary:
+        poly = boundary['features'][0]['geometry']
+    else:
+        poly = boundary['geometry']
+    cdb = ConflateBuildings(args.dburi, poly)
+    cdb.overlaps(args.osmuri)
+    # log.info(f"Wrote {args.outfile}")
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
