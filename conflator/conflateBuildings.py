@@ -158,7 +158,6 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("-d", "--dburi", required=True, help="Source Database URI")
     parser.add_argument("-o", "--osmuri", required=True, help="OSM Database URI")
-    # parser.add_argument("-c", "--category", required=True, help="")
     parser.add_argument("-b", "--boundary", required=True,
                         help="Boundary polygon to limit the data size")
     # parser.add_argument("-o", "--outfile", help="Post conflation output file")
