@@ -23,6 +23,7 @@ from sys import argv
 from osm_fieldwork.osmfile import OsmFile
 from geojson import Point, Feature, FeatureCollection, dump, Polygon
 import geojson
+import concurrent.futures
 import psycopg2
 from shapely.geometry import shape, Polygon, mapping
 import shapely
@@ -31,7 +32,7 @@ import xmltodict
 from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
 from osm_fieldwork.convert import escape
-from osm_fieldwork.make_data_extract import PostgresClient, uriParser
+from osm_rawdata.postgres import uriParser, DatabaseAccess
 from codetiming import Timer
 import concurrent.futures
 from cpuinfo import get_cpu_info
@@ -48,51 +49,31 @@ log = logging.getLogger(__name__)
 info = get_cpu_info()
 cores = info['count']
 
-
-# def findDuplicatesDatabase(self, osm, newbld):
-#     """Find duplicate buildings between two databases"""
-#     sql = "SELECT ST_Area(ST_Transform(ST_INTERSECTION(g1.way, g2.way), 2167)),g1.osm_id,ST_Area(ST_Transform(g1.way, 2167)),g2.osm_id,ST_Area(ST_Transform(g2.way, 2167)) FROM boundary AS g1, boundary AS g2 WHERE ST_OVERLAPS(g1.way, g2.way);"
-#     pass
-
-
 class ConflatePOI(object):
     def __init__(self,
-                 source: str,
-                 boundary: str = None,
+                 dburi: str = None,
+                 boundary: Polygon = None,
                  ):
         """
-        Initialize Input data source
+        This class conflates data that has been imported into a postgres
+        database using the Underpass raw data schema.
 
         Args:
-            source (str): 
-            boundary: str = None
+            dburi (str): The DB URI
+            boundary (Polygon): The AOI of the project
 
         Returns:
-            (ConflateODK): An instance of this object
+            (ConflatePOI): An instance of this object
         """
-        self.postgres = list()
-        self.source = source
-        self.tags = dict()
-        # Distance in meters for conflating with postgis
-        self.tolerance = 7
         self.data = dict()
-        # PG: is the same prefix as ogr2ogr
-        # "[user[:password]@][netloc][:port][/dbname]"
-        if source[0:3] == "PG:":
-            uri = uriParser(source[3:])
-            # self.source = "underpass" is not support yet
-            # Each thread needs it's own connection to postgres to avoid problems.
+        self.db = list()
+        self.tolerance = 7 # Distance in meters for conflating with postgis
+        if dburi:
             for thread in range(0, cores + 1):
-                db = PostgresClient(dbhost=uri['dbhost'], dbname=uri['dbname'], dbuser=uri['dbuser'], dbpass=uri['dbpass'])
-                self.postgres.append(db)
+                db = GeoSupport(dburi)
+                self.db.append(db)
                 if boundary:
-                    self.clip(boundary, db)
-        else:
-            log.info("Opening data file: %s" % source)
-            src = open(source, "r")
-            self.data = geojson.load(src)
-            if boundary:
-                self.clip(boundary)
+                    db.clipDB(boundary, db)
 
     def overlaps(self,
                 feature: dict,
@@ -267,87 +248,8 @@ class ConflatePOI(object):
             return {'attrs': attrs, 'tags': tags}
         return dict()
 
-    def conflateById(self,
-                     feature: dict,
-                     dbindex: int,
-                     ):
-        """
-        Conflate a feature with existing ways using the OSM ID
-
-        Args:
-            feature (dict): The feature to conflate
-            dbindex (int): An index into the array of postgres connections
-
-        Returns:
-            (dict):  The modified feature
-        """
-        log.debug(f"conflateById({feature})")
-        id = int(feature['attrs']['id'])
-        if id > 0:
-            if self.source[:3] != "PG:":
-                sql = f"SELECT osm_id,tags,version,ST_AsText(geom) FROM ways_view WHERE tags->>'id'='{id}'"
-                # log.debug(sql)
-                self.postgres[0].dbcursor.execute(sql)
-                result = self.postgres[0].dbcursor.fetchone()
-                if result:
-                    version = int(result[0][2]) + 1
-                    attrs = {'id': int(result[0][0]), 'version': version}
-                    tags = result[0][1]
-                    # tags[f'old_{key}'] = value
-                    tags['fixme'] = "Probably a duplicate!"
-                    geom = mapping(shapely.from_wkt(result[0][3]))
-                    return {'attrs': attrs, 'tags': tags}
-                else:
-                    sql = f"SELECT osm_id,tags,version,ST_AsText(geom) FROM ways_view WHERE tags->>'id'='{id}'"
-                    # log.debug(sql)
-                    self.postgres[dbindex].dbcursor.execute(sql)
-                    result = self.postgres[dbindex].dbcursor.fetchone()
-                    if result:
-                        version = int(result[0][2]) + 1
-                        attrs = {'id': int(result[0][0]), 'version': version}
-                        tags = result[0][1]
-                        # tags[f'old_{key}'] = value
-                        tags['fixme'] = "Probably a duplicate!"
-                        geom = mapping(shapely.from_wkt(result[0][3]))
-                    return {'attrs': attrs, 'tags': tags, 'refs': refs}
-            else:
-                for key, value in self.data.items():
-                    if key == id:
-                        return value
-        return dict()
-
-    def cleanFeature(self,
-                     feature: dict,
-                     ):
-        """
-        Remove tags that are attributes instead
-        Args:
-            feature (dict): The feature to clean
-
-        Returns:
-            (dict):  The modified feature
-        """
-            # We only use the version and ID in the attributes
-        if 'id' in feature['tags']:
-            del feature['tags']['id']
-        if 'version' in feature['tags']:
-            del feature['tags']['version']
-        if 'title' in feature['tags']:
-            del feature['tags']['title']
-        if 'label' in feature['tags']:
-            del feature['tags']['label']
-        return feature
-
-    def dump(self):
-        """Dump internal data"""
-        print(f"Data source is: {self.source}")
-        print(f"There are {len(self.data)} existing features")
-        # if len(self.versions) > 0:
-        #     for k, v in self.original.items():
-        #         print(f"{k}(v{self.versions[k]}) = {v}")
-
     def conflateData(self,
-                     odkdata: list,
+                     data: list,
                      ):
         """
         Conflate all the data. This the primary interfacte for conflation.
@@ -364,12 +266,10 @@ class ConflatePOI(object):
         # which is often used to match an amenity.
         if len(self.data) == 0:
             self.postgres[0].dbcursor.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch")
-        log.debug(f"OdkMerge::conflateData() called! {len(odkdata)} features")
+        log.debug(f"conflateData() called! {len(data)} features")
 
         # A chunk is a group of threads
         chunk = round(len(odkdata) / cores)
-
-        # cycle = range(0, len(odkdata), chunk)
 
         # Chop the data into a subset for each thread
         newdata = list()
@@ -380,7 +280,7 @@ class ConflatePOI(object):
             i = 0
             subset = dict()
             futures = list()
-            for key, value in odkdata.items():
+            for key, value in data.items():
                 subset[key] = value
                 if i == chunk:
                     i = 0
@@ -391,23 +291,12 @@ class ConflatePOI(object):
                     subset = dict()
                 i += 1
             for future in concurrent.futures.as_completed(futures):
-            # # for future in concurrent.futures.wait(futures, return_when='ALL_COMPLETED'):
                 log.debug(f"Waiting for thread to complete..")
                 # print(f"YYEESS!! {future.result(timeout=10)}")
                 newdata.append(future.result(timeout=5))
         timer.stop()
         return newdata
         # return alldata
-
-    def outputOSM(self,
-                  data: FeatureCollection,
-                  )
-        """
-        Output in OSM XML format
-
-        Args:
-            data (FeatureCollection): The data to convert
-        """
 
 def conflateThread(features: dict,
                    source: str,
