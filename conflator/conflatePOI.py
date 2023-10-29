@@ -54,6 +54,7 @@ class ConflatePOI(object):
     def __init__(self,
                  dburi: str = None,
                  boundary: Polygon = None,
+                 threshold: int = 7,
                  ):
         """
         This class conflates data that has been imported into a postgres
@@ -62,15 +63,16 @@ class ConflatePOI(object):
         Args:
             dburi (str): The DB URI
             boundary (Polygon): The AOI of the project
+            threshold (int): The distance in meters for distance calculations
 
         Returns:
             (ConflatePOI): An instance of this object
         """
         self.data = dict()
         self.db = None
-        self.tolerance = 7 # Distance in meters for conflating with postgis
+        self.tolerance = threshold # Distance in meters for conflating with postgis
         self.boundary = boundary
-        self.analyze = ('building', 'amenity')
+        self.analyze = ('building', 'amenity', 'shop', 'name')
         if dburi:
             # for thread in range(0, cores + 1):
             self.db = GeoSupport(dburi)
@@ -151,12 +153,14 @@ class ConflatePOI(object):
 
     def conflateData(self,
                      data: list,
+                     threshold: int = 7,
                      ):
         """
         Conflate all the data. This the primary interfacte for conflation.
 
         Args:
-            odkdata (list): A list of all the entries in the OSM XML input file
+            data (list): A list of all the entries in the OSM XML input file
+            threshold (int): The threshold for distance calculations
 
         Returns:
             (dict):  The modified features
@@ -173,7 +177,7 @@ class ConflatePOI(object):
         entries = len(data)
         chunk = round(len(data) / cores)
 
-        if entries <= chunk:
+        if True: # FIXME: entries <= chunk:
             result = conflateThread(data, self)
             timer.stop()
             return result
@@ -203,7 +207,6 @@ class ConflatePOI(object):
                 newdata.append(future.result(timeout=5))
         timer.stop()
         return newdata
-        # return alldata
 
     def conflateWay(self,
                     feature: dict,
@@ -220,42 +223,51 @@ class ConflatePOI(object):
             (dict):  The modified feature
         """
         # log.debug(f"conflateWay({feature})")
-        hits = False
+        hits = 0
         result = list()
         geom = Point((float(feature["attrs"]["lon"]), float(feature["attrs"]["lat"])))
         wkt = shape(geom)
         for key, value in feature['tags'].items():
-            if key in self.analyze:
-                # Sometimes the duplicate is a polygon, really common for parking lots.
-                cleanval = escape(value)
-                query = f"SELECT osm_id,tags,version,ST_AsText(ST_Centroid(geom)) FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= 1"
-                # log.debug(query)
-                if db:
-                    result = db.queryDB(query)
-                else:
-                    result = self.db.queryDB(query)
-                log.warning(f"No results at all for {query}")
-                if len(result) > 0:
-                    hits = True
-                    break
-        if hits:
-            log.debug(f"Got a dup in ways!!! {feature['tags']['name']}")
+            print(f"WAY: {key} = {value}")
+            if key not in self.analyze:
+                continue
+            # Sometimes the duplicate is a polygon, really common for parking lots.
+            cleanval = escape(value)
+            # query = f"SELECT osm_id,tags,version,ST_AsText(ST_Centroid(geom)) FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= 1 AND tags->>'building' IS NOT NULL OR tags->>'amenity' IS NOT NULL ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
+            query = f"SELECT osm_id,tags,version,ST_AsText(ST_Centroid(geom)),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= 1 ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
+            log.debug(query)
+            if db:
+                result = db.queryDB(query)
+            else:
+                result = self.db.queryDB(query)
+            if len(result) > 0:
+                hits += 1
+                # break
+            # else:
+            #     log.warning(f"No results at all for {query}")
+
+        osm = list()
+        if hits > 0:
             # the result is a list from what we specify for SELECT
-            version = int(result[0][2]) + 1
-            attrs = {'id': int(result[0][0]), 'version': version}
-            tags = result[0][1]
-            tags[f'old_{key}'] = value
-            tags['fixme'] = "Probably a duplicate!"
-            geom = mapping(shapely.from_wkt(result[0][3]))
-            refs = list()
-            # FIXME: iterate through the points and find the existing nodes,
-            # which I'm not sure
-            # is possible
-            # SELECT osm_id,tags,version FROM nodes WHERE ST_Contains(geom, ST_GeomFromText('Point(-105.9918636 38.5360821)'));
-            # for i in geom['coordinates'][0]:
-            #    print(f"XXXXX: {i}")
-            return {'attrs': attrs, 'tags': tags, 'refs': refs}
-        return dict()
+            for entry in result:
+                dist = entry[4] # FIXME: for debugging
+                version = int(entry[0]) + 1
+                attrs = {'id': int(entry[0]), 'version': version}
+                log.debug(f"Got a dup in ways with ID {feature['attrs']['id']}!!! {feature['tags']}")
+                tags = entry[1]
+                tags[f'old_{key}'] = value
+                tags['fixme'] = "Probably a duplicate!"
+                tags['dist'] = dist
+                geom = mapping(shapely.from_wkt(entry[3]))
+                refs = list()
+                # FIXME: iterate through the points and find the existing nodes,
+                # which I'm not sure is possible
+                # SELECT osm_id,tags,version FROM nodes WHERE ST_Contains(geom, ST_GeomFromText('Point(-105.9918636 38.5360821)'));
+                # for i in geom['coordinates'][0]:
+                #    print(f"XXXXX: {i}")
+                osm.append({'attrs': attrs, 'tags': tags, 'refs': refs})
+
+        return osm
 
     def conflateNode(self,
                      feature: dict,
@@ -272,41 +284,52 @@ class ConflatePOI(object):
             (dict):  The modified feature
         """
         # log.debug(f"conflateNode({feature})")
-        hits = False
+        hits = 0
         geom = Point((float(feature["attrs"]["lon"]), float(feature["attrs"]["lat"])))
         wkt = shape(geom)
         result = list()
         ratio = 1
         for key,value in feature['tags'].items():
-            if True: #  key in self.analyze:
-                # print("%s = %s" % (key, value))
-                # Use a Geography data type to get the answer in meters, which
-                # is easier to deal with than degress of the earth.
-                cleanval = escape(value)
-                query = f"SELECT osm_id,tags,version,ST_AsEWKT(geom) FROM nodes_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= {ratio}"
-                # print(query)
-                # FIXME: this currently only works with a local database,
-                # not underpass yet
-                if db:
-                    result = db.queryDB(query)
-                else:
-                    result = self.db.queryDB(query)
-                # log.warning(f"No results at all for {query}")
-                if len(result) > 0:
-                    hits = True
-                    break
-        if hits:
-            log.debug(f"Got a dup in nodes!!! {feature['tags']}")
-            version = int(result[0][2]) + 1
-            coords = shapely.from_wkt(result[0][3][10:])
-            lat = coords.y
-            lon = coords.x
-            attrs = {'id': int(result[0][0]), 'version': version, 'lat': lat, 'lon': lon}
-            tags = result[0][1]
-            tags[f'old_{key}'] = value
-            tags['fixme'] = "Probably a duplicate!"
-            return {'attrs': attrs, 'tags': tags}
-        return dict()
+            print(f"NODE: {key} = {value}")
+            if key not in self.analyze:
+                continue
+
+            # Use a Geography data type to get the answer in meters, which
+            # is easier to deal with than degress of the earth.
+            cleanval = escape(value)
+            query = f"SELECT osm_id,tags,version,ST_AsEWKT(geom),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')),levenshtein(tags->>'{key}', '{cleanval}') FROM nodes_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= {ratio}"
+            # AND (tags->>'amenity' IS NOT NULL OR tags->>'shop' IS NOT NULL)"
+            # print(query)
+            # FIXME: this currently only works with a local database,
+            # not underpass yet
+            if db:
+                result = db.queryDB(query)
+            else:
+                result = self.db.queryDB(query)
+                log.debug(f"Got {len(result)} results for {query}")
+            if len(result) > 0:
+                hits += 1
+                # break
+            #else:
+            #    log.warning(f"No results at all for {query}")
+
+        osm = list()
+        if hits > 0:
+            for entry in result:
+                dist = entry[4] # FIXME: for debugging
+                match = entry[5] # FIXME: for debugging
+                log.debug(f"Got a dup in nodes {dist}m away!!! {feature['tags']}")
+                version = int(entry[2]) + 1
+                coords = shapely.from_wkt(entry[3][10:])
+                lat = coords.y
+                lon = coords.x
+                attrs = {'id': int(entry[0]), 'version': version, 'lat': lat, 'lon': lon}
+                tags = entry[1]
+                tags[f'old_{key}'] = value
+                tags['dist'] = dist
+                tags['fixme'] = "Probably a duplicate!"
+                osm.append({'attrs': attrs, 'tags': tags})
+        return osm
 
 
 def conflateThread(features: list,
@@ -317,7 +340,7 @@ def conflateThread(features: list,
 
     Args:
         feature (dict): The feature to conflate
-        dbindex (int): An index into the array of postgres connections
+        cp (ConflatePOI): The top level class
 
     Returns:
     """
@@ -346,19 +369,23 @@ def conflateThread(features: list,
         elif id < 0:
             result = cp.conflateNode(value)
             if len(result) == 0:
-
+                # log.warning(f"No results in nodes at all for {value}")
                 result = cp.conflateWay(value)
-        if result and len(result) > 0:
+
+        if len(result) > 0:
             # Merge the tags and attributes together, the OSM data and ODK data.
             # If no match is found, the ODK data is used to create a new feature.
-            if 'fixme' in result['tags']:
-                dups += 1
-                # newf = source.cleanFeature(result)
-                attrs = value['attrs'] | result['attrs']
-                tags = value['tags'] | result['tags']
-                merged.append({'attrs': attrs, 'tags': tags})
-            else:
-                merged.append(value)
+            if len(result) > 1:
+                log.warning(f"Got more than one result! Got {len(result)}")
+            for entry in result:
+                if 'fixme' in entry['tags']:
+                    dups += 1
+                    # newf = source.cleanFeature(result)
+                    attrs = value['attrs'] | entry['attrs']
+                    tags = value['tags'] | entry['tags']
+                    merged.append({'attrs': attrs, 'tags': tags})
+                else:
+                    merged.append(value)
         else:
             merged.append(value)
             # log.error(f"There are no results!")
@@ -379,6 +406,8 @@ def main():
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("-o", "--osmuri", required=True, help="OSM Database URI")
+    parser.add_argument("-t", "--threshold", default=7,
+                        help="Threshold for distance calculations")
     parser.add_argument("-i", "--infile", required=True,
                         help="GeoJson or OSM XML file to conflate")
     parser.add_argument("-b", "--boundary",
@@ -405,7 +434,7 @@ def main():
         poly = boundary['features'][0]['geometry']
     else:
         poly = boundary['geometry']
-    extract = ConflatePOI(args.osmuri, poly)
+    extract = ConflatePOI(args.osmuri, poly, args.threshold)
 
     if extract:
         odkf = OsmFile(outfile)
