@@ -217,7 +217,7 @@ class ConflatePOI(object):
 
         Args:
             feature (dict): The feature to conflate
-            dbindex (int): An index into the array of postgres connections
+            db (GeoSupport): The datbase connection to use
 
         Returns:
             (dict):  The modified feature
@@ -278,7 +278,7 @@ class ConflatePOI(object):
 
         Args:
             feature (dict): The feature to conflate
-            dbindex (int): An index into the array of postgres connections
+            db (GeoSupport): The datbase connection to use
 
         Returns:
             (dict):  The modified feature
@@ -339,10 +339,11 @@ def conflateThread(features: list,
     Conflate a subset of the data
 
     Args:
-        feature (dict): The feature to conflate
+        features (list): The feature to conflate
         cp (ConflatePOI): The top level class
 
     Returns:
+        (list): The results of the conflation
     """
     timer = Timer(text="conflateThread() took {seconds:.0f}s")
     timer.start()
