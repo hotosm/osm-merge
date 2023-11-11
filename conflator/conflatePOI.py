@@ -72,7 +72,8 @@ class ConflatePOI(object):
         self.db = None
         self.tolerance = threshold # Distance in meters for conflating with postgis
         self.boundary = boundary
-        self.analyze = ('building', 'amenity', 'shop', 'name')
+        # Use a common select so it's consistent when parsing results
+        self.select = "SELECT osm_id,tags,version,ST_AsText(geom),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;%s\'))"
         if dburi:
             # for thread in range(0, cores + 1):
             self.db = GeoSupport(dburi)
@@ -151,6 +152,83 @@ class ConflatePOI(object):
                 return {'attrs': attrs, 'tags': tags}
         return dict()
 
+    def queryToFeature(self,
+                       results: list,
+                       ):
+        """
+        Convert the results of an SQL to a GeoJson Feature
+
+        Args:
+            results (list): The results of the query
+
+        Returns:
+            (list): a list of the features fromn the results
+        """
+
+        features = list()
+        for entry in results:
+            osm_id = int(entry[0])
+            tags = entry[1]
+            version = int(entry[2])
+            coords = shapely.from_wkt(entry[3])
+            dist = entry[4]
+            if coords.geom_type == 'Polygon':
+                center = shapely.centroid(coords)
+                lat = center.y
+                lon = center.x
+                tags['geom_type'] = 'way'
+            elif coords.geom_type == "Point":
+                lat = coords.y
+                lon = coords.x
+                tags['geom_type'] = 'node'
+            else:
+                log.error(f"Unsupported geometry type: {coords.geom_type}")
+            # match = entry[5] # FIXME: for debugging
+            # the timestamp attribute gets added when it's uploaded to OSM.
+            attrs = {'id': osm_id,
+                    'version': version,
+                    'lat': lat,
+                    'lon': lon,
+                    }
+            tags['dist'] = dist
+            # tags['match'] = match # FIXME: for debugging
+            # tags['fixme'] = "Probably a duplicate node!"
+            features.append({'attrs': attrs, 'tags': tags})
+
+        return features
+
+    def checkTags(self,
+                  feature: Feature,
+                  osm: dict,
+                  ):
+        """
+        Check tags between 2 features.
+
+        Args:
+            feature (Feature): The feature from the external dataset
+            osm (dict): The result of the SQL query
+
+        Returns:
+            (int): The nunber of tag matches
+            (dict): The updated tags
+        """
+        tags = osm['tags']
+        hits = 0
+        match_threshold = 80
+        if osm['tags']['dist'] > float(self.tolerance):
+            return 0, osm['tags']
+        for key, value in feature['tags'].items():
+            if key in tags:
+                ratio = fuzz.ratio(value, tags[key])
+                if ratio > match_threshold:
+                    hits += 1
+                else:
+                    if key != 'note':
+                        tags[f'old_{key}'] = value
+            tags[key] = value
+
+        return hits, tags
+
     def conflateData(self,
                      data: list,
                      threshold: int = 7,
@@ -208,80 +286,100 @@ class ConflatePOI(object):
         timer.stop()
         return newdata
 
-    def conflateWay(self,
-                    feature: dict,
+    def queryWays(self,
+                    feature: Feature,
                     db: GeoSupport = None,
                     ):
         """
         Conflate a POI against all the ways in a postgres view
 
         Args:
-            feature (dict): The feature to conflate
+            feature (Feature): The feature to conflate
             db (GeoSupport): The datbase connection to use
 
         Returns:
-            (dict):  The modified feature
+            (list): The data with tags added from the conflation
         """
         # log.debug(f"conflateWay({feature})")
         hits = 0
         result = list()
         geom = Point((float(feature["attrs"]["lon"]), float(feature["attrs"]["lat"])))
         wkt = shape(geom)
-        for key, value in feature['tags'].items():
-            print(f"WAY: {key} = {value}")
-            if key not in self.analyze:
-                continue
-            # Sometimes the duplicate is a polygon, really common for parking lots.
-            cleanval = escape(value)
-            # query = f"SELECT osm_id,tags,version,ST_AsText(ST_Centroid(geom)) FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= 1 AND tags->>'building' IS NOT NULL OR tags->>'amenity' IS NOT NULL ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
-            query = f"SELECT osm_id,tags,version,ST_AsText(ST_Centroid(geom)),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= 1 ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
-            log.debug(query)
-            if db:
-                result = db.queryDB(query)
-            else:
-                result = self.db.queryDB(query)
-            if len(result) > 0:
-                hits += 1
-                # break
-            # else:
-            #     log.warning(f"No results at all for {query}")
 
-        osm = list()
-        if hits > 0:
-            # the result is a list from what we specify for SELECT
-            for entry in result:
-                dist = entry[4] # FIXME: for debugging
-                version = int(entry[0]) + 1
-                attrs = {'id': int(entry[0]), 'version': version}
-                log.debug(f"Got a dup in ways with ID {feature['attrs']['id']}!!! {feature['tags']}")
-                tags = entry[1]
-                tags[f'old_{key}'] = value
-                tags['fixme'] = "Probably a duplicate!"
-                tags['dist'] = dist
-                geom = mapping(shapely.from_wkt(entry[3]))
-                refs = list()
-                # FIXME: iterate through the points and find the existing nodes,
-                # which I'm not sure is possible
-                # SELECT osm_id,tags,version FROM nodes WHERE ST_Contains(geom, ST_GeomFromText('Point(-105.9918636 38.5360821)'));
-                # for i in geom['coordinates'][0]:
-                #    print(f"XXXXX: {i}")
-                osm.append({'attrs': attrs, 'tags': tags, 'refs': refs})
+        # cleanval = escape(value)
+        # Get all ways close to this feature.
+#        query = f"SELECT osm_id,tags,version,ST_AsText(ST_Centroid(geom)),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
+        query = f"{self.select}" % wkt.wkt
+        query += f" FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
+        #log.debug(query)
+        result = list()
+        if db:
+            result = db.queryDB(query)
+        else:
+            result = self.db.queryDB(query)
+        if len(result) > 0:
+            hits += 1
+        else:
+            log.warning(f"No results at all for {query}")
 
-        return osm
+        return result
 
-    def conflateNode(self,
-                     feature: dict,
+        # this is the treshold for fuzzy string matching
+        # match_threshold = 80
+
+        # for key, value in feature['tags'].items():
+        #     print(f"WAY: {key} = {value}")
+        #     # if key not in self.analyze:
+        #     #     continue
+        #     # Sometimes the duplicate is a polygon, really common for parking lots.
+        #     tags =  result[0][1]
+        #     if 'building' not in tags:
+        #         return list()
+
+        #     if key in tags:
+        #         ratio = fuzz.ratio(value, tags[key])
+        #         if ratio > match_threshold:
+        #             log.debug(f"Got a tag match {ratio} for {value}!")
+        #             hits += 1
+
+        # # cleanval = escape(value)
+        # osm = list()
+        # if hits > 0:
+        #     # the result is a list from what we specify for SELECT
+        #     for entry in result:
+        #         dist = entry[4]
+        #         version = int(entry[2]) + 1
+        #         attrs = {'id': int(entry[0]), 'version': version}
+        #         log.debug(f"Got a dup in ways with ID {feature['attrs']['id']}!!! {feature['tags']}")
+        #         tags = entry[1]
+        #         merged = feature['tags'] | tags
+        #         # tags[f'old_{key}'] = value
+        #         merged['fixme'] = "Probably a duplicate way!"
+        #         merged['dist'] = dist
+        #         geom = mapping(shapely.from_wkt(entry[3]))
+        #         # FIXME: iterate through the points and find the existing nodes,
+        #         # which I'm not sure is sensible.
+        #         # SELECT osm_id,tags,version FROM nodes WHERE ST_Contains(geom, ST_GeomFromText('Point(-105.9918636 38.5360821)'));
+        #         # for i in geom['coordinates'][0]:
+        #         #    print(f"XXXXX: {i}")
+        #         osm.append({'attrs': attrs, 'tags': merged, 'refs': list()})
+
+        # return osm
+
+    def queryNodes(self,
+                     feature: Feature,
                      db: GeoSupport = None,
                      ):
         """
-        Conflate a POI against all the nodes in the view
+        Find all the nodes in the view within a certain distance that
+        are buildings or amenities.
 
         Args:
-            feature (dict): The feature to conflate
-            db (GeoSupport): The datbase connection to use
+            feature (Feature): The feature to use as the location
+            db (GeoSupport): The database connection to use
 
         Returns:
-            (dict):  The modified feature
+            (list): The results of the conflation
         """
         # log.debug(f"conflateNode({feature})")
         hits = 0
@@ -289,48 +387,58 @@ class ConflatePOI(object):
         wkt = shape(geom)
         result = list()
         ratio = 1
-        for key,value in feature['tags'].items():
-            print(f"NODE: {key} = {value}")
-            if key not in self.analyze:
-                continue
 
-            # Use a Geography data type to get the answer in meters, which
-            # is easier to deal with than degress of the earth.
-            cleanval = escape(value)
-            query = f"SELECT osm_id,tags,version,ST_AsEWKT(geom),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')),levenshtein(tags->>'{key}', '{cleanval}') FROM nodes_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= {ratio}"
-            # AND (tags->>'amenity' IS NOT NULL OR tags->>'shop' IS NOT NULL)"
-            # print(query)
-            # FIXME: this currently only works with a local database,
-            # not underpass yet
-            if db:
-                result = db.queryDB(query)
-            else:
-                result = self.db.queryDB(query)
-                log.debug(f"Got {len(result)} results for {query}")
-            if len(result) > 0:
-                hits += 1
-                # break
-            #else:
-            #    log.warning(f"No results at all for {query}")
+        # for key,value in feature['tags'].items():
+        # print(f"NODE: {key} = {value}")
+        # if key not in self.analyze:
+        #     continue
 
-        osm = list()
-        if hits > 0:
-            for entry in result:
-                dist = entry[4] # FIXME: for debugging
-                match = entry[5] # FIXME: for debugging
-                log.debug(f"Got a dup in nodes {dist}m away!!! {feature['tags']}")
-                version = int(entry[2]) + 1
-                coords = shapely.from_wkt(entry[3][10:])
-                lat = coords.y
-                lon = coords.x
-                attrs = {'id': int(entry[0]), 'version': version, 'lat': lat, 'lon': lon}
-                tags = entry[1]
-                tags[f'old_{key}'] = value
-                tags['dist'] = dist
-                tags['fixme'] = "Probably a duplicate!"
-                osm.append({'attrs': attrs, 'tags': tags})
-        return osm
+        # Use a Geography data type to get the answer in meters, which
+        # is easier to deal with than degress of the earth.
+        #cleanval = escape(value)
+        # query = f"SELECT osm_id,tags,version,ST_AsEWKT(geom),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')),levenshtein(tags->>'{key}', '{cleanval}') FROM nodes_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= {ratio}"
+        # AND (tags->>'amenity' IS NOT NULL OR tags->>'shop' IS NOT NULL)"
+        query = f"{self.select}" % wkt.wkt
+        query += f" FROM nodes_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND (tags->>'amenity' IS NOT NULL OR tags->>'building' IS NOT NULL)"
+        #log.debug(query)
+        # FIXME: this currently only works with a local database,
+        # not underpass yet
+        if db:
+            result = db.queryDB(query)
+        else:
+            result = self.db.queryDB(query)
+        # log.debug(f"Got {len(result)} results")
+        if len(result) > 0:
+            hits += 1
+            # break
+        # else:
+        #     log.warning(f"No results at all for {query}")
 
+        return result
+
+        # osm = list()
+        # if hits > 0:
+        #     for entry in result:
+        #         dist = entry[4] # FIXME: for debugging
+        #         match = entry[5] # FIXME: for debugging
+        #         log.debug(f"Got a dup in nodes {dist}m away!!! {feature['tags']}")
+        #         osm_id = int(entry[0])
+        #         tags = entry[1]
+        #         version = int(entry[2]) + 1
+        #         coords = shapely.from_wkt(entry[3][10:])
+        #         lat = coords.y
+        #         lon = coords.x
+        #         # the timestamp attribute gets added when it's uploaded to OSM.
+        #         attrs = {'id': osm_id,
+        #                  'version': version,
+        #                  'lat': lat,
+        #                  'lon': lon,
+        #                 }
+        #         tags['dist'] = dist # FIXME: for debugging
+        #         tags['match'] = match # FIXME: for debugging
+        #         tags['fixme'] = "Probably a duplicate node!"
+        #         osm.append({'attrs': attrs, 'tags': tags})
+        # return osm
 
 def conflateThread(features: list,
                    cp: ConflatePOI,
@@ -348,11 +456,11 @@ def conflateThread(features: list,
     timer = Timer(text="conflateThread() took {seconds:.0f}s")
     timer.start()
     log.debug(f"conflateThread() called! {len(features)} features")
-    merged = list()
     result = dict()
     dups = 0
     # This is brute force, slow but accurate. Process each feature
     # and look for a possible match with existing data.
+    merged = list()
     for key, value in features.items():
         id = int(value['attrs']['id'])
         geom = Point((float(value["attrs"]["lon"]), float(value["attrs"]["lat"])))
@@ -362,38 +470,63 @@ def conflateThread(features: list,
         # Each of the conflation methods take a single feature
         # as a parameter, and returns a possible match or a zero
         # length dictionary.
+        results = list()
         if id > 0:
             # Any feature ID greater than zero is existing data.
             # Any feature ID less than zero is new data collected
             # using geopoint in the XLSForm.
-            result = cp.conflateById(value)
+            result = cp.queryById(value)
         elif id < 0:
-            result = cp.conflateNode(value)
-            if len(result) == 0:
+            result = cp.queryNodes(value)
+            if len(results) == 0:
                 # log.warning(f"No results in nodes at all for {value}")
-                result = cp.conflateWay(value)
+                results = cp.queryWays(value)
+                if len(result) == 0:
+                    log.warning(f"No results in ways at all for {value}")
+                    # value['fixme'] = "Probably a new feature"
+                    # merged.append(value)
 
-        if len(result) > 0:
+        if len(results) == 0:
+            merged.append(value)
+            continue
+            # log.error(f"There are no results!")
+
             # Merge the tags and attributes together, the OSM data and ODK data.
             # If no match is found, the ODK data is used to create a new feature.
-            if len(result) > 1:
-                log.warning(f"Got more than one result! Got {len(result)}")
-            for entry in result:
-                if 'fixme' in entry['tags']:
-                    dups += 1
-                    # newf = source.cleanFeature(result)
-                    attrs = value['attrs'] | entry['attrs']
-                    tags = value['tags'] | entry['tags']
-                    merged.append({'attrs': attrs, 'tags': tags})
-                else:
-                    merged.append(value)
-        else:
-            merged.append(value)
-            # log.error(f"There are no results!")
+        if len(results) > 1:
+            log.warning(f"Got more than one result! Got {len(results)}")
+
+            for entry in cp.queryToFeature(results):
+                hits, tags = cp.checkTags(value, entry)
+                log.debug(f"Got {hits} hits for {tags}")
+                if hits > 0:
+                    tags['fixme'] = f"Proably a duplicate, got {hits} matches"
+                    entry['tags'] = tags
+                    entry['attrs']['version'] += 1
+                    merged.append(entry)
+                    break
+
+                #     for k1, v2  in entry.items():
+                #         dups += 1
+                #         if 'id' in value['attrs']:
+                #             del value['attrs']['id']
+                #         attrs = value['attrs'] | entry['attrs']
+                #         # We use ID for the external data set, it should always be
+                #         # a negative number. But if we got results, that means this
+                #         # feature came from OSM, so use the osm_id.
+                #         attrs['id'] = int(entry['attrs']['id'])
+                #         tags = value['tags'] | entry['tags']
+                #         print(f"ENTRY: {entry}")
+                #         if 'refs' in entry:
+                #             merged.append({'attrs': attrs, 'tags': tags, 'refs': list()})
+                #         else:
+                #             merged.append({'attrs': attrs, 'tags': tags})
+                # else:
+                #     # No possible matches found
+                #     merged.append(value)
     timer.stop()
     log.debug(f"Found {dups} duplicates")
     return merged
-
 
 def main():
     """This main function lets this class be run standalone by a bash script"""
@@ -452,22 +585,16 @@ def main():
     out = list()
     #print(data)
     for entry in data:
-        # if 'refs' in feature or 'building' in feature['tags']:
-        for feature in entry:
-            if 'refs' in feature:
-                feature['refs'] = list()
-                out.append(odkf.createWay(entry, True))
-            else:
-                out.append(odkf.createNode(entry, True))
+        if 'geom_type' not in entry['tags']:
+            continue
+        if entry['tags']['geom_type'] == 'way':
+            del entry['tags']['geom_type']
+            out.append(odkf.createWay(entry, True))
+        else:
+            del entry['tags']['geom_type']
+            out.append(odkf.createNode(entry, True))
+        # this isn't needed anymore
 
-    # out = ""
-    # for id, feature in osm.items():
-    #     result = extract.conflateFile(feature)
-    #     if len(result) > 0:
-    #         node = odkf.featureToNode(result)
-    #     else:
-    #         node = feature
-    #     out += odkf.createNode(node, True)
     odkf.write(out)
     log.info(f"Wrote {outfile}")
 
