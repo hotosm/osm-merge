@@ -381,7 +381,7 @@ class ConflatePOI(object):
         Returns:
             (list): The results of the conflation
         """
-        # log.debug(f"conflateNode({feature})")
+        # log.debug(f"queryNodes({feature})")
         hits = 0
         geom = Point((float(feature["attrs"]["lon"]), float(feature["attrs"]["lat"])))
         wkt = shape(geom)
@@ -395,7 +395,7 @@ class ConflatePOI(object):
 
         # Use a Geography data type to get the answer in meters, which
         # is easier to deal with than degress of the earth.
-        #cleanval = escape(value)
+        # cleanval = escape(value)
         # query = f"SELECT osm_id,tags,version,ST_AsEWKT(geom),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')),levenshtein(tags->>'{key}', '{cleanval}') FROM nodes_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} AND levenshtein(tags->>'{key}', '{cleanval}') <= {ratio}"
         # AND (tags->>'amenity' IS NOT NULL OR tags->>'shop' IS NOT NULL)"
         query = f"{self.select}" % wkt.wkt
@@ -415,30 +415,6 @@ class ConflatePOI(object):
         #     log.warning(f"No results at all for {query}")
 
         return result
-
-        # osm = list()
-        # if hits > 0:
-        #     for entry in result:
-        #         dist = entry[4] # FIXME: for debugging
-        #         match = entry[5] # FIXME: for debugging
-        #         log.debug(f"Got a dup in nodes {dist}m away!!! {feature['tags']}")
-        #         osm_id = int(entry[0])
-        #         tags = entry[1]
-        #         version = int(entry[2]) + 1
-        #         coords = shapely.from_wkt(entry[3][10:])
-        #         lat = coords.y
-        #         lon = coords.x
-        #         # the timestamp attribute gets added when it's uploaded to OSM.
-        #         attrs = {'id': osm_id,
-        #                  'version': version,
-        #                  'lat': lat,
-        #                  'lon': lon,
-        #                 }
-        #         tags['dist'] = dist # FIXME: for debugging
-        #         tags['match'] = match # FIXME: for debugging
-        #         tags['fixme'] = "Probably a duplicate node!"
-        #         osm.append({'attrs': attrs, 'tags': tags})
-        # return osm
 
 def conflateThread(features: list,
                    cp: ConflatePOI,
@@ -491,20 +467,24 @@ def conflateThread(features: list,
             continue
             # log.error(f"There are no results!")
 
-            # Merge the tags and attributes together, the OSM data and ODK data.
-            # If no match is found, the ODK data is used to create a new feature.
+            # Merge the tags and attributes together, the OSM data and
+            # data. If no match is found, the ODK data is used to
+            # eate a new feature.
         if len(results) > 1:
             log.warning(f"Got more than one result! Got {len(results)}")
 
             for entry in cp.queryToFeature(results):
                 hits, tags = cp.checkTags(value, entry)
-                log.debug(f"Got {hits} hits for {tags}")
+                log.debug(f"Got {hits} out of {len(tags)} matched for {tags}")
                 if hits > 0:
-                    tags['fixme'] = f"Proably a duplicate, got {hits} matches"
+                    dups += 1
+                    tags['fixme'] = f"Probably a duplicate, got {hits} matches"
                     entry['tags'] = tags
                     entry['attrs']['version'] += 1
                     merged.append(entry)
                     break
+                else:
+                    merged.append(value)
 
                 #     for k1, v2  in entry.items():
                 #         dups += 1
@@ -586,7 +566,8 @@ def main():
     #print(data)
     for entry in data:
         if 'geom_type' not in entry['tags']:
-            continue
+            if 'lat' in entry['attrs']:
+                entry['tags']['geom_type'] = 'node'
         if entry['tags']['geom_type'] == 'way':
             del entry['tags']['geom_type']
             out.append(odkf.createWay(entry, True))
