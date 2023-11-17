@@ -172,6 +172,11 @@ class ConflatePOI(object):
             version = int(entry[2])
             coords = shapely.from_wkt(entry[3])
             dist = entry[4]
+            # ways have an additional column
+            if len(entry) == 6:
+                refs = entry[5]
+            else:
+                refs = list()
             if coords.geom_type == 'Polygon':
                 center = shapely.centroid(coords)
                 lat = center.y
@@ -193,7 +198,7 @@ class ConflatePOI(object):
             tags['dist'] = dist
             # tags['match'] = match # FIXME: for debugging
             # tags['fixme'] = "Probably a duplicate node!"
-            features.append({'attrs': attrs, 'tags': tags})
+            features.append({'attrs': attrs, 'tags': tags, 'refs': refs})
 
         return features
 
@@ -310,7 +315,7 @@ class ConflatePOI(object):
         # Get all ways close to this feature.
 #        query = f"SELECT osm_id,tags,version,ST_AsText(ST_Centroid(geom)),ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
         query = f"{self.select}" % wkt.wkt
-        query += f" FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
+        query += f", refs FROM ways_view WHERE ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\')) < {self.tolerance} ORDER BY ST_Distance(geom::geography, ST_GeogFromText(\'SRID=4326;{wkt.wkt}\'))"
         #log.debug(query)
         result = list()
         if db:
@@ -323,48 +328,6 @@ class ConflatePOI(object):
             log.warning(f"No results at all for {query}")
 
         return result
-
-        # this is the treshold for fuzzy string matching
-        # match_threshold = 80
-
-        # for key, value in feature['tags'].items():
-        #     print(f"WAY: {key} = {value}")
-        #     # if key not in self.analyze:
-        #     #     continue
-        #     # Sometimes the duplicate is a polygon, really common for parking lots.
-        #     tags =  result[0][1]
-        #     if 'building' not in tags:
-        #         return list()
-
-        #     if key in tags:
-        #         ratio = fuzz.ratio(value, tags[key])
-        #         if ratio > match_threshold:
-        #             log.debug(f"Got a tag match {ratio} for {value}!")
-        #             hits += 1
-
-        # # cleanval = escape(value)
-        # osm = list()
-        # if hits > 0:
-        #     # the result is a list from what we specify for SELECT
-        #     for entry in result:
-        #         dist = entry[4]
-        #         version = int(entry[2]) + 1
-        #         attrs = {'id': int(entry[0]), 'version': version}
-        #         log.debug(f"Got a dup in ways with ID {feature['attrs']['id']}!!! {feature['tags']}")
-        #         tags = entry[1]
-        #         merged = feature['tags'] | tags
-        #         # tags[f'old_{key}'] = value
-        #         merged['fixme'] = "Probably a duplicate way!"
-        #         merged['dist'] = dist
-        #         geom = mapping(shapely.from_wkt(entry[3]))
-        #         # FIXME: iterate through the points and find the existing nodes,
-        #         # which I'm not sure is sensible.
-        #         # SELECT osm_id,tags,version FROM nodes WHERE ST_Contains(geom, ST_GeomFromText('Point(-105.9918636 38.5360821)'));
-        #         # for i in geom['coordinates'][0]:
-        #         #    print(f"XXXXX: {i}")
-        #         osm.append({'attrs': attrs, 'tags': merged, 'refs': list()})
-
-        # return osm
 
     def queryNodes(self,
                      feature: Feature,
@@ -451,13 +414,13 @@ def conflateThread(features: list,
             # Any feature ID greater than zero is existing data.
             # Any feature ID less than zero is new data collected
             # using geopoint in the XLSForm.
-            result = cp.queryById(value)
+            results = cp.queryById(value)
         elif id < 0:
-            result = cp.queryNodes(value)
+            results = cp.queryNodes(value)
             if len(results) == 0:
                 # log.warning(f"No results in nodes at all for {value}")
                 results = cp.queryWays(value)
-                if len(result) == 0:
+                if len(results) == 0:
                     log.warning(f"No results in ways at all for {value}")
                     # value['fixme'] = "Probably a new feature"
                     # merged.append(value)
@@ -486,24 +449,6 @@ def conflateThread(features: list,
                 else:
                     merged.append(value)
 
-                #     for k1, v2  in entry.items():
-                #         dups += 1
-                #         if 'id' in value['attrs']:
-                #             del value['attrs']['id']
-                #         attrs = value['attrs'] | entry['attrs']
-                #         # We use ID for the external data set, it should always be
-                #         # a negative number. But if we got results, that means this
-                #         # feature came from OSM, so use the osm_id.
-                #         attrs['id'] = int(entry['attrs']['id'])
-                #         tags = value['tags'] | entry['tags']
-                #         print(f"ENTRY: {entry}")
-                #         if 'refs' in entry:
-                #             merged.append({'attrs': attrs, 'tags': tags, 'refs': list()})
-                #         else:
-                #             merged.append({'attrs': attrs, 'tags': tags})
-                # else:
-                #     # No possible matches found
-                #     merged.append(value)
     timer.stop()
     log.debug(f"Found {dups} duplicates")
     return merged
