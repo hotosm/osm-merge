@@ -101,6 +101,4 @@ exclude = [
 convention = "google"
 
 [project.scripts]
-# conflator = "conflator.cmd:main"
-# hot-import = "conflator.postgres:main"
-geofabrik = "conflator.geofabrik:main"
+conflator = "conflator.conflator:main"

@@ -64,14 +64,11 @@ plugins:
 nav:
   - Home: index.md
   - About: about.md
+  - Conflation Guide: conflation.md
   - Utilities:
-      - Importer: importer.md
-      - Postgres: postgres.md
-      - Geofabrik: geofabrik.md
-  - File Formats:
-      - JSON: json.md
-      - YAML: yaml.md
-      - Overture: overture.md
+      - Conflator: conflator.md
+      - Utilities: utilities.md
+  - Results: results.md
   - API: api.md
-  - License: LICENSE
+  - License: LICENSE.md
   - Changelog: CHANGELOG.md
