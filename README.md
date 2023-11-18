@@ -9,19 +9,19 @@
 </p>
 <p align="center">
   <a href="https://github.com/hotosm/conflator/actions/workflows/build.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/workflows/Build/badge.svg" alt="Build">
+      <img src="https://github.com/hotosm/conflator/actions/workflows/build.yml/badge.svg" alt="Build">
   </a>
   <a href="https://github.com/hotosm/conflator/actions/workflows/build-ci.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/workflows/Build CI Img/badge.svg" alt="CI Build">
+      <img src="https://github.com/hotosm/conflator/actions/workflows/build-ci.yml/badge.svg" alt="CI Build">
   </a>
   <a href="https://github.com/hotosm/conflator/actions/workflows/docs.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/workflows/Publish Docs/badge.svg" alt="Publish Docs">
+      <img src="https://github.com/hotosm/conflator/actions/workflows/docs.yml/badge.svg" alt="Publish Docs">
   </a>
   <a href="https://github.com/hotosm/conflator/actions/workflows/publish.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/workflows/Publish to PyPi.org/badge.svg" alt="Publish">
+      <img src="https://github.com/hotosm/conflator/actions/workflows/publish.yml/badge.svg" alt="Publish">
   </a>
   <a href="https://github.com/hotosm/conflator/actions/workflows/pytest.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/workflows/PyTest/badge.svg" alt="Test">
+      <img src="https://github.com/hotosm/conflator/actions/workflows/pytest.yml/badge.svg" alt="Test">
   </a>
   <a href="https://pypi.org/project/conflator" target="_blank">
       <img src="https://img.shields.io/pypi/v/conflator?color=%2334D058&label=pypi%20package" alt="Package version">
