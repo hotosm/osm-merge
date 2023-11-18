@@ -6,7 +6,7 @@ groups = ["default", "debug", "dev", "docs", "test"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:17af09497df7ff92ff0633bd215e86670b32a35838072de1c9158070fe64406b"
+content_hash = "sha256:72056993b253b066b6db296c972a2a8da011171383fa57994ad87cd6a04c99aa"
 
 [[package]]
 name = "appnope"
@@ -310,6 +310,19 @@ files = [
 ]
 
 [[package]]
+name = "geodex"
+version = "0.1.2"
+summary = "A tool to find all geospatial tile indices overlapping an arbitrary boundary at an arbitrary zoom."
+dependencies = [
+    "pygeotile>=1.0.5",
+    "shapely>=1.6.4",
+]
+files = [
+    {file = "geodex-0.1.2-py3-none-any.whl", hash = "sha256:9b4d5cc74c8993ea27d3a31405568399bf3f2e8f28f2d08bc266cbb29be27a86"},
+    {file = "geodex-0.1.2.tar.gz", hash = "sha256:490e9a6e10f7d4d2825d7fa9bd73e73fa6a3b9b1f63a395d1dd6614da5ca4cc6"},
+]
+
+[[package]]
 name = "geojson"
 version = "3.1.0"
 requires_python = ">=3.7"
@@ -500,6 +513,81 @@ files = [
 ]
 
 [[package]]
+name = "levenshtein"
+version = "0.23.0"
+requires_python = ">=3.7"
+summary = "Python extension for computing string edit distances and similarities."
+dependencies = [
+    "rapidfuzz<4.0.0,>=3.1.0",
+]
+files = [
+    {file = "Levenshtein-0.23.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:2d3f2b8e67915268c49f0faa29a29a8c26811a4b46bd96dd043bc8557428065d"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:10b980dcc865f8fe04723e448fac4e9a32cbd21fb41ab548725a2d30d9a22429"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:2f8c8c48217b2733ae5bd8ef14e0ad730a30d113c84dc2cfc441435ef900732b"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:854a0962d6f5852b891b6b5789467d1e72b69722df1bc0dd85cbf70efeddc83f"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:5abc4ee22340625ec401d6f11136afa387d377b7aa5dad475618ffce1f0d2e2f"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:20f79946481052bbbee5284c755aa0a5feb10a344d530e014a50cb9544745dd3"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a6084fc909a218843bb55723fde64a8a58bac7e9086854c37134269b3f946aeb"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0acaae1c20c8ed37915b0cde14b5c77d5a3ba08e05f9ce4f55e16843de9c7bb8"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:54a51036b02222912a029a6efa2ce1ee2be49c88e0bb32995e0999feba183913"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:68ec2ef442621027f290cb5cef80962889d86fff3e405e5d21c7f9634d096bbf"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-musllinux_1_1_ppc64le.whl", hash = "sha256:d8ba18720bafa4a65f07baba8c3228e98a6f8da7455de4ec58ae06de4ecdaea0"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-musllinux_1_1_s390x.whl", hash = "sha256:af1b70cac87c5627cd2227823318fa39c64fbfed686c8c3c2f713f72bc25813b"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:fe2810c42cc5bca15eeb4a2eb192b1f74ceef6005876b1a166ecbde1defbd22d"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-win32.whl", hash = "sha256:89a0829637221ff0fd6ce63dfbe59e22b25eeba914d50e191519b9d9b8ccf3e9"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-win_amd64.whl", hash = "sha256:b8bc81d59205558326ac75c97e236fd72b8bcdf63fcdbfb7387bd63da242b209"},
+    {file = "Levenshtein-0.23.0-cp310-cp310-win_arm64.whl", hash = "sha256:151046d1c70bdf01ede01f46467c11151ceb9c86fefaf400978b990110d0a55e"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:7e992de09832ee11b35910c05c1581e8a9ab8ea9737c2f582c7eb540e2cdde69"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:1a5e3461d29b3188518464bd3121fc64635ff884ae544147b5d326ce13c50d36"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:1772c4491f6ef6504e591c0dd60e1e418b2015074c3d56ee93af6b1a019906ee"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e125c92cd0ac3b53c4c80fcf2890d89a1d19ff4979dc804031773bc90223859f"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:0d2f608c5ce7b9a0a0af3c910f43ea7eb060296655aa127b10e4af7be5559303"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:fe5c3b7d96a838d9d86bb4ec57495749965e598a3ea2c5b877a61aa09478bab7"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:249eaa351b5355b3e3ca7e3a8e2a0bca7bff4491c89a0b0fa3b9d0614cf3efeb"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0033a243510e829ead1ae62720389c9f17d422a98c0525da593d239a9ff434e5"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:f956ad16cab9267c0e7d382a37b4baca6bf3bf1637a76fa95fdbf9dd3ea774d7"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:3789e4aeaeb830d944e1f502f9aa9024e9cd36b68d6eba6892df7972b884abd7"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-musllinux_1_1_ppc64le.whl", hash = "sha256:f91335f056b9a548070cb87b3e6cf017a18b27d34a83f222bdf46a5360615f11"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-musllinux_1_1_s390x.whl", hash = "sha256:3497eda857e70863a090673a82442877914c57b5f04673c782642e69caf25c0c"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:5e17ea59115179c269c6daea52415faaf54c6340d4ad91d9012750845a445a13"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-win32.whl", hash = "sha256:da2063cee1fbecc09e1692e7c4de7624fd4c47a54ee7588b7ea20540f8f8d779"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-win_amd64.whl", hash = "sha256:4d3b9c9e2852eca20de6bd8ca7f47d817a056993fd4927a4d50728b62315376b"},
+    {file = "Levenshtein-0.23.0-cp311-cp311-win_arm64.whl", hash = "sha256:ef2e3e93ae612ac87c3a28f08e8544b707d67e99f9624e420762a7c275bb13c5"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:85220b27a47df4a5106ef13d43b6181d73da77d3f78646ec7251a0c5eb08ac40"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:6bb77b3ade7f256ca5882450aaf129be79b11e074505b56c5997af5058a8f834"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:99b487f08c32530ee608e8aab0c4075048262a7f5a6e113bac495b05154ae427"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8f91d0a5d3696e373cae08c80ec99a4ff041e562e55648ebe582725cba555190"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:fddda71ae372cd835ffd64990f0d0b160409e881bf8722b6c5dc15dc4239d7db"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:7664bcf9a12e62c672a926c4579f74689507beaa24378ad7664f0603b0dafd20"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d6d07539502610ee8d6437a77840feedefa47044ab0f35cd3bc37adfc63753bd"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:830a74b6a045a13e1b1d28af62af9878aeae8e7386f14888c84084d577b92771"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:f29cbd0c172a8fc1d51eaacd163bdc11596aded5a90db617e6b778c2258c7006"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:df0704fd6a30a7c27c03655ae6dc77345c1655634fe59654e74bb06a3c7c1357"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-musllinux_1_1_ppc64le.whl", hash = "sha256:0ab52358f54ee48ad7656a773a0c72ef89bb9ba5acc6b380cfffd619fb223a23"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-musllinux_1_1_s390x.whl", hash = "sha256:f0a86394c9440e23a29f48f2bbc460de7b19950f46ec2bea3be8c2090839bb29"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:a689e6e0514f48a434e7ee44cc1eb29c34b21c51c57accb304eac97fba87bf48"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-win32.whl", hash = "sha256:2d3229c1336498c2b72842dd4c850dff1040588a5468abe5104444a372c1a573"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-win_amd64.whl", hash = "sha256:5b9b6a8509415bc214d33f5828d7c700c80292ea25f9d9e8cba95ad5a74b3cdf"},
+    {file = "Levenshtein-0.23.0-cp312-cp312-win_arm64.whl", hash = "sha256:5a61606bad3afb9fcec0a2a21871319c3f7da933658d2e0e6e55ab4a34814f48"},
+    {file = "Levenshtein-0.23.0-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:760c964ff0be8dea5f7eda20314cf66238fdd0fec63f1ce9c474736bb2904924"},
+    {file = "Levenshtein-0.23.0-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:de42400ea86e3e8be3dc7f9b3b9ed51da7fd06dc2f3a426d7effd7fbf35de848"},
+    {file = "Levenshtein-0.23.0-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b2080ee52aeac03854a0c6e73d4214d5be2120bdd5f16def4394f9fbc5666e04"},
+    {file = "Levenshtein-0.23.0-pp37-pypy37_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fb00ecae116e62801613788d8dc3938df26f582efce5a3d3320e9692575e7c4d"},
+    {file = "Levenshtein-0.23.0-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:f351694f65d4df48ee2578d977d37a0560bd3e8535e85dfe59df6abeed12bd6e"},
+    {file = "Levenshtein-0.23.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:34859c5ff7261f25daea810b5439ad80624cbb9021381df2c390c20eb75b79c6"},
+    {file = "Levenshtein-0.23.0-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0ece1d077d9006cff329bb95eb9704f407933ff4484e5d008a384d268b993439"},
+    {file = "Levenshtein-0.23.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:35ce82403730dd2a3b397abb2535786af06835fcf3dc40dc8ea67ed589bbd010"},
+    {file = "Levenshtein-0.23.0-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4a88aa3b5f49aeca08080b6c3fa7e1095d939eafb13f42dbe8f1b27ff405fd43"},
+    {file = "Levenshtein-0.23.0-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:748fbba6d9c04fc39b956b44ccde8eb14f34e21ab68a0f9965aae3fa5c8fdb5e"},
+    {file = "Levenshtein-0.23.0-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:60440d583986e344119a15cea9e12099f3a07bdddc1c98ec2dda69e96429fb25"},
+    {file = "Levenshtein-0.23.0-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5b048a83b07fc869648460f2af1255e265326d75965157a165dde2d9ba64fa73"},
+    {file = "Levenshtein-0.23.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4be0e5e742f6a299acf7aa8d2e5cfca946bcff224383fd451d894e79499f0a46"},
+    {file = "Levenshtein-0.23.0-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e7a626637c1d967e3e504ced353f89c2a9f6c8b4b4dbf348fdd3e1daa947a23c"},
+    {file = "Levenshtein-0.23.0-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:88d8a13cf310cfc893e3734f8e7e42ef20c52780506e9bdb96e76a8b75e3ba20"},
+    {file = "Levenshtein-0.23.0.tar.gz", hash = "sha256:de7ccc31a471ea5bfafabe804c12a63e18b4511afc1014f23c3cc7be8c70d3bd"},
+]
+
+[[package]]
 name = "markdown"
 version = "3.5.1"
 requires_python = ">=3.8"
@@ -559,6 +647,18 @@ dependencies = [
 files = [
     {file = "matplotlib-inline-0.1.6.tar.gz", hash = "sha256:f887e5f10ba98e8d2b150ddcf4702c1e5f8b3a20005eb0f74bfdbd360ee6f304"},
     {file = "matplotlib_inline-0.1.6-py3-none-any.whl", hash = "sha256:f1f41aab5328aa5aaea9b16d083b128102f8712542f819fe7e6a420ff581b311"},
+]
+
+[[package]]
+name = "mercantile"
+version = "1.2.1"
+summary = "Web mercator XYZ tile utilities"
+dependencies = [
+    "click>=3.0",
+]
+files = [
+    {file = "mercantile-1.2.1-py3-none-any.whl", hash = "sha256:30f457a73ee88261aab787b7069d85961a5703bb09dc57a170190bc042cd023f"},
+    {file = "mercantile-1.2.1.tar.gz", hash = "sha256:fa3c6db15daffd58454ac198b31887519a19caccee3f9d63d17ae7ff61b3b56b"},
 ]
 
 [[package]]
@@ -748,6 +848,41 @@ files = [
 ]
 
 [[package]]
+name = "osm-fieldwork"
+version = "0.3.7"
+requires_python = ">=3.10"
+summary = "Processing field data from OpenDataKit to OpenStreetMap format."
+dependencies = [
+    "PyYAML>=6.0",
+    "codetiming>=1.4.0",
+    "flatdict>=4.0.1",
+    "geodex>=0.1.2",
+    "geojson>=2.5.0",
+    "haversine>=2.8.0",
+    "levenshtein>=0.21.1",
+    "mercantile>=1.2.1",
+    "osm-rawdata>=0.1.3",
+    "overpy>=0.6",
+    "pandas>=2.0.3",
+    "pmtiles>=3.2.0",
+    "progress>=1.6",
+    "psycopg2>=2.9.7",
+    "py-cpuinfo>=9.0.0",
+    "pySmartDL>=1.3.4",
+    "pymbtiles>=0.5.0",
+    "qrcode>=7.4.2",
+    "requests>=2.31.0",
+    "segno>=1.5.2",
+    "shapely>=1.8.5",
+    "thefuzz>=0.19.0",
+    "xmltodict>=0.13.0",
+]
+files = [
+    {file = "osm-fieldwork-0.3.7.tar.gz", hash = "sha256:d941d9ba01d93af0eaf0810b72eabb4cac986d07420859593e6302b533a6a9c1"},
+    {file = "osm_fieldwork-0.3.7-py3-none-any.whl", hash = "sha256:18ca6dead0e1be63e693da6537b76c077ca9b4e680285a1ff2b2fba44ed6d590"},
+]
+
+[[package]]
 name = "osm-rawdata"
 version = "0.1.5"
 requires_python = ">=3.10"
@@ -770,6 +905,15 @@ files = [
 ]
 
 [[package]]
+name = "overpy"
+version = "0.6"
+requires_python = ">=3.6"
+summary = "Python Wrapper to access the OpenStreepMap Overpass API"
+files = [
+    {file = "overpy-0.6.tar.gz", hash = "sha256:75fa462c445a3d8ade4dad84df6f150d273f45548639229316829a3a8c3e2190"},
+]
+
+[[package]]
 name = "packaging"
 version = "23.2"
 requires_python = ">=3.7"
@@ -785,6 +929,41 @@ version = "0.5.6"
 summary = "Divides large result sets into pages for easier browsing"
 files = [
     {file = "paginate-0.5.6.tar.gz", hash = "sha256:5e6007b6a9398177a7e1648d04fdd9f8c9766a1a945bceac82f1929e8c78af2d"},
+]
+
+[[package]]
+name = "pandas"
+version = "2.1.3"
+requires_python = ">=3.9"
+summary = "Powerful data structures for data analysis, time series, and statistics"
+dependencies = [
+    "numpy<2,>=1.22.4; python_version < \"3.11\"",
+    "numpy<2,>=1.23.2; python_version == \"3.11\"",
+    "numpy<2,>=1.26.0; python_version >= \"3.12\"",
+    "python-dateutil>=2.8.2",
+    "pytz>=2020.1",
+    "tzdata>=2022.1",
+]
+files = [
+    {file = "pandas-2.1.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:acf08a73b5022b479c1be155d4988b72f3020f308f7a87c527702c5f8966d34f"},
+    {file = "pandas-2.1.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3cc4469ff0cf9aa3a005870cb49ab8969942b7156e0a46cc3f5abd6b11051dfb"},
+    {file = "pandas-2.1.3-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:35172bff95f598cc5866c047f43c7f4df2c893acd8e10e6653a4b792ed7f19bb"},
+    {file = "pandas-2.1.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:59dfe0e65a2f3988e940224e2a70932edc964df79f3356e5f2997c7d63e758b4"},
+    {file = "pandas-2.1.3-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:0296a66200dee556850d99b24c54c7dfa53a3264b1ca6f440e42bad424caea03"},
+    {file = "pandas-2.1.3-cp310-cp310-win_amd64.whl", hash = "sha256:465571472267a2d6e00657900afadbe6097c8e1dc43746917db4dfc862e8863e"},
+    {file = "pandas-2.1.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:04d4c58e1f112a74689da707be31cf689db086949c71828ef5da86727cfe3f82"},
+    {file = "pandas-2.1.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:7fa2ad4ff196768ae63a33f8062e6838efed3a319cf938fdf8b95e956c813042"},
+    {file = "pandas-2.1.3-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4441ac94a2a2613e3982e502ccec3bdedefe871e8cea54b8775992485c5660ef"},
+    {file = "pandas-2.1.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d5ded6ff28abbf0ea7689f251754d3789e1edb0c4d0d91028f0b980598418a58"},
+    {file = "pandas-2.1.3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:fca5680368a5139d4920ae3dc993eb5106d49f814ff24018b64d8850a52c6ed2"},
+    {file = "pandas-2.1.3-cp311-cp311-win_amd64.whl", hash = "sha256:de21e12bf1511190fc1e9ebc067f14ca09fccfb189a813b38d63211d54832f5f"},
+    {file = "pandas-2.1.3-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:a5d53c725832e5f1645e7674989f4c106e4b7249c1d57549023ed5462d73b140"},
+    {file = "pandas-2.1.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:7cf4cf26042476e39394f1f86868d25b265ff787c9b2f0d367280f11afbdee6d"},
+    {file = "pandas-2.1.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:72c84ec1b1d8e5efcbff5312abe92bfb9d5b558f11e0cf077f5496c4f4a3c99e"},
+    {file = "pandas-2.1.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1f539e113739a3e0cc15176bf1231a553db0239bfa47a2c870283fd93ba4f683"},
+    {file = "pandas-2.1.3-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:fc77309da3b55732059e484a1efc0897f6149183c522390772d3561f9bf96c00"},
+    {file = "pandas-2.1.3-cp312-cp312-win_amd64.whl", hash = "sha256:08637041279b8981a062899da0ef47828df52a1838204d2b3761fbd3e9fcb549"},
+    {file = "pandas-2.1.3.tar.gz", hash = "sha256:22929f84bca106921917eb73c1521317ddd0a4c71b395bcf767a106e3494209f"},
 ]
 
 [[package]]
@@ -837,6 +1016,15 @@ summary = "plugin and hook calling mechanisms for python"
 files = [
     {file = "pluggy-1.3.0-py3-none-any.whl", hash = "sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7"},
     {file = "pluggy-1.3.0.tar.gz", hash = "sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12"},
+]
+
+[[package]]
+name = "pmtiles"
+version = "3.2.0"
+summary = "Library and utilities to write and read PMTiles files - cloud-optimized archives of map tiles."
+files = [
+    {file = "pmtiles-3.2.0-py3-none-any.whl", hash = "sha256:f44e85c6622249e99044db7de77e81afa79f12faf3b53f6e0dab7a345f597e8a"},
+    {file = "pmtiles-3.2.0.tar.gz", hash = "sha256:49b24af5ba59c505bd70e8459b5eec889c1213cd7fd39eb6132a516eb8dd4301"},
 ]
 
 [[package]]
@@ -953,6 +1141,14 @@ files = [
 ]
 
 [[package]]
+name = "pygeotile"
+version = "1.0.6"
+summary = "Python package to handle tiles and points of different projections, in particular WGS 84 (Latitude, Longitude), Spherical Mercator (Meters), Pixel Pyramid and Tiles (TMS, Google, QuadTree)"
+files = [
+    {file = "pyGeoTile-1.0.6.tar.gz", hash = "sha256:64b1cfac77a392e81e2220412872cd0fb4988c25e136f8aed7c03ced59134ff9"},
+]
+
+[[package]]
 name = "pygments"
 version = "2.16.1"
 requires_python = ">=3.7"
@@ -960,6 +1156,15 @@ summary = "Pygments is a syntax highlighting package written in Python."
 files = [
     {file = "Pygments-2.16.1-py3-none-any.whl", hash = "sha256:13fc09fa63bc8d8671a6d247e1eb303c4b343eaee81d861f3404db2935653692"},
     {file = "Pygments-2.16.1.tar.gz", hash = "sha256:1daff0494820c69bc8941e407aa20f577374ee88364ee10a98fdbe0aece96e29"},
+]
+
+[[package]]
+name = "pymbtiles"
+version = "0.5.0"
+summary = "MapBox Mbtiles Utilities"
+files = [
+    {file = "pymbtiles-0.5.0-py3-none-any.whl", hash = "sha256:91c1c2fa3e25f581d563a60e705105f7277b0dbb9ff727c8c28cb66f0f891c84"},
+    {file = "pymbtiles-0.5.0.tar.gz", hash = "sha256:b4eb2c470d2eb3d94627cdc8a8ae448b8899af2dd696f9a5eca706ddf8293b58"},
 ]
 
 [[package]]
@@ -974,6 +1179,24 @@ dependencies = [
 files = [
     {file = "pymdown_extensions-10.4-py3-none-any.whl", hash = "sha256:cfc28d6a09d19448bcbf8eee3ce098c7d17ff99f7bd3069db4819af181212037"},
     {file = "pymdown_extensions-10.4.tar.gz", hash = "sha256:bc46f11749ecd4d6b71cf62396104b4a200bad3498cb0f5dad1b8502fe461a35"},
+]
+
+[[package]]
+name = "pypng"
+version = "0.20220715.0"
+summary = "Pure Python library for saving and loading PNG images"
+files = [
+    {file = "pypng-0.20220715.0-py3-none-any.whl", hash = "sha256:4a43e969b8f5aaafb2a415536c1a8ec7e341cd6a3f957fd5b5f32a4cfeed902c"},
+    {file = "pypng-0.20220715.0.tar.gz", hash = "sha256:739c433ba96f078315de54c0db975aee537cbc3e1d0ae4ed9aab0ca1e427e2c1"},
+]
+
+[[package]]
+name = "pysmartdl"
+version = "1.3.4"
+summary = "A Smart Download Manager for Python"
+files = [
+    {file = "pySmartDL-1.3.4-py3-none-any.whl", hash = "sha256:671c277ca710fb9b6603b19176f5c091041ec4ef6dcdb507c9a983a89ca35d31"},
+    {file = "pySmartDL-1.3.4.tar.gz", hash = "sha256:35275d1694f3474d33bdca93b27d3608265ffd42f5aeb28e56f38b906c0c35f4"},
 ]
 
 [[package]]
@@ -1005,6 +1228,15 @@ dependencies = [
 files = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
     {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
+]
+
+[[package]]
+name = "pytz"
+version = "2023.3.post1"
+summary = "World timezone definitions, modern and historical"
+files = [
+    {file = "pytz-2023.3.post1-py2.py3-none-any.whl", hash = "sha256:ce42d816b81b68506614c11e8937d3aa9e41007ceb50bfdcb0749b921bf646c7"},
+    {file = "pytz-2023.3.post1.tar.gz", hash = "sha256:7b4fddbeb94a1eba4b557da24f19fdf9db575192544270a9101d8509f9f43d7b"},
 ]
 
 [[package]]
@@ -1049,6 +1281,21 @@ dependencies = [
 files = [
     {file = "pyyaml_env_tag-0.1-py3-none-any.whl", hash = "sha256:af31106dec8a4d68c60207c1886031cbf839b68aa7abccdb19868200532c2069"},
     {file = "pyyaml_env_tag-0.1.tar.gz", hash = "sha256:70092675bda14fdec33b31ba77e7543de9ddc88f2e5b99160396572d11525bdb"},
+]
+
+[[package]]
+name = "qrcode"
+version = "7.4.2"
+requires_python = ">=3.7"
+summary = "QR Code image generator"
+dependencies = [
+    "colorama; platform_system == \"Windows\"",
+    "pypng",
+    "typing-extensions",
+]
+files = [
+    {file = "qrcode-7.4.2-py3-none-any.whl", hash = "sha256:581dca7a029bcb2deef5d01068e39093e80ef00b4a61098a2182eac59d01643a"},
+    {file = "qrcode-7.4.2.tar.gz", hash = "sha256:9dd969454827e127dbd93696b20747239e6d540e082937c90f14ac95b30f5845"},
 ]
 
 [[package]]
@@ -1197,6 +1444,16 @@ dependencies = [
 files = [
     {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
     {file = "requests-2.31.0.tar.gz", hash = "sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1"},
+]
+
+[[package]]
+name = "segno"
+version = "1.5.3"
+requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+summary = "QR Code and Micro QR Code generator for Python 2 and Python 3"
+files = [
+    {file = "segno-1.5.3-py2.py3-none-any.whl", hash = "sha256:9bf88c8be5ca99657881889399f73ad595231230236d89a16b4eb4933513fe07"},
+    {file = "segno-1.5.3.tar.gz", hash = "sha256:08f678ee3d0c96854f916879d2b953829332c6efcaa387d4b41b7b7a78d75e49"},
 ]
 
 [[package]]
@@ -1378,6 +1635,16 @@ summary = "Backported and Experimental Type Hints for Python 3.8+"
 files = [
     {file = "typing_extensions-4.8.0-py3-none-any.whl", hash = "sha256:8f92fc8806f9a6b641eaa5318da32b44d401efaac0f6678c9bc448ba3605faa0"},
     {file = "typing_extensions-4.8.0.tar.gz", hash = "sha256:df8e4339e9cb77357558cbdbceca33c303714cf861d1eef15e1070055ae8b7ef"},
+]
+
+[[package]]
+name = "tzdata"
+version = "2023.3"
+requires_python = ">=2"
+summary = "Provider of IANA time zone data"
+files = [
+    {file = "tzdata-2023.3-py2.py3-none-any.whl", hash = "sha256:7e65763eef3120314099b6939b5546db7adce1e7d6f2e179e3df563c70511eda"},
+    {file = "tzdata-2023.3.tar.gz", hash = "sha256:11ef1e08e54acb0d4f95bdb1be05da659673de4acbd21bf9c69e94cc5e907a3a"},
 ]
 
 [[package]]
