@@ -1,5 +1,5 @@
 site_name: conflator
-site_description: Software for data conflation for OSM
+site_description: Conflate OSM data.
 # strict: true
 site_url: "https://www.hotosm.org"
 
@@ -65,7 +65,13 @@ nav:
   - Home: index.md
   - About: about.md
   - Utilities:
-      - ConflateBuildings: conflation.md
-      - ConflatePOI: conflation.md
+      - Importer: importer.md
+      - Postgres: postgres.md
+      - Geofabrik: geofabrik.md
+  - File Formats:
+      - JSON: json.md
+      - YAML: yaml.md
+      - Overture: overture.md
   - API: api.md
-  - License: LICENSE.md
+  - License: LICENSE
+  - Changelog: CHANGELOG.md

@@ -1,6 +1,0 @@
-logging
-gdal
-ogr
-pytest
-shapely
-progress

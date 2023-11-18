@@ -1,0 +1,13 @@
+"devops":
+  - ".github/**/*"
+  - "Dockerfile"
+  - "*entrypoint.sh"
+"dependency":
+  - "pyproject.toml"
+  - "pdm.lock"
+"documentation":
+  - "docs/**/*"
+  - "mkdocs.yml"
+  - "README.md"
+"version":
+  - "conflator/__version__.py"
