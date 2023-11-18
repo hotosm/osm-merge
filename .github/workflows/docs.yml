@@ -1,0 +1,24 @@
+name: 📖 Publish Docs
+
+on:
+  push:
+    paths:
+      - docs/**
+      - conflator/**
+      - mkdocs.yml
+    branches: [main]
+  # Allow manual trigger (workflow_dispatch)
+  workflow_dispatch:
+
+jobs:
+  build_doxygen:
+    uses: hotosm/gh-workflows/.github/workflows/doxygen_build.yml@1.2.4
+    with:
+      output_path: docs/apidocs
+
+  publish_docs:
+    uses: hotosm/gh-workflows/.github/workflows/mkdocs_build.yml@1.2.4
+    needs: [build_doxygen]
+    with:
+      image: ghcr.io/${{ github.repository }}:ci
+      doxygen: true
