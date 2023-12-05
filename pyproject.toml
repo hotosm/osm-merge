@@ -13,6 +13,8 @@ dependencies = [
     "py_cpuinfo>=9.0.0",
     "shapely>=1.8.5",
     "thefuzz>=0.19.0",
+    # levenshtein used by thefuzz underneath (do not remove)
+    "levenshtein>=0.20.0",
     "xmltodict>=0.13.0",
     "haversine>=2.8.0",
     "osm-rawdata>=0.1.3",
