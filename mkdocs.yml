@@ -68,7 +68,6 @@ nav:
   - Utilities:
       - Conflator: conflator.md
       - Utilities: utilities.md
-  - Results: results.md
   - API: api.md
   - Class Hierarchy: apidocs/html/classes.html
   - License: LICENSE.md
