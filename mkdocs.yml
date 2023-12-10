@@ -70,6 +70,6 @@ nav:
       - Utilities: utilities.md
   - Results: results.md
   - API: api.md
-  - Class Hierarchy: apidocs/html/index.html
+  - Class Hierarchy: apidocs/html/classes.html
   - License: LICENSE.md
   - Changelog: CHANGELOG.md
