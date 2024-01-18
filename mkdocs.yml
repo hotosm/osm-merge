@@ -72,3 +72,4 @@ nav:
   - Class Hierarchy: apidocs/html/classes.html
   - License: LICENSE.md
   - Changelog: CHANGELOG.md
+  - Versioning: https://docs.hotosm.org/dev-guide/version-control/#creating-releases
