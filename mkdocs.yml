@@ -65,7 +65,7 @@ plugins:
 nav:
   - Home: index.md
   - About: about.md
-  - Conflation Guide: conflation.md
+  - Conflation Guide: odkconflation.md
   - Utilities:
       - Conflator: conflator.md
       - Utilities: utilities.md
