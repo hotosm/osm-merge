@@ -15,7 +15,7 @@ etc...  which currently are now dead projects. Conflation is a hard
 technical challenge and often the results are poor and
 unstatisfing result. For smalller datasets often it's easier to do do
 manual conflation using [JOSM](https://josm.openstreetmap.de/) or
-Qgis](https://qgis.org/en/site/). This project tries to simply the
+[Qgis](https://qgis.org/en/site/). This project tries to simply the
 problem by focusing on OpenStreetMap data.
 
 ## Smartphone Data Collection
@@ -171,6 +171,43 @@ features on your smartphone, mis-typing occurs. If there is a 100%
 match in the name tags, then chances are the feature exists in OSM
 already.
 
+If there is no *name* tag in the ODK data, then the other tags are
+compared to try to find a possible duplicate feature. For example, a
+public toilet at a trailhead has no name, but if both ODK and OSM have
+**amenity=toilet**, then it's very likey a duplicate. If no tags
+match, then the ODK data is proably a new feature.
+
+Any time a possible duplicate is found, it is not automatically
+merged. Instead a **fixme** tag is added to the feature in the output
+file with a statement that it is potentially a duplicate. When the
+output file is loaded into JOSM, you can search for this tag to
+manually decide if it is a duplicate.
+
+## XLSForm Design
+
+Part of the key detail to improve conflation requires a carefully
+created XLSForm. There is much more detailed information on
+[XLSForm
+design](https://hotosm.github.io/osm-fieldwork/about/xlsforms/), but
+briefly whatever is in the *name* column in the *survey* sheet becomes
+the name of the tags, and whatever is in the *name* column in the
+*choices* sheet becomes the value. If you want a relatively smooth
+conflation, make sure your XLSForm uses OSM tagging schemas.
+
+If you don't follow OSM tagging, then conflation will assumme all your
+ODK data is a new feature, and you'll have to manually conflate the
+results using JOSM. That's OK for small datasets, but quickly becomes
+very tedious for the larger datasets that FMTM collects.
+
+## The Output File
+
+The output file must be in OSM XML to enable updating the ways. If the
+OSM data is a POI, viewing it in JOSM is easy. If the OSM data is a
+polygon, when loaded into JOSM, they won't appear at first. Since the
+OSM way created by conflation has preserved the *refs* used by OSM XML
+to reference the nodes, doing *update modified* in JOSM then pulls
+down the nodes and all the polygons will appear.
+
 ## Conflicts
 
 There are some interesting issues to fix post conflation. ODK data is
@@ -190,5 +227,10 @@ FMTM downloads a data extract from OSM using
 filters the data extract based on what is on the choices
 sheet of the XLSForm. Otherwise Collect won't launch. Because this
 data extract does not contain all the tags that are in OSM, it creates
-conflicts. This problem is FMTM specific.
+conflicts. This problem is FMTM specific, and can be improved by
+making more complete data extract from OSM.
 
+When the only tag in the OSM data is **building=**, any tags from ODK
+are merged with the building polygon when possible. If the OSM feature
+has other tags, JOSM will flag this as a conflict. Then you have to
+manually merge the tags in JOSM.
