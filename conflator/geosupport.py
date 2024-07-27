@@ -26,8 +26,7 @@ import psycopg2
 from shapely.geometry import shape, Polygon, mapping
 import shapely
 from shapely import wkt, wkb
-from osm_rawdata.postgres import uriParser, PostgresClient
-
+from osm_rawdata.pgasync import PostgresClient
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -36,24 +35,56 @@ log = logging.getLogger(__name__)
 class GeoSupport(object):
     def __init__(self,
                  dburi: str = None,
+                 config: str = None,
                  ):
         """
         This class conflates data that has been imported into a postgres
         database using the Underpass raw data schema.
 
         Args:
-            dburi (str, optional): The DB URI
+            dburi (str, optional): The database URI
+            config (str, optional): The config file from the osm-rawdata project
 
         Returns:
             (GeoSupport): An instance of this object
         """
-        self.postgres = list()
         self.db = None
-        self.uri = dburi
-        if dburi:
-            self.db = PostgresClient(dburi)
+        self.dburi = dburi
+        self.config = config
 
-    def clipDB(self,
+    async def initialize(self,
+                        dburi: str = None,
+                        config: str = None,
+                        ):
+        """
+        When async, we can't initialize the async database connection,
+        so it has to be done as an extrat step.
+
+        Args:
+            dburi (str, optional): The database URI
+            config (str, optional): The config file from the osm-rawdata project
+        """
+        if dburi:
+            self.db = PostgresClient()
+            await self.db.connect(dburi)
+        elif self.dburi:
+            self.db = PostgresClient()
+            await self.db.connect(self.dburi)
+
+        if config:
+            await self.db.loadConfig(config)
+        elif self.config:
+            await self.db.loadConfig(config)
+
+    async def dump(self):
+        print(f"Config category \" {self.config}\"")
+        for db in self.postgres:
+            if db.is_closed():
+                print(f"Database URI \"{db.dburi}\" is closed")
+            else:
+                print(f"Database URI \"{db.dburi}\" is open")
+
+    async def clipDB(self,
              boundary: Polygon,
              db: PostgresClient = None,
              view: str = "ways_view",
@@ -81,30 +112,33 @@ class GeoSupport(object):
         sql = f"DROP VIEW IF EXISTS {view} CASCADE ;CREATE VIEW {view} AS SELECT * FROM ways_poly WHERE ST_CONTAINS(ST_GeomFromEWKT('SRID=4326;{ewkt}'), geom)"
         # log.debug(sql)
         if db:
-            result = db.queryLocal(sql)
+            result = await db.queryDB(sql)
         elif self.db:
-            result = self.db.queryLocal(sql)
+            result = await self.db.queryDBl(sql)
         else:
             return False
 
         return True
 
-    def queryDB(self,
-                sql: str,
+    async def queryDB(self,
+                sql: str = None,
                 db: PostgresClient = None,
-                ):
+                ) -> list:
         """
         Query a database table
 
         Args:
-            db (PostgreClient): A reference to the existing database connection
+            db (PostgreClient, optional): A reference to the existing database connection
             sql (str): The SQL query to execute
 
         Returns:
-            (FeatureCollection): The results of the query
+            (list): The results of the query
         """
-        data = list()
-        log.debug(sql)
+        result = list()
+        if not sql:
+            log.error(f"You need to pass a valid SQL string!")
+            return result
+
         if db:
             result = db.queryLocal(sql)
         elif self.db:
@@ -112,7 +146,7 @@ class GeoSupport(object):
 
         return result
 
-    def clipFile(self,
+    async def clipFile(self,
                 boundary: Polygon,
                 data: FeatureCollection,
                 ):
@@ -137,7 +171,7 @@ class GeoSupport(object):
 
         return new
 
-    def outputOSM(self,
+    async def outputOSM(self,
                   data: FeatureCollection,
                   outfile: str = None,
                   ):
@@ -166,7 +200,7 @@ class GeoSupport(object):
 
         return out
 
-    def outputJOSM(self,
+    async def outputJOSM(self,
                   data: FeatureCollection,
                   outfile: str = None,
                   ):
@@ -187,7 +221,7 @@ class GeoSupport(object):
         else:
             return False
 
-def main():
+async def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
         prog="conflateDB",
@@ -215,15 +249,17 @@ def main():
     boundary = open(args.boundary, 'r')
     poly = geojson.load(boundary)
 
-    db = DatabaseAccess(args.dburi)
+    db = DatabaseAccess(args.dburi, poly)
     cdb = GeoSupport()
-    # 
+
     cdb.clipDB(poly, db)
     sql = "SELECT COUNT(osm_id) FROM ways_view"
-    result = cdb.queryDB(sql, db)
+    result = await cdb.queryDB(sql, db)
     if type(result) == list:
         log.debug(f"Returned: {result[0]}")
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    main()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(main())
