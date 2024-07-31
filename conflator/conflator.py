@@ -51,6 +51,7 @@ import tqdm.asyncio
 import xmltodict
 # from deepdiff import DeepDiff
 import math
+from threading import Thread
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ log = logging.getLogger(__name__)
 info = get_cpu_info()
 # Try doubling the number of cores, since the CPU load is
 # still reasonable.
-cores = info['count'] * 2
+cores = info['count']
 
 # shut off warnings from pyproj
 import warnings
@@ -73,11 +74,11 @@ def distSort(data: list):
     """
     return data['dist']
 
-async def conflateThread(odkdata: list,
+def conflateThread(odkdata: list,
                    osmdata: list,
                    threshold: float = 7.0,
                    spellcheck: bool = True,
-                   ):
+                   ) -> list:
     """
     Conflate features from ODK against all the features in OSM.
 
@@ -90,8 +91,9 @@ async def conflateThread(odkdata: list,
     Returns:
         (list):  The conflated output
     """
+    # log.debug(f"Dispatching thread ")
+
     timer = Timer(text="conflateFeatures() took {seconds:.0f}s")
-    timer.start()
 
     # ODK data is always a single node when mapping buildings, but the
     # OSM data will be a mix of nodes and ways. For the OSM data, the
@@ -110,10 +112,13 @@ async def conflateThread(odkdata: list,
     nodes = dict()
     version = 0
     cutils = Conflator()
+    i = 0
     # Progress bar
-    # xpbar = tqdm.tqdm(odkdata)
-    # for entry in pbar:
-    for entry in odkdata:
+    pbar = tqdm.tqdm(odkdata)
+    for entry in pbar:
+    # for entry in odkdata:
+        i += 1
+        timer.start()
         confidence = 0
         maybe = list()
         odktags = dict()
@@ -130,12 +135,6 @@ async def conflateThread(odkdata: list,
             # We could probably do this using GeoPandas or gdal, but that's
             # going to do the same brute force thing anyway.
 
-            # existing = dict()
-            # if "attrs" in osm:
-            #     existing = self.osmToFeature(osm)
-            # else:
-            #     existing = osm
-
             # If the input file is in OSM XML format, we don't want to
             # conflate the nodes with no tags. They are used to build
             # the geometry for the way, and after that aren't needed anymore.
@@ -147,9 +146,10 @@ async def conflateThread(odkdata: list,
 
             dist = float()
             try:
-                dist = await cutils.getDistance(entry, existing)
+                dist = cutils.getDistance(entry, existing)
             except:
-                breakpoint()
+                continue
+                #breakpoint()
 
             if dist <= threshold:
                 log.debug(f"DIST: {dist / 1000}km. {dist}m")
@@ -159,70 +159,40 @@ async def conflateThread(odkdata: list,
                     # Probably an exact hit, likely from data imported
                     # into OSM from the same source.
                     maybe.append({"dist": dist, "odk": entry, "osm": existing})
+                    geom = maybe[0]["odk"]["geometry"]
+                    tags = maybe[0]["odk"]["properties"]
+                    data.append(Feature(geometry=geom, properties=tags))
                     break
                 # cache all OSM features within our threshold distance
                 # These are needed by ODK, but duplicates of other fields,
                 # so they aren't needed and just add more clutter.
                 maybe.append({"dist": dist, "odk": entry, "osm": existing})
 
-            # if osmwkt.geom_type != 'Point':
-            #     center = shapely.centroid(osmwkt)
-            # else:
-            #     center = shape(osmwkt)
-            # # dist = shapely.hausdorff_distance(center, wkt)
-            # dist = wkt.distance(center)
-            # if dist < threshold:
-            #     # cache all OSM features within our threshold distance
-            #     # These are needed by ODK, but duplicates of other fields,
-            #     # so they aren't needed and just add more clutter.
-            #     maybe.append({"dist": dist, "odk": entry, "osm": existing})
-
         # Compare tags for everything that got cached
         hits = 0
+
         if len(maybe) > 0:
             # cache the refs to use in the OSM XML output file
             refs = list()
             odk = dict()
             osm = dict()
-            # After sorting, the first entry is the closet feature
+            # FIXME: After sorting, the first entry should be the
+            # closet feature, but this should be extended to check
+            # the tags of the other features found under the threshold
+            # distance.
             maybe.sort(key=distSort)
-            if 'title' in odk:
-                del odk['title']
-            if 'label' in odk:
-                del odk['label']
-
-            hits, tags = await cutils.checkTags(maybe, existing)
-            log.debug(f"TAGS: {tags}")
-            breakpoint()
-            # if hits > 0:
-            #     # log.debug(f"HITS: {hits}")
-            #     # If there have been hits, it's probably a duplicate
-            #     attrs = {"id": osm['attrs']["id"], "version": version, 'lat': osm['attrs']['lat'], 'lon': osm['attrs']['lon']}
-            #     newtags = odktags | osmtags
-            #     # These are added by ODK Collect, and not relevant for OSM
-            #     # del newtags['id']
-            #     if "refs" in newtags:
-            #         del newtags['refs']
-            #     # if "properties" in existing:
-            #     #     attrs["id"] = existing["properties"]["id"]
-            #     # else:
-            #     #     attrs["id"] = existing["attrs"]["id"]
-            #     newtags['fixme'] = "Probably a duplicate!"
-            #     newtags['confidence'] = hits
-            #     if len(refs) == 0:
-            #         feature = {"attrs": attrs, "version": version, "tags": newtags}
-            #     else:
-            #         feature = {"attrs": attrs, "version": version, "refs": refs, "tags": newtags}
-            #     # data.append(feature)
-
-            # # If no hits, it's new data. ODK data is always just a POI for now
+            if maybe[0]["dist"] >= 0.0:
+                hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
+                log.debug(f"TAGS: {hits}: {tags}")
+            tags['fixme'] = "Probably a duplicate!"
+            if "refs" in maybe[0]["osm"]:
+                tags["refs"] = maybe[0]["osm"]["refs"]
+            geom = maybe[0]["odk"]["geometry"]
+            data.append(Feature(geometry=geom, properties=tags))
+            # If no hits, it's new data. ODK data is always just a POI for now
             # feature["attrs"] = {"id": odkid, "lat": entry["attrs"]["lat"], "lon": entry["attrs"]["lon"], "version": version, "timestamp": entry["attrs"]["timestamp"]}
-            # feature["tags"] = odktags
-            # # print(f"{odkid}: {odktags}")
-            # odkid -= 1
-            # data.append(feature)
+        timer.stop()
 
-    timer.stop()
     return data
 
 class Conflator(object):
@@ -254,7 +224,7 @@ class Conflator(object):
         self.data = dict()
         self.analyze = ("building", "name", "amenity", "landuse", "cuisine", "tourism", "leisure")
 
-    async def getDistance(self,
+    def getDistance(self,
             newdata: Feature,
             olddata: Feature,
             ) -> float:
@@ -301,7 +271,7 @@ class Conflator(object):
 
         return dist # * 111195
 
-    async def checkTags(self,
+    def checkTags(self,
                         extfeat: Feature,
                         osm: Feature,
                         ):
@@ -323,7 +293,12 @@ class Conflator(object):
         version = 0
         for key, value in extfeat['properties'].items():
             if key in osm["properties"]:
-                if key == "osm_id" or key == "id":
+                if key == "title" or key == "label":
+                    # ODK data extracts have an title and image tags,
+                    # which is usually just a duplicate of the name,
+                    # so drop those.
+                    continue
+                elif key == "osm_id" or key == "id":
                     # External data not from an OSM source always has
                     # negative IDs to distinguish it from current OSM data.
                     if value <= 0:
@@ -352,7 +327,8 @@ class Conflator(object):
                         hits += 1
                         props["ratio"] = ratio
                         props[key] = value
-                        props[f"old_{key}"] = osm["properties"][key]
+                        if value != osm["properties"][key]:
+                            props[f"old_{key}"] = osm["properties"][key]
                     else:
                         if key != 'note':
                             props[key] = value
@@ -361,6 +337,8 @@ class Conflator(object):
                     # Course the new value is probably more up to data
                     # than what is in OSM. Keep both in the properties
                     # for debugging tag conflation.
+                    if key == "title" or key == "label":
+                        continue
                     props[key] = value
                     if value != osm["properties"][key]:
                         props[f"old_{key}"] = osm["properties"][key]
@@ -599,14 +577,29 @@ class Conflator(object):
         alldata = list()
         tasks = list()
 
-        # log.warning(f"This makes take time, so please wait...")
-        async with asyncio.TaskGroup() as tg:
-            for block in range(0, entries, chunk):
-                log.debug(f"Dispatching thread {block}:{block + chunk}")
-                tasks.append(tg.create_task(conflateThread(odkdata[block:block + chunk - 1], osmdata)))
-            #for task in tasks:
-            #    alldata += task.result()
+        # conflateThread(odkdata, osmdata)
 
+        futures = list()
+        with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
+            for block in range(0, entries, chunk):
+                future = executor.submit(conflateThread,
+                        odkdata[block:block + chunk - 1],
+                        osmdata
+                        )
+                futures.append(future)
+            #for thread in concurrent.futures.wait(futures, return_when='ALL_COMPLETED'):
+            for future in concurrent.futures.as_completed(futures):
+                log.debug(f"Waiting for thread to complete.. {future.result()}")
+                alldata += future.result()
+
+        executor.shutdown()
+
+        # async with asyncio.TaskGroup() as tg:
+        #     for block in range(0, entries, chunk):
+        #         log.debug(f"Dispatching thread {block}:{block + chunk}")
+        #         # task = tg.create_task(conflateThread(odkdata[block:block + chunk - 1], osmdata))
+        #         # tasks.append(task)
+        #         tasks.append(tg.create_task(conflateThread(odkdata[block:block + chunk - 1], osmdata)))
         timer.stop()
 
         # return await conflateThread(odkdata, osmdata, threshold)
@@ -807,7 +800,7 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
     parser.add_argument("-c", "--config", default="highway", help="The config file for the SQL query")
     parser.add_argument("-s", "--source", required=True, help="The external data to conflate")
     parser.add_argument("-t", "--threshold", default=1, help="Threshold for distance calculations")
-    parser.add_argument("-o", "--outfile", help="Output file from the conflation")
+    parser.add_argument("-o", "--outfile", default="out.geojson", help="Output file from the conflation")
     parser.add_argument("-b", "--boundary", help="Optional boundary polygon to limit the data size")
 
     args = parser.parse_args()
@@ -850,14 +843,18 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
 
     data = await conflate.conflateData(args.source, args.extract, float(args.threshold))
 
-    jsonout = f"{toplevel.stem}-out.geojson"
-    osmout = f"{toplevel.stem}-out.osm"
+    # path = Path(args.outfile)
+    #jsonout = f"{path.stem}-out.geojson"
+    #osmout = f"{toplevel.stem}-out.osm"
 
-    # await conflate.writeOSM(data, osmout)
-    # await conflate.writeGeoJson(data, jsonout)
+    # conflate.writeOSM(data, osmout)
+    # conflate.writeGeoJson(data, jsonout)
+    file = open(args.outfile, "w")
+    fc = FeatureCollection(data)
+    geojson.dump(fc, file)
 
-    log.info(f"Wrote {osmout}")
-    log.info(f"Wrote {jsonout}")
+    # log.info(f"Wrote {osmout}")
+    log.info(f"Wrote {args.outfile}")
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
