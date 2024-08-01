@@ -223,6 +223,60 @@ class GeoSupport(object):
 
         return new
 
+    async def copyTable(self,
+                        table: str,
+                        remote: PostgresClient,
+                        ):
+        """
+        Use DBLINK to copy a table from the external
+        database to a local table so conflating is much faster.
+
+        Args:
+            table (str): The table to copy
+        """
+        timer = Timer(initial_text=f"Copying {table}...",
+                      text="copying {table} took {seconds:.0f}s",
+                      logger=log.debug,
+                    )
+        # Get the columns from the remote database table
+        self.columns = await remote.getColumns(table)
+
+        print(f"SELF: {self.pg.dburi}")
+        print(f"REMOTE: {remote.dburi}")
+
+        # Do we already have a local copy ?
+        sql = f"SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename  = '{table}'"
+        result = await self.pg.execute(sql)
+        print(result)
+
+        # cleanup old temporary tables in the current database
+        # drop = ["DROP TABLE IF EXISTS users_bak",
+        #         "DROP TABLE IF EXISTS user_interests",
+        #         "DROP TABLE IF EXISTS foo"]
+        # result = await pg.pg.executemany(drop)
+        sql = f"DROP TABLE IF EXISTS new_{table} CASCADE"
+        result = await self.pg.execute(sql)
+        sql = f"DROP TABLE IF EXISTS {table}_bak CASCADE"
+        result = await self.pg.execute(sql)
+        timer.start()
+        dbuser = self.pg.dburi["dbuser"]
+        dbpass = self.pg.dburi["dbpass"]
+        sql = f"CREATE SERVER IF NOT EXISTS pg_rep_db FOREIGN DATA WRAPPER dblink_fdw  OPTIONS (dbname 'tm4');"
+        data = await self.pg.execute(sql)
+
+        sql = f"CREATE USER MAPPING IF NOT EXISTS FOR {dbuser} SERVER pg_rep_db OPTIONS ( user '{dbuser}', password '{dbpass}');"
+        result = await self.pg.execute(sql)
+
+        # Copy table from remote database so JOIN is faster when it's in the
+        # same database
+        #columns = await sel.getColumns(table)
+        log.warning(f"Copying a remote table is slow, but faster than remote access......")
+        sql = f"SELECT * INTO {table} FROM dblink('pg_rep_db','SELECT * FROM {table}') AS {table}({self.columns})"
+        print(sql)
+        result = await self.pg.execute(sql)
+
+        return True
+
 async def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
