@@ -106,6 +106,7 @@ def conflateThread(odkdata: list,
     # this is the treshold for fuzzy string matching
     match_threshold = 80
     data = list()
+    newdata = list()
     # New features not in OSM always use negative IDs
     odkid = -100
     osmid = 0
@@ -152,16 +153,16 @@ def conflateThread(odkdata: list,
                 #breakpoint()
 
             if dist <= threshold:
-                log.debug(f"DIST: {dist / 1000}km. {dist}m")
-                log.debug(f"ENTRY: {entry["properties"]}")
-                log.debug(f"EXISTING: {existing["properties"]}")
+                # log.debug(f"DIST: {dist / 1000}km. {dist}m")
+                # log.debug(f"ENTRY: {entry["properties"]}")
+                # log.debug(f"EXISTING: {existing["properties"]}")
                 if dist <= 0.0:
                     # Probably an exact hit, likely from data imported
                     # into OSM from the same source.
                     maybe.append({"dist": dist, "odk": entry, "osm": existing})
                     #geom = maybe[0]["odk"]["geometry"]
                     hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
-                    log.debug(f"TAGS: {hits}: {tags}")
+                    # log.debug(f"TAGS: {hits}: {tags}")
                     tags = {**maybe[0]["odk"]["properties"], **maybe[0]["osm"]["properties"]}
 
                     data.append(Feature(geometry=geom, properties=tags))
@@ -188,7 +189,7 @@ def conflateThread(odkdata: list,
             maybe.sort(key=distSort)
             if maybe[0]["dist"] >= 0.0:
                 hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
-                log.debug(f"TAGS: {hits}: {tags}")
+                # log.debug(f"TAGS: {hits}: {tags}")
             tags['fixme'] = "Probably a duplicate!"
             if "refs" in maybe[0]["osm"]["properties"]:
                 tags["refs"] = maybe[0]["osm"]["properties"]["refs"]
@@ -203,11 +204,11 @@ def conflateThread(odkdata: list,
         else:
             entry["properties"]["version"] = 1
             entry["properties"]["fixme"] = "New features should be imported following OSM guidelines."
-            # data.append(entry)
+            newdata.append(entry)
 
         timer.stop()
 
-    return data
+    return data # , newdata
 
 class Conflator(object):
     def __init__(self,
@@ -286,9 +287,9 @@ class Conflator(object):
         return dist # * 111195
 
     def checkTags(self,
-                        extfeat: Feature,
-                        osm: Feature,
-                        ):
+                  extfeat: Feature,
+                  osm: Feature,
+                   ):
         """
         Check tags between 2 features.
 
@@ -358,6 +359,9 @@ class Conflator(object):
                         props[f"old_{key}"] = osm["properties"][key]
                     else:
                         hits += 1
+            else:
+                # Add the tag from the new data since it isn't in OSM yet.
+                props[key] = value
 
         return hits, props
 
@@ -741,7 +745,11 @@ class Conflator(object):
                 # The OSM XML file won't have any nodes, so at first won't
                 # display in JOSM until you do a File->"Update modified",
                 if len(tags['refs']) > 0:
-                    item["refs"] = eval(tags["refs"])
+                    if type(tags["refs"]) != list:
+                        item["refs"] = eval(tags["refs"])
+                    else:
+                        item["refs"] = tags["refs"]
+                    del tags["refs"]
                     out = osm.createWay(item, True)
             else:
                 out = osm.createNode(item, True)
