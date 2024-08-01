@@ -1,107 +1,46 @@
 # Utility Programs
 
-Conflator includes a few bourne shell scripts used for bulk
-processing of data files. Because of the poor performance when
-processing huge data files, they're split up into manageable
-pieces. There are several assumptions made, namely that the OSM data
-is in postgres database, imported via [these
-instructions](conflation.md). The building footprint file can be
-either in a database, or the downloaded GeoJson formatted data file.
+To conflate external datasets with OSM, the external data needs to be
+converted to the OSM tagging schema. Otherwise comparing tags gets
+very convoluted. Since every dataset uses a different schema, included
+are a few utility programs for converting external datasets. Currently
+the only datatsets are for highways. These datasets are available from
+the [USDA](https://www.usda.gov/), and have an appropriate license to
+use with OpenStreetMap. Indeed, some of this data has already been
+imported. The files are available from the 
+[FSGeodata Clearinghouse](https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=transportation)
 
-Since all of the output files need to be web accessible, these scripts
-are usually run in the directory containing the data files. Each
-country should be in a separate directory. These scripts take two
-command line arguments, the country to be processed, and optionally a
-single project to process. By default all projects are processed. If a
-consistent naming convention is used, the basename of the current
-directory is to try to guess the proper country name. That same value
-is also used to identify the correct database or data file name.
+Most of the fields in the dataset aren't needed for OSM, only the
+reference number if it has one, and the name. Most of these highways
+are already in OSM, but it's a bit of a mess, and mostly
+unvalidated. Most of the problems are related to the TIGER import
+in 2007. So the goal of these utilities is to add in the [TIGER
+fixup](https://wiki.openstreetmap.org/wiki/TIGER_fixup) work by
+updating or adding the name and a reference number. These utilities
+prepare the dataset for conflation.
 
-### For example
+There are other fields in the datasets we might want, like surface
+type, is it 4wd only, etc... but often the OSM data is more up to
+date. And to really get that right, you need to ground truth it.
 
-	~www/Africa/Kenya
-	~www/Africa/Kenya/kenya-latest.pbf
-	~www/Africa/Kenya/kenya.geojsonl
-	~www/Africa/Nigeria
-	~www/Africa/Nigeria/nigeria-latest.pbf
-	~www/Africa/Nigeria/nigeria.geojsonl
-	~www/Asia/Nepal
-	~www/Asia/Nepal/...
+## mvum.py
 
-# Tasking Manager Projects
+This converts the [Motor Vehicle Use Map(MVUM)](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.Road_MVUM.zip) dataset that contains
+data on highways more suitable for offroad vehicles. Some require
+specialized offroad vehicles like a UTV or ATV. The data in OSM for
+these roads is really poor. Often the reference number is wrong, or
+lacks the suffix. We assume the USDA data is correct when it comes to
+name and reference number, and this will get handled later by
+conflation.
 
-Since the import data is huge, the Tasking Manager is used to
-validation the results of conflation. To further reduce the data size,
-the project boundaries are downlooaded from the Tasking Manager by
-using it's remote API. These are then saved to disk using the naming
-convention *12345-project.geojson*, where **12345** is a project
-ID. The project boundaries can downloaded using the
-[splitter.py](splitter.md) program, which is part of conflator. A
-boundary can be downloaded like this:
+## roadcore.py
 
-> PATH/splitter.py -p 12345
+This converts the [Road Core](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.RoadCore_FS.zip) vehicle map. This contains data on all
+highways in a national forest. It's similar to the MVUM dataset.
 
-Since a big import requires multiple Tasking Manager projects, to get
-started, download all of the boundaries for this import.
+## Trails.py
 
-## clipsrc.sh
-
-This script extracts all the buildings in the specified country into a
-data file. This assumes all the data has already been imported into
-postgres. Since there are usually multiple countries imported into
-postgres, this gets just the ones we want for furthur processing. 
-
-This generates two output files from the database, namely the country
-name, postfixed by the data source. For example *kenya-osm.geojson*
-and *kenya-ms.geojson*. These data files are then split into
-smaller files based on a Tasking Manager project boundary. Each of the
-smaller files follows the same naming convention, *12345-osm.geojson*
-or *kenya-ms.geojson*.
-
-> PATH/clipsrc.sh kenya
-
-## update.sh
-
-This script processes the project sized data files for the best
-performance. One again, it looks for any files that follow the naming
-convention, and runs the [conflation script](conflator.md) on each of
-the project boundaries. The generates a single output file, containing
-buildings from the footprint file that are not already in OSM. This
-file is *12345-buildings.geojson*.
-
-> PATH/clipsrc.sh nigeria
-
-## index.sh
-
-This script generates a simple webpage to navigate all the data files,
-so they can be manually downloaded for validation. This script should
-be run in the directory with all the data files. The first section is
-just the project from the Tasking Manager, the rest are all the
-smaller files for each project. Each project has 3 generated data
-files, the two raw data files produced from the database, and the
-conflated building output.
-
-> ./index.sh
-
-## splittasks.sh
-
-This utility splits an existing data file of the results of building
-conflation into smaller pieces. If the project id is specified on the
-command line, only that project is downloaded. Otherwise the current
-directory is scanned for files using the naming convention of
-${projectid}-tasks.geojson. This then uses the X and Y coordinates of
-the task for the default zoom level  This then uses the X and Y
-coordinates of the task for the default zoom level to uniquely name
-the data file so the Tasking Manager can load it.
-
-> PATH/splittasks.sh [project ID]
-
-## getosm
-
-This utility is to download smaller data files than are available
-from GeoFabrik. It requires a boundary polygon from a Tasking Manager
-project. If the project id is specified on the command line, only that
-project is downloaded. Otherwise the current directory is scanned for
-files using the naming convention of ${projectid}-projects.geojson.
-
-> PATH/getosm.sh [project ID]
+This converts the [NPSPublish](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.TrailNFS_Publish.zip) Trail dataset. These are hiking trails
+not open to motor vehicles. Currently much of this dataset has empty
+fields, but the trail name and reference number is useful. This
+utility is to support the OpenStreetMap US [Trails Initiative](https://openstreetmap.us/our-work/trails/).
