@@ -98,11 +98,9 @@ class GeoSupport(object):
             for key, value in entry["properties"].items():
                 tags += f"\"{key}\": \"{value}\", "
             tags = tags[:-2]
-            tags += "}\'::jsonb);"
-            sql = f"INSERT INTO {table} (geom, tags) VALUES(ST_GeomFromEWKT('SRID=4326;{ewkt}'), {tags}"
-            # print(f"{sql}")
-
-        # result = self.db.execute(sql)
+            tags += "}\'::jsonb)"
+            sql = f"INSERT INTO {table} (geom, tags) VALUES(ST_GeomFromEWKT(\'SRID=4326;{ewkt}\'), {tags}"
+            result = await self.db.pg.execute(sql)
 
         return False
 
