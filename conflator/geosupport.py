@@ -27,6 +27,9 @@ from shapely.geometry import shape, Polygon, mapping
 import shapely
 from shapely import wkt, wkb
 from osm_rawdata.pgasync import PostgresClient
+from tqdm import tqdm
+import tqdm.asyncio
+import asyncio
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -51,6 +54,57 @@ class GeoSupport(object):
         self.db = None
         self.dburi = dburi
         self.config = config
+
+    async def importDataset(self,
+                     filespec: str,
+                     ) -> bool:
+        """
+        Import a GeoJson file into a postgres database for conflation.
+
+        Args:
+            filespec (str): The GeoJson file to import
+
+        Returns:
+            (bool): If the import was successful
+        """
+        file = open(filespec, "r")
+        data = geojson.load(file)
+
+        # Create the tables
+        sql = "CREATE EXTENSION postgis;"
+        result = await self.db.execute(sql)
+        sql = f"DROP TABLE IF EXISTS public.nodes CASCADE; CREATE TABLE public.nodes (osm_id bigint, geom geometry, tags jsonb);"
+        result = await self.db.execute(sql)
+        sql = f"DROP TABLE IF EXISTS public.ways_line CASCADE; CREATE TABLE public.ways_line (osm_id bigint, geom geometry, tags jsonb);"
+        result = await self.db.execute(sql)
+        sql = f"DROP TABLE IF EXISTS public.poly CASCADE; CREATE TABLE public.ways_poly (osm_id bigint, geom geometry, tags jsonb);"
+        result = await self.db.execute(sql)
+
+        # if self.db.is_closed():
+        #     return False
+
+        table = self.dburi.split('/')[1]
+        for entry in data["features"]:
+            keys = "geom, "
+            geometry = shape(entry["geometry"])
+            ewkt = geometry.wkt
+            if geometry.geom_type == "LineString":
+                table = "ways_line"
+            if geometry.geom_type == "Polygon":
+                table = "ways_poly"
+            if geometry.geom_type == "Point":
+                table = "nodes"
+            tags = f"\'{{"
+            for key, value in entry["properties"].items():
+                tags += f"\"{key}\": \"{value}\", "
+            tags = tags[:-2]
+            tags += "}\'::jsonb);"
+            sql = f"INSERT INTO {table} (geom, tags) VALUES(ST_GeomFromEWKT('SRID=4326;{ewkt}'), {tags}"
+            # print(f"{sql}")
+
+        # result = self.db.execute(sql)
+
+        return False
 
     async def initialize(self,
                         dburi: str = None,
@@ -171,56 +225,6 @@ class GeoSupport(object):
 
         return new
 
-    async def outputOSM(self,
-                  data: FeatureCollection,
-                  outfile: str = None,
-                  ):
-        """
-        Output in OSM XML format
-
-        Args:
-            data (FeatureCollection): The data to convert
-            outfile (str): The filespec of the OSM file
-
-        Returns:
-            (list): The OSM XML output
-        """
-        out = list()
-        osmf = OsmFile(outfile)
-        for feature in data:
-            if feature["geometry"]["type"] == "Polygon":
-                feature["refs"] = list()
-                out.append(osmf.createWay(feature, True))
-            elif feature["geometry"]["type"] == "Point":
-                out.append(osmf.createNode(feature, True))
-
-        if outfile:
-            osmf.write(out)
-            log.info(f"Wrote {outfile}")
-
-        return out
-
-    async def outputJOSM(self,
-                  data: FeatureCollection,
-                  outfile: str = None,
-                  ):
-        """
-        Output in OSM XML format
-
-        Args:
-            data (FeatureCollection): The data to convert
-            outfile (str): The filespec of the GeoJson file
-
-        Returns:
-            (bool): Whether the creation of the output file worked
-        """
-        if outfile:
-            file = open(outfile, 'w')
-            geojson.dump(FeatureCollection(features), file)
-            return True
-        else:
-            return False
-
 async def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
@@ -229,9 +233,9 @@ async def main():
         description="This program contains common support used by the other programs",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
+    parser.add_argument("-i", "--infile", required=True, help="External dataset")
     parser.add_argument("-d", "--dburi", required=True, help="Database URI")
-    parser.add_argument("-b", "--boundary", required=True,
-                        help="Boundary polygon to limit the data size")
+    parser.add_argument("-b", "--boundary", help="Boundary polygon to limit the data size")
 
     args = parser.parse_args()
 
@@ -245,6 +249,13 @@ async def main():
         )
         ch.setFormatter(formatter)
         log.addHandler(ch)
+
+    # Import a GeoJson file into a database
+    if args.infile:
+        cdb = GeoSupport(args.dburi)
+        await cdb.initialize()
+        await cdb.importDataset(args.infile)
+        quit()
 
     boundary = open(args.boundary, 'r')
     poly = geojson.load(boundary)
