@@ -159,9 +159,14 @@ def conflateThread(odkdata: list,
                     # Probably an exact hit, likely from data imported
                     # into OSM from the same source.
                     maybe.append({"dist": dist, "odk": entry, "osm": existing})
-                    geom = maybe[0]["odk"]["geometry"]
-                    tags = maybe[0]["odk"]["properties"]
+                    #geom = maybe[0]["odk"]["geometry"]
+                    hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
+                    log.debug(f"TAGS: {hits}: {tags}")
+                    tags = {**maybe[0]["odk"]["properties"], **maybe[0]["osm"]["properties"]}
+
                     data.append(Feature(geometry=geom, properties=tags))
+                    # FIXME: don't process more existing features to
+                    # improve performance.
                     break
                 # cache all OSM features within our threshold distance
                 # These are needed by ODK, but duplicates of other fields,
@@ -185,12 +190,21 @@ def conflateThread(odkdata: list,
                 hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
                 log.debug(f"TAGS: {hits}: {tags}")
             tags['fixme'] = "Probably a duplicate!"
-            if "refs" in maybe[0]["osm"]:
-                tags["refs"] = maybe[0]["osm"]["refs"]
+            if "refs" in maybe[0]["osm"]["properties"]:
+                tags["refs"] = maybe[0]["osm"]["properties"]["refs"]
             geom = maybe[0]["odk"]["geometry"]
+            if "osm_id" in  maybe[0]["osm"]["properties"]:
+                tags["id"] =  maybe[0]["osm"]["properties"]["osm_id"]
+            elif "id" in  maybe[0]["osm"]["properties"]:
+                tags["id"] =  maybe[0]["osm"]["properties"]["id"]
+            tags["version"] =  maybe[0]["osm"]["properties"]["version"]
             data.append(Feature(geometry=geom, properties=tags))
             # If no hits, it's new data. ODK data is always just a POI for now
-            # feature["attrs"] = {"id": odkid, "lat": entry["attrs"]["lat"], "lon": entry["attrs"]["lon"], "version": version, "timestamp": entry["attrs"]["timestamp"]}
+        else:
+            entry["properties"]["version"] = 1
+            entry["properties"]["fixme"] = "New features should be imported following OSM guidelines."
+            # data.append(entry)
+
         timer.stop()
 
     return data
@@ -512,31 +526,6 @@ class Conflator(object):
 
             return True
 
-    # def makeNewFeature(self,
-    #                    attrs: dict = None,
-    #                    tags: dict = None,
-    #                    ) -> dict:
-    #     """
-    #     Create a new feature with optional data
-
-    #     Args:
-    #         attrs (dict): All of the attributes and their values
-    #         tags (dict): All of the tags and their values
-
-    #     Returns:
-    #         (dict): A template feature with no data
-    #     """
-    #     newf = dict()
-    #     if attrs:
-    #         newf['attrs'] = attrs
-    #     else:
-    #         newf['attrs'] = dict()
-    #     if tags:
-    #         newf['tags'] = tags
-    #     else:
-    #         newf['tags'] = dict()
-    #     return newf
-
     async def conflateData(self,
                     odkspec: str,
                     osmspec: str,
@@ -577,22 +566,25 @@ class Conflator(object):
         alldata = list()
         tasks = list()
 
-        # conflateThread(odkdata, osmdata)
+        # Make threading optional for easier debugging
+        single = False
+        if single:
+            conflateThread(odkdata, osmdata)
+        else:
+            futures = list()
+            with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
+                for block in range(0, entries, chunk):
+                    future = executor.submit(conflateThread,
+                            odkdata[block:block + chunk - 1],
+                            osmdata
+                            )
+                    futures.append(future)
+                #for thread in concurrent.futures.wait(futures, return_when='ALL_COMPLETED'):
+                for future in concurrent.futures.as_completed(futures):
+                    log.debug(f"Waiting for thread to complete.. {future.result()}")
+                    alldata += future.result()
 
-        futures = list()
-        with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
-            for block in range(0, entries, chunk):
-                future = executor.submit(conflateThread,
-                        odkdata[block:block + chunk - 1],
-                        osmdata
-                        )
-                futures.append(future)
-            #for thread in concurrent.futures.wait(futures, return_when='ALL_COMPLETED'):
-            for future in concurrent.futures.as_completed(futures):
-                log.debug(f"Waiting for thread to complete.. {future.result()}")
-                alldata += future.result()
-
-        executor.shutdown()
+            executor.shutdown()
 
         # async with asyncio.TaskGroup() as tg:
         #     for block in range(0, entries, chunk):
@@ -716,14 +708,43 @@ class Conflator(object):
                  data: dict,
                  filespec: str,
                  ):
+        """
+        Write the data to an OSM XML file.
+
+        Args:
+            data (dict): The list of GeoJson features
+            filespec (str): The output file name
+        """
         osm = OsmFile(filespec)
         for entry in data:
-            out = str()
-            if 'refs' in entry:
-                if len(entry['refs']) > 0:
-                    out = osm.createWay(entry, True)
+            id = -1
+            if "osm_id" in entry["properties"]:
+                id = entry["properties"]["osm_id"]
+            elif "id" in entry["properties"]:
+                id = entry["properties"]["id"]
+            try:
+                attrs = {"id": id, "version": entry["properties"]["version"]}
+            except:
+                breakpoint()
+            tags = entry["properties"]
+            # These are OSM attributes, not tags
+            if "id" in tags:
+                del tags["id"]
+            if "version" in tags:
+                del tags["version"]
+            item = {"attrs": attrs, "tags": tags}
+            # if entry["geometry"]["type"] == "LineString" or entry["geometry"]["type"] == "Polygon":
+            print(entry)
+            if 'refs' in tags:
+            # if "geometry" not in entry:
+                # OSM ways don't have a geometry, just references to node IDs.
+                # The OSM XML file won't have any nodes, so at first won't
+                # display in JOSM until you do a File->"Update modified",
+                if len(tags['refs']) > 0:
+                    item["refs"] = eval(tags["refs"])
+                    out = osm.createWay(item, True)
             else:
-                out = osm.createNode(entry, True)
+                out = osm.createNode(item, True)
             if len(out) > 0:
                 osm.write(out)
 
@@ -731,8 +752,16 @@ class Conflator(object):
                  data: dict,
                  filespec: str,
                  ):
-        for entry in data:
-            pass
+        """
+        Write the data to a GeoJson file.
+
+        Args:
+            data (dict): The list of GeoJson features
+            filespec (str): The output file name
+        """
+        file = open(filespec, "w")
+        fc = FeatureCollection(data)
+        geojson.dump(fc, file)
 
     def osmToFeature(self,
                      osm: dict(),
@@ -752,10 +781,9 @@ class Conflator(object):
 
         if "osm_id" in osm["attrs"]:
             id = osm["attrs"]["osm_id"]
-        else:
+        elif "id" in osm["attrs"]:
             id = osm["attrs"]["id"]
-        props = {"id": id,
-                }
+        props = {"id": id}
         if "version" in osm["attrs"]:
             props["version"] = osm["attrs"]["version"]
 
@@ -843,17 +871,14 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
 
     data = await conflate.conflateData(args.source, args.extract, float(args.threshold))
 
-    # path = Path(args.outfile)
-    #jsonout = f"{path.stem}-out.geojson"
-    #osmout = f"{toplevel.stem}-out.osm"
+    path = Path(args.outfile)
+    jsonout = f"{path.stem}-out.geojson"
+    osmout = f"{path.stem}-out.osm"
 
-    # conflate.writeOSM(data, osmout)
-    # conflate.writeGeoJson(data, jsonout)
-    file = open(args.outfile, "w")
-    fc = FeatureCollection(data)
-    geojson.dump(fc, file)
+    conflate.writeOSM(data, osmout)
+    conflate.writeGeoJson(data, jsonout)
 
-    # log.info(f"Wrote {osmout}")
+    log.info(f"Wrote {osmout}")
     log.info(f"Wrote {args.outfile}")
 
 if __name__ == "__main__":
