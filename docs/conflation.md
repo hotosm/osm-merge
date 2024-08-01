@@ -183,7 +183,7 @@ the highway is displayed, as well as routing for navigation.
 	"alt_name": "Bar-K Ranch Road",
 	"surface": "dirt",
 	"smoothness": "bad",
-	"highway": "unclassified",
+	"highway": "track",
 	"ref": "CO 112",
 	"ref:usfs": "FR 521.1A"
 	"tracktype": "grade3"
@@ -223,7 +223,15 @@ data. There is an optional threshold to set the distance limit. Since
 currently this is focused on conflating files without a database, this
 is computationally intensive, so slow. For data that was imported in
 the past from MVUM datasets, a distance of zero means it's probably
-the same segment.
+the same segment. The external dataset needs to have the tagging
+converted to the syntax OSM uses. Tagging can be adjusted using a
+conversion program, but as conversion is usually a one-off task, it
+can also be done using JOSM or QGIS. Usually it's deleting most of the
+tags in the external dataset that aren't appropriate for
+OSM. Primarily the only tags that are needed are the *name* and any
+reference numbers. Since the MVUM data also classified the types of
+road surface, this can also be converted. Although as mentioned, may
+be drastically out of data, and OSM is more recent and ground-truthed.
 
 Then there is a comparison of the road names. It's assumed the one from
 the MVUM dataset is the correct one. And since typos and weird
