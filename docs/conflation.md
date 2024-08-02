@@ -150,6 +150,102 @@ tags & values are compared with any nearby building. Since often these
 imports are features already in OSM with limited metadata, this adds
 more details.
 
+## Highways
+
+Highways are more complex because it uses relations. A relation is a
+groups of highway segments into a single entity. Some times the tags
+are on the relation, other times each highway segment. The segments
+change when the highway condition changes, but the name and reference
+number doesn't change. External datasets don't use relations, they are
+OSM specific.
+
+### MVUM Highways
+
+The USDA publishes a dataset of [Motor Vehicle Use Maps
+(MVUM)](https://www.fs.usda.gov/detail/psicc/maps-pubs/?cid=stelprdb5177824
+) highways in the National Forest. Some of this data has already been
+imported into OSM, although the metadata may be lacking, but the
+LineString is there. MVUM roads are primarily compacted dirt
+roads. While some can be driven in a passenger vehicle, most are
+varying degrees of bad to horrible to impassable. These highways are
+often used for recreational traffic by off-road vehicles, or for
+emergency access for a wildland fire or backcountry rescue.
+
+Another key detail of MVUM highways is each one may have 4 names!
+There is of course the primary name, for example "Cedar Lake
+Road". But it may also have a *locals* name, common in remote
+areas. And then there is the reference number. A MVUM highway may have
+two reference numbers, the country designated one, and the USDA
+one. Luckily OSM supports this. Many of these tags effect both how
+the highway is displayed, as well as routing for navigation. 
+
+	"name": "Platte Lake Road",
+	"alt_name": "Bar-K Ranch Road",
+	"surface": "dirt",
+	"smoothness": "bad",
+	"highway": "track",
+	"ref": "CO 112",
+	"ref:usfs": "FR 521.1A"
+	"tracktype": "grade3"
+
+A *bad* highway is something I'd be comfortable driving in a 4x4
+high-clearance vehicle. Smoothness values can be a bit misleading, as
+often what is in OSM may be years out of date. And most MVUM roads get
+zero maintainance, so get eroded, pot-holed, and or exposed rocks. And
+people's perception of road conditions is subjective based on one's
+experience driving these highways.
+
+All of this metadata makes conflation interesting. Since existing OSM
+features were added by more than one person, the tagging may not be
+consistent. For example, the existing data may have *Forest Service
+Road 123*, which should really be **ref:usfs=FR 123**. And the real
+highway name *Piney Pass Road* is in the MVUM dataset. The goal of
+highway conflation is to merge the new metadata into the existing OSM
+feature where possible. This then needs to be validated by a human
+being. There is still much tedious work to process post conflation
+data before it can be uploaded to OSM.
+
+But sometimes conflation works well, especially when the LineString
+in OSM was imported from older versions of the MVUM data. But often
+highways in OSM were traced off satellite imagery, and may have wildly
+different geometry.
+
+If you ignore conflating the tags other than name or ref, the process
+is somewhat less messy. And tags like *surface* and *smoothness*
+really should be ground-truthed anyway. So I do ignore those for now
+and stick to validating the name and the two reference numbers which
+are usually lacking in OSM. That and addding consistency to the data
+to make it easier to make data extracts.
+
+To conflate OSM highways with external data, initially each entry in
+the external dataset does a distance comparison with the existing OSM
+data. There is an optional threshold to set the distance limit. Since
+currently this is focused on conflating files without a database, this
+is computationally intensive, so slow. For data that was imported in
+the past from MVUM datasets, a distance of zero means it's probably
+the same segment. The external dataset needs to have the tagging
+converted to the syntax OSM uses. Tagging can be adjusted using a
+conversion program, but as conversion is usually a one-off task, it
+can also be done using JOSM or QGIS. Usually it's deleting most of the
+tags in the external dataset that aren't appropriate for
+OSM. Primarily the only tags that are needed are the *name* and any
+reference numbers. Since the MVUM data also classified the types of
+road surface, this can also be converted. Although as mentioned, may
+be drastically out of data, and OSM is more recent and ground-truthed.
+
+Then there is a comparison of the road names. It's assumed the one from
+the MVUM dataset is the correct one. And since typos and weird
+abbreviations may exist in the datasets, fuzzy string matching is
+performed. This way names like *FS 123.1* can match *FR 123.1A*. In
+this case the current name value in OSM becomes *alt_name*, and the
+MVUM name becomes the official name. This way when validating you can
+make decisions where there is confusion on what is correct. For an
+exact name match no other tags are checked to save a little time.
+
+Any other processing is going to be MVUM highway specific, so there
+will be an additional step to work through the reference numbers not
+supported by this program.
+
 # Output Files
 
 If the data files are huge, it's necessary to conflate with a subset
