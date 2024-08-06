@@ -1,7 +1,7 @@
 [project]
 name = "osm-merge"
 dynamic = ["version"]
-description = "Conflate OSM data."
+description = "Merge features and tags into existing OSM data."
 authors = [
     {name = "Rob Savoye", email = "rob.savoye@hotosm.org"},
 ]

@@ -5,23 +5,23 @@
   <img src="https://github.com/hotosm/fmtm/blob/main/images/hot_logo.png?raw=true" style="width: 200px;" alt="HOT"></a>
 </p>
 <p align="center">
-  <em>Conflate OSM data.</em>
+  <em>Merge features and tags into existing OSM data.</em>
 </p>
 <p align="center">
-  <a href="https://github.com/hotosm/conflator/actions/workflows/build.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/actions/workflows/build.yml/badge.svg" alt="Build">
+  <a href="https://github.com/hotosm/osm-merge/actions/workflows/build.yml" target="_blank">
+      <img src="https://github.com/hotosm/osm-merge/actions/workflows/build.yml/badge.svg" alt="Build">
   </a>
-  <a href="https://github.com/hotosm/conflator/actions/workflows/build-ci.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/actions/workflows/build-ci.yml/badge.svg" alt="CI Build">
+  <a href="https://github.com/hotosm/osm-merge/actions/workflows/build-ci.yml" target="_blank">
+      <img src="https://github.com/hotosm/osm-merge/actions/workflows/build-ci.yml/badge.svg" alt="CI Build">
   </a>
-  <a href="https://github.com/hotosm/conflator/actions/workflows/docs.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/actions/workflows/docs.yml/badge.svg" alt="Publish Docs">
+  <a href="https://github.com/hotosm/osm-merge/actions/workflows/docs.yml" target="_blank">
+      <img src="https://github.com/hotosm/osm-merge/actions/workflows/docs.yml/badge.svg" alt="Publish Docs">
   </a>
-  <a href="https://github.com/hotosm/conflator/actions/workflows/publish.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/actions/workflows/publish.yml/badge.svg" alt="Publish">
+  <a href="https://github.com/hotosm/osm-merge/actions/workflows/publish.yml" target="_blank">
+      <img src="https://github.com/hotosm/osm-merge/actions/workflows/publish.yml/badge.svg" alt="Publish">
   </a>
-  <a href="https://github.com/hotosm/conflator/actions/workflows/pytest.yml" target="_blank">
-      <img src="https://github.com/hotosm/conflator/actions/workflows/pytest.yml/badge.svg" alt="Test">
+  <a href="https://github.com/hotosm/osm-merge/actions/workflows/pytest.yml" target="_blank">
+      <img src="https://github.com/hotosm/osm-merge/actions/workflows/pytest.yml/badge.svg" alt="Test">
   </a>
   <a href="https://pypi.org/project/conflator" target="_blank">
       <img src="https://img.shields.io/pypi/v/conflator?color=%2334D058&label=pypi%20package" alt="Package version">
@@ -29,8 +29,8 @@
   <a href="https://pypistats.org/packages/conflator" target="_blank">
       <img src="https://img.shields.io/pypi/dm/conflator.svg" alt="Downloads">
   </a>
-  <a href="https://github.com/hotosm/conflator/blob/main/LICENSE.md" target="_blank">
-      <img src="https://img.shields.io/github/license/hotosm/conflator.svg" alt="License">
+  <a href="https://github.com/hotosm/osm-merge/blob/main/LICENSE.md" target="_blank">
+      <img src="https://img.shields.io/github/license/hotosm/osm-merge.svg" alt="License">
   </a>
 </p>
 
@@ -38,7 +38,7 @@
 
 📖 **Documentation**: <a href="https://hotosm.github.io/conflator/" target="_blank">https://hotosm.github.io/conflator/</a>
 
-🖥️ **Source Code**: <a href="https://github.com/hotosm/conflator" target="_blank">https://github.com/hotosm/conflator</a>
+🖥️ **Source Code**: <a href="https://github.com/hotosm/osm-merge" target="_blank">https://github.com/hotosm/osm-merge</a>
 
 ---
 

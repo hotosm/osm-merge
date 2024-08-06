@@ -1,10 +1,10 @@
-site_name: conflator
-site_description: Conflate OSM data.
+site_name: osm-merge
+site_description: Merge features and tags into existing OSM data.
 # strict: true
 site_url: "https://www.hotosm.org"
 
-repo_name: "hotosm/conflator"
-repo_url: "https://github.com/hotosm/conflator/"
+repo_name: "hotosm/osm-merge"
+repo_url: "https://github.com/hotosm/osm-merge/"
 edit_uri: "edit/main/docs/"
 
 extra:
