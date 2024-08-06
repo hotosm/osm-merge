@@ -1,5 +1,5 @@
 [project]
-name = "conflator"
+name = "osm-merge"
 dynamic = ["version"]
 description = "Conflate OSM data."
 authors = [
@@ -33,9 +33,9 @@ classifiers = [
 ]
 
 [project.urls]
-homepage = "https://hotosm.github.io/conflator"
-documentation = "https://hotosm.github.io/conflator"
-repository = "https://github.com/hotosm/conflator"
+homepage = "https://hotosm.github.io/osm-merge"
+documentation = "https://hotosm.github.io/osm-merge"
+repository = "https://github.com/hotosm/osm-merge"
 
 [build-system]
 requires = ["pdm-pep517>=1.1.4"]
@@ -46,21 +46,21 @@ addopts = "-ra -q -p no:warnings"
 testpaths = [
     "tests",
 ]
-pythonpath = "conflator"
+pythonpath = "osm_merge"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
 version = "0.2.0"
 version_files = [
     "pyproject.toml:version",
-    "conflator/__version__.py",
+    "osm_merge/__version__.py",
 ]
 update_changelog_on_bump = true
 
 [tool.pdm]
-version = {from = "conflator/__version__.py"}
+version = {from = "osm_merge/__version__.py"}
 [tool.pdm.build]
-includes = ["conflator"]
+includes = ["osm-merge"]
 source-includes = ["tests", "LICENSE.md", "README.md"]
 [tool.pdm.dev-dependencies]
 dev = [
@@ -99,10 +99,11 @@ exclude = [
     "__pypackages__",
     "build",
     "dist",
-    "conflator/__version__.py",
+    "osm_merge/__version__.py",
 ]
 [tool.ruff.pydocstyle]
 convention = "google"
 
 [project.scripts]
-conflator = "conflator.conflator:main"
+osm-merge = "osm_merge.conflator:main"
+#conflator = "osm-merge.conflator:main"
