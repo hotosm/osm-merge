@@ -106,4 +106,3 @@ convention = "google"
 
 [project.scripts]
 osm-merge = "osm_merge.conflator:main"
-#conflator = "osm-merge.conflator:main"

@@ -1,6 +1,6 @@
 # Conflator Program
 
-Conflator is a program that conflates building footprint data with
+osm-merge is a program that conflates building footprint data with
 OpenStreetMap data to remove duplicates. The result of the conflation
 process is buildings that only exist in the footprints data file.
 
@@ -18,16 +18,16 @@ document](conflation.md).
 
 These are the nost commonly used options.
 
-	--help(-h)       Get command line options
-	--verbose(-v)    Enable verbose output
-	--boundary(-b)   Specify a multipolygon for boundaries, one file for each polygon
-	--project(-p)    Tasking Manager project ID to get boundaries from database
-	--osmdata(-x)    OSM XML/PBF or OSM database to get boundaries (prefix with pg: if database)
-	--outdir(-o)     Output file prefix for output files (default "/tmp/tmproject-")
-	--footprints(-f) File or building footprints Database URL (prefix with pg: if database)
-	--dbhost(-d)     Database host, defaults to "localhost"
-	--dbuser(-u)     Database user, defaults to current user
-	--dbpass(-w)     Database user, defaults to no password needed
+    --help(-h)       Get command line options
+    --verbose(-v)    Enable verbose output
+    --boundary(-b)   Specify a multipolygon for boundaries, one file for each polygon
+    --project(-p)    Tasking Manager project ID to get boundaries from database
+    --osmdata(-x)    OSM XML/PBF or OSM database to get boundaries (prefix with pg: if database)
+    --outdir(-o)     Output file prefix for output files (default "/tmp/tmproject-")
+    --footprints(-f) File or building footprints Database URL (prefix with pg: if database)
+    --dbhost(-d)     Database host, defaults to "localhost"
+    --dbuser(-u)     Database user, defaults to current user
+    --dbpass(-w)     Database user, defaults to no password needed
 
 ## Tasking Manager Options
 
@@ -36,9 +36,9 @@ a Tasking Manager database. A more common usage is to use the
 [splitter.py](splitter.md) program to download the project boundary
 from the Tasking Manager itself.
 
-	--splittasks     When using the Tasking Manager database, split into tasks
-	--schema         OSM database schema (pgsnapshot, ogr2ogr, osm2pgsql) defaults to "pgsnapshot"
-	--tmdata(-t)     Tasking Manager database to get boundaries if no boundary file	prefix with pg: for database usage, http for REST API
+    --splittasks     When using the Tasking Manager database, split into tasks
+    --schema         OSM database schema (pgsnapshot, ogr2ogr, osm2pgsql) defaults to "pgsnapshot"
+    --tmdata(-t)     Tasking Manager database to get boundaries if no boundary file prefix with pg: for database usage, http for REST API
 
 ## OSM Options
 
@@ -47,7 +47,7 @@ database, the default admin levl is 4, which is commonly used for
 couty boundaries. This lets the user select what level of
 administrative boundaries they want.
 
-	--admin(-a)      When querying the OSM database, this is the admin_level, (defaults to 4)
+    --admin(-a)      When querying the OSM database, this is the admin_level, (defaults to 4)
 
 ## Examples
 
@@ -67,7 +67,7 @@ is used as the prefix for the output files.
 > PATH/conflator.py -v -x pg:kenya -b 12007-project.geojson -f pg:kenya_footprints -o 12057 -d mapdb -u me
 
 This is the same except the database is on a remote machine called
-*mapdb* and the user needs to be *me*.
+_mapdb_ and the user needs to be _me_.
 
 > PATH/conflator.py -t tmsnap -p 8345 -b pg:kenya_foot -o pg:Kenya
 

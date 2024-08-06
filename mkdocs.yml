@@ -65,9 +65,11 @@ plugins:
 nav:
   - Home: index.md
   - About: about.md
-  - Conflation Guide: odkconflation.md
+  - Conflation Guides:
+      - General: conflation.md
+      - ODK: odkconflation.md
   - Utilities:
-      - Conflator: conflator.md
+      - OSM Merge: osm-merge.md
       - Utilities: utilities.md
   - API: api.md
   - Class Hierarchy: apidocs/html/classes.html

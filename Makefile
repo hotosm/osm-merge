@@ -23,7 +23,7 @@ NAME := tm-admin
 VERSION := 0.1.0
 
 all:
-	@cd conflator ; $(MAKE)
+	@cd osm_merge ; $(MAKE)
 
 apidoc: force
 	cd docs && doxygen

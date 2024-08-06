@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - docs/**
-      - conflator/**
+      - osm_merge/**
       - mkdocs.yml
     branches: [main]
   # Allow manual trigger (workflow_dispatch)

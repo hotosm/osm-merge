@@ -1,5 +1,5 @@
 # Copyright (c) 2022, 2023 Humanitarian OpenStreetMap Team
-# This file is part of conflator.
+# This file is part of osm-merge.
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 #     GNU General Public License for more details.
 #
 #     You should have received a copy of the GNU General Public License
-#     along with conflator.  If not, see <https:#www.gnu.org/licenses/>.
+#     along with osm-merge.  If not, see <https:#www.gnu.org/licenses/>.
 #
 ARG PYTHON_IMG_TAG=3.10
 
@@ -21,9 +21,9 @@ FROM docker.io/python:${PYTHON_IMG_TAG}-slim-bookworm as base
 ARG COMMIT_REF
 ARG PYTHON_IMG_TAG
 ARG MAINTAINER=admin@hotosm.org
-LABEL org.hotosm.conflator.python-img-tag="${PYTHON_IMG_TAG}" \
-      org.hotosm.conflator.commit-ref="${COMMIT_REF}" \
-      org.hotosm.conflator.maintainer="${MAINTAINER}"
+LABEL org.hotosm.osm-merge.python-img-tag="${PYTHON_IMG_TAG}" \
+      org.hotosm.osm-merge.commit-ref="${COMMIT_REF}" \
+      org.hotosm.osm-merge.maintainer="${MAINTAINER}"
 RUN set -ex \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \

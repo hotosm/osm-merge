@@ -1,4 +1,4 @@
-# Conflator
+# OSM Merge
 
 <!-- markdownlint-disable -->
 <p align="center">
@@ -23,11 +23,11 @@
   <a href="https://github.com/hotosm/osm-merge/actions/workflows/pytest.yml" target="_blank">
       <img src="https://github.com/hotosm/osm-merge/actions/workflows/pytest.yml/badge.svg" alt="Test">
   </a>
-  <a href="https://pypi.org/project/conflator" target="_blank">
-      <img src="https://img.shields.io/pypi/v/conflator?color=%2334D058&label=pypi%20package" alt="Package version">
+  <a href="https://pypi.org/project/osm_merge" target="_blank">
+      <img src="https://img.shields.io/pypi/v/osm_merge?color=%2334D058&label=pypi%20package" alt="Package version">
   </a>
-  <a href="https://pypistats.org/packages/conflator" target="_blank">
-      <img src="https://img.shields.io/pypi/dm/conflator.svg" alt="Downloads">
+  <a href="https://pypistats.org/packages/osm_merge" target="_blank">
+      <img src="https://img.shields.io/pypi/dm/osm_merge.svg" alt="Downloads">
   </a>
   <a href="https://github.com/hotosm/osm-merge/blob/main/LICENSE.md" target="_blank">
       <img src="https://img.shields.io/github/license/hotosm/osm-merge.svg" alt="License">
@@ -36,7 +36,7 @@
 
 ---
 
-📖 **Documentation**: <a href="https://hotosm.github.io/conflator/" target="_blank">https://hotosm.github.io/conflator/</a>
+📖 **Documentation**: <a href="https://hotosm.github.io/osm-merge/" target="_blank">https://hotosm.github.io/osm-merge/</a>
 
 🖥️ **Source Code**: <a href="https://github.com/hotosm/osm-merge" target="_blank">https://github.com/hotosm/osm-merge</a>
 

@@ -10,4 +10,4 @@
   - "mkdocs.yml"
   - "README.md"
 "version":
-  - "conflator/__version__.py"
+  - "osm_merge/__version__.py"
