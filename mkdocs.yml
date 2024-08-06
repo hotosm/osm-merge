@@ -64,7 +64,12 @@ plugins:
 
 nav:
   - Home: index.md
-  - About: about.md
+  - Get Started:
+      - About: about.md
+      - License: LICENSE.md
+      - Changelog: CHANGELOG.md
+      - Code of Conduct: https://docs.hotosm.org/code-of-conduct
+      - Versioning: https://docs.hotosm.org/dev-guide/repo-management/version-control/#creating-releases
   - Conflation Guides:
       - General: conflation.md
       - ODK: odkconflation.md
@@ -73,7 +78,3 @@ nav:
       - Utilities: utilities.md
   - API: api.md
   - Class Hierarchy: apidocs/html/classes.html
-  - License: LICENSE.md
-  - Changelog: CHANGELOG.md
-  - Code of Conduct: https://docs.hotosm.org/code-of-conduct
-  - Versioning: https://docs.hotosm.org/dev-guide/version-control/#creating-releases
