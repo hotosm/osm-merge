@@ -2,13 +2,12 @@
 
 ## config.py
 
-::: conflator.conflateBuildings
+::: osm_merge.conflator.conflateBuildings
 options:
 show_source: false
 heading_level: 3
 
-::: conflator.conflatePOI
+::: osm_merge.conflator.conflatePOI
 options:
 show_source: false
 heading_level: 3
-
