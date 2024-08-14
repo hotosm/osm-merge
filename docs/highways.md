@@ -173,3 +173,105 @@ contained in this project is then run to filter the input data file
 into GeoJson with OSM tagging schema. The topographical data is
 especially useful for conflation, since the name and reference number
 match the paper or GeoPDF maps many people use.
+
+## Conflation
+
+Once all the datasets are broken into manageble peices, and everything
+is using the OSM tagging schema conflation can start. There are two
+datasets specified, one is the primary, and the other is the
+secondary. The tag values in the primary will override the values in
+the secondary file. To be paranoid about the details, when a tag value
+is overwritten by the primary data source, the current value becomes
+*old_*, ie... *name* becomes *old_name*, and then name is updated to
+the current value. Sometimes when editing the difference in the names
+is due to abbreviations being used, spelling mistakes, etc... so the
+*old_name* can be deleted.
+
+When conflating multiple datasets, those need to
+be conflated against each other before conflating with OSM. Since the
+topographical dataset is what matches a paper map, or GeoPDF, I
+consider that the primary dataset. The MVUM and trail data are
+particularly full of mistakes. Sometimes one dataset has a name, and
+the other doesn't, so conflation here produces that value.
+
+There are also many, many highways in these areas that in OSM only
+have **highway=something**. These are easy to conflate as you are only
+adding new tags. While in TIGER there are many
+**highway=residential**, that should really be
+**highway=unclassified** or **highway=track**, it is entirely possible
+it is a residential road. There's a lot of nice cabins way out in most
+national forests. But this is the type of thing you'd really need to
+ground-truth, and luckily doesn't effect navigation when you are out
+in a network of unmaintained dirt roads.
+
+### Editing in JOSM
+
+Unfortunately manually validating the data is very time consuming, but
+it's important to get it right. I use the *TODO* plugin and also a
+data filter so I just select highways. With the TODO plugin, I add the
+selected features, ideally the entire task. Then I just go through all
+the features one at a time.
+
+I often have the original datasets loaded as layers, since sometimes
+it's useful to refer back to when you find issues with the
+conflation. Much of the existing data in OSM has many unused tags
+added during the TIGER import. These also get deleted as meaningless
+bloat. Some were imported with all the tags from the original dataset
+which also get deleted. This is life as a data janitor...
+
+Once you've validated all the features in the task, it can be run
+through the JOSM validator, and if all is good, uploaded to OSM. Often
+the JOSM validators find many existing issues. I fix anything that is
+an error, and mostly ignore all the warning as that's a whole other
+project.
+
+There are two primary ways to validate the conflation
+output. Depending on the amount of data, sometimes one way is better
+than the other, so it's good to be flexible.
+
+#### Editing OSM XML
+
+The conflation process produces an output file in OSM XML format. This
+file has incremented the version number and added *action=modify" to
+the attributes for the feature. When loaded into OSM, no data is
+initially visible. If you go to the File menu, go down and execute
+*update modified*. This will download all the nodes for the ways, and
+all the highways will become visible. Highways that have multiple tags
+already in OSM will become a conflict. These can be resolved easier in
+JOSM using the conflict dialog box. No geometries have change, just
+tags, so you have to manually select the tags to be merged. Features
+without tags beyond **highway=something** merge automatically. which
+makes validating these features quick and easy.
+
+#### Editing GeoJson
+
+While JOSM can load and edit GeoJson data, not being in a native OSM
+format it can't be automatically merge. Instead load the GeoJson file
+and then create a new OSM layer. I select all the highways in the
+task, and load them into the TODO plugin. Sometimes there are so few
+highways, I don't use the TODO plugin. I then cut the tags and values
+for a feature from the GeoJson file, then switch to the OSM layer, and
+paste the tags into the feature.
+
+#### Splitting Highways
+
+In national forest lands, the reference number changes at every major
+intersection. Side roads that branch off have an additional modifier
+added. or example, the main road may be called *ref:usfs="FR 505",
+with a change to *ref:usfs="FR 505.1" when it crosses a state
+line. Spur roads (often to campsites) get a letter attached, so the
+spur road is *ref:usfgs="FR 505.1A". Understanding how the reference
+numbers are assigned makes it easy to transmit your location over a
+rado or phone, and have somebody looking on a map find that
+location. Much easier than using GPS coordinates.
+
+For the highways that were traced off of satellite imagery, there is
+often a problem with forks in the road. Often tree cover of poor
+resolution imagery makes it hard to see the highway. And a lot of the
+highways go through an area with an entire network of other dirt
+roads, so the reference number may just group a bunch of highway
+segments. Often the most visible highway imagery at a fork is not the
+actual road. In this case the highway has to be split at the fork, and
+the new segment tagged for it's actual value, and the actual highway
+segment gets tagged correctly. This is critical if you want navigation
+to work.
