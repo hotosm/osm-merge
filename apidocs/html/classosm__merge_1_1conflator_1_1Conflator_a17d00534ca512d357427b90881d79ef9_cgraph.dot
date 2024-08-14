@@ -1,0 +1,10 @@
+digraph "osm_merge.conflator.Conflator.conflateData"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="osm_merge.conflator.Conflator.conflateData",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="osm_merge.conflator.Conflator.parseFile",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classosm__merge_1_1conflator_1_1Conflator.html#acd9d464c7ab348cfa241c677ac15e0f8",tooltip=" "];
+}
