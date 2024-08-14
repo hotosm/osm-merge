@@ -86,39 +86,44 @@ class MVUM(object):
             for key, value in entry["properties"].items():
                 if value == "N/A" or value is None:
                     continue
-                print(key, value)
+                # print(key, value)
                 if key == "TRAIL_NO":
                     props["ref:usfs"] = f"FR {value}"
                 if key == "TRAIL_NAME":
                     props["name"] = value.title()
-                if key == "SNOWMOBILE" or key == "SNOWMOB_1":
+                if key == "SNOWMOBILE_ACCPT" or key == "SNOWMOBILE_MANAGED":
                     props["snowmobile"] = "yes"
-                if key == key == "SNOWMOB_2":
+                if key == key == "SNOWMOBILE_RESTRICTED":
                     props["snowmobile"] = "no"
-                if key == "HIKER_PEDE" or key == "HIKER_PE_1":
+                if key == "HIKER_PEDESTRIAN_MANAGED" or key == "HIKER_PEDESTRIAN_ACCPT":
                     props["access"] = "public"
-                if key == "BICYCLE_MA" or key == "BICYCLE_AC":
-                    props[""] = "yes"
-                if key == "BICYCLE_RE":
+                if key == "BICYCLE_MANAGED" or key == "_BICYCLEACCPT":
+                    props["bicycle"] = "yes"
+                if key == "BICYCLE_RESTRICTED":
                     props["bicycle"] = "no"
-                if key == "ATV_MANAGE":
+                if key == "ATV_MANAGED" or key == "ATV_ACCPT":
                     props["atv"] = "yes"
-                if key == "ATV_RESTRI":
+                if key == "ATV_RESTRICTED":
                     props["atv"] = "no"
-                if key == "MOTORCYCLE" or key == "MOTORCYC_1":
+                if key == "MOTORCYCLE_MANAGED" or key == "MOTORCYCLE_ACCPT":
                     props["motorcycle"] = "yes"
-                if key == "MOTORCYC_2":
+                if key == "MOTORCYCLE_RESTRICTED":
                     props["motorcycle"] = "no"
-                if key == "PACK_SADDL" or key == "PACK_SAD_1":
+                if key == "PACK_SADDLE_MANAGED" or key == "PACK_SADDLE_ACCPT:":
                     props["horse"] = "yes"
-                if key == "PACK_SAD_2":
+                if key == "PACK_SADDLE_RESTRICTED":
                     props["horse"] = "no"
-                if key == "SNOWSHOE_M" or key == "SNOWSHOE_A":
+                if key == "SNOWSHOE_MANAGED" or key == "SNOWSHOE_ACCPT":
                     props["snowshoe"] = "yes"
-                if key == "XCOUNTRY_S" or key == "XCOUNTRY_1":
+                if key == "SNOWSHOE_RESTRICTED":
+                    props["snowshoe"] = "no"
+                if key == "XCOUNTRY_SKI_MANAGED" or key == "XCOUNTRY_SKI_ACCPT":
                     props["ski"] = "yes"
-                
-            highways.append(Feature(geometry=geom, properties=props))
+                if key == "XCOUNTRY_SKI_RESTRICTED":
+                    props["ski"] = "no"
+
+            if geom is not None:
+                highways.append(Feature(geometry=geom, properties=props))
             #print(props)
 
         return FeatureCollection(highways)
@@ -148,17 +153,29 @@ good to avoid any highway with a smoothness of "very bad" or worse.
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("-i", "--infile", required=True, help="Output file from the conflation")
-    parser.add_argument("-c", "--convert", action="store_true", help="Convert MVUM feature to OSM feature")
+    parser.add_argument("-c", "--convert", default=True, action="store_true", help="Convert MVUM feature to OSM feature")
     parser.add_argument("-o", "--outfile", default="out.geojson", help="Output file")
 
     args = parser.parse_args()
 
+    # if verbose, dump to the terminal.
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(threadName)10s - %(name)s - %(levelname)s - %(message)s"
+        )
+        ch.setFormatter(formatter)
+        log.addHandler(ch)
+
     mvum = MVUM()
-    if args.convert:
+    if args.convert and args.convert:
         data = mvum.convert(args.infile)
 
-    file = open(args.outfile, "w")
-    geojson.dump(data, file)
+        file = open(args.outfile, "w")
+        geojson.dump(data, file)
+        log.info(f"Wrote {args.outfile}")
         
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""

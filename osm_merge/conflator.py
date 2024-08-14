@@ -31,8 +31,7 @@ from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
 from osm_fieldwork.convert import escape
 from osm_fieldwork.parsers import ODKParsers
-# from osm_merge.geosupport import GeoSupport
-from geosupport import GeoSupport
+from osm_merge.geosupport import GeoSupport
 import pyproj
 import asyncio
 from codetiming import Timer
@@ -49,7 +48,6 @@ from osm_rawdata.pgasync import PostgresClient
 from tqdm import tqdm
 import tqdm.asyncio
 import xmltodict
-# from deepdiff import DeepDiff
 import math
 from threading import Thread
 
@@ -65,6 +63,8 @@ cores = info['count']
 # shut off warnings from pyproj
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+# Shapely.distance doesn't like duplicate points
+warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
 # A function that returns the 'year' value:
 def distSort(data: list):
@@ -122,17 +122,17 @@ def conflateThread(odkdata: list,
         timer.start()
         confidence = 0
         maybe = list()
-        odktags = dict()
-        osmtags = dict()
-        feature = dict()
-        newtags = dict()
-        geom = None
         # if "attrs" in entry:
         #     odk = cutils.osmToFeature(entry)
         # else:
         #     odk = entry
 
         for existing in osmdata:
+            odktags = dict()
+            osmtags = dict()
+            feature = dict()
+            newtags = dict()
+            geom = None
             # We could probably do this using GeoPandas or gdal, but that's
             # going to do the same brute force thing anyway.
 
@@ -140,6 +140,10 @@ def conflateThread(odkdata: list,
             # conflate the nodes with no tags. They are used to build
             # the geometry for the way, and after that aren't needed anymore.
             # If the node has tags, then it's a POI, which we do conflate.
+            # log.debug(entry)
+            if entry["geometry"] is None or existing["geometry"] is None:
+                # Obviously can't do a distance comparison is a geometry is missing
+                continue
             if entry["geometry"]["type"] == "Point" and len(entry["properties"]) <= 2:
                 continue
             if existing["geometry"]["type"] == "Point" and len(existing["properties"]) <= 2:
@@ -162,8 +166,8 @@ def conflateThread(odkdata: list,
                     maybe.append({"dist": dist, "odk": entry, "osm": existing})
                     #geom = maybe[0]["odk"]["geometry"]
                     hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
+                    # tags = {**maybe[0]["odk"]["properties"], **maybe[0]["osm"]["properties"]}
                     # log.debug(f"TAGS: {hits}: {tags}")
-                    tags = {**maybe[0]["odk"]["properties"], **maybe[0]["osm"]["properties"]}
 
                     data.append(Feature(geometry=geom, properties=tags))
                     # FIXME: don't process more existing features to
@@ -190,7 +194,7 @@ def conflateThread(odkdata: list,
             if maybe[0]["dist"] >= 0.0:
                 hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
                 # log.debug(f"TAGS: {hits}: {tags}")
-            tags['fixme'] = "Probably a duplicate!"
+            tags['fixme'] = "Don't upload this to OSM without validation!"
             if "refs" in maybe[0]["osm"]["properties"]:
                 tags["refs"] = maybe[0]["osm"]["properties"]["refs"]
             geom = maybe[0]["odk"]["geometry"]
@@ -198,7 +202,10 @@ def conflateThread(odkdata: list,
                 tags["id"] =  maybe[0]["osm"]["properties"]["osm_id"]
             elif "id" in  maybe[0]["osm"]["properties"]:
                 tags["id"] =  maybe[0]["osm"]["properties"]["id"]
-            tags["version"] =  maybe[0]["osm"]["properties"]["version"]
+            if "version" in maybe[0]["osm"]["properties"]:
+                tags["version"] = maybe[0]["osm"]["properties"]["version"]
+            else:
+                tags["version"] = 1
             data.append(Feature(geometry=geom, properties=tags))
             # If no hits, it's new data. ODK data is always just a POI for now
         else:
@@ -265,6 +272,9 @@ class Conflator(object):
         newobj = transform(project.transform, shape(newdata["geometry"]))
         oldobj = transform(project.transform, shape(olddata["geometry"]))
 
+        # log.debug(f"{oldobj} : {newobj}")
+        # if oldobj.geom_type == "MultiLineString" and newobj.geom_type == "MultiLineString":
+        #     log.debug("MULTILINESTRING!!")
         if oldobj.geom_type == "LineString" and newobj.geom_type == "LineString":
             # Compare two highways
             dist = newobj.distance(oldobj)
@@ -302,11 +312,22 @@ class Conflator(object):
             (dict): The updated tags
         """
         match_threshold = 80
+        keep = ["surface",
+                "name",
+                "ref",
+                "ref:usfs",
+                "smoothness",
+                "highway",
+                "tracktype"]
         hits = 0
         props = dict()
         id = 0
         version = 0
         for key, value in extfeat['properties'].items():
+            if key not in keep:
+                # Reduce the amount of tags needed for a match since some of
+                # the OSM data is bloated.
+                continue
             if key in osm["properties"]:
                 if key == "title" or key == "label":
                     # ODK data extracts have an title and image tags,
@@ -370,8 +391,7 @@ class Conflator(object):
         osmfile: str,
     ) -> list:
         """
-        Read a OSM XML file generated by osm_fieldwork and convert
-        it to GeoJson for consistency.
+        Read a OSM XML file and convert it to GeoJson for consistency.
 
         Args:
             osmfile (str): The OSM XML file to load
@@ -421,14 +441,16 @@ class Conflator(object):
                 alldata.append(Feature(geometry=geom, properties=properties))
 
         for way in data["way"]:
+            attrs = dict()
             properties = {
                 "id": int(way["@id"]),
             }
             refs = list()
-            if len(way["nd"]) > 0:
-                for ref in way["nd"]:
-                    refs.append(int(ref["@ref"]))
-            properties["refs"] = refs
+            if "nd" in way:
+                if len(way["nd"]) > 0:
+                    for ref in way["nd"]:
+                        refs.append(int(ref["@ref"]))
+                properties["refs"] = refs
 
             if "@version" not in node:
                 properties["version"] = 1
@@ -585,20 +607,13 @@ class Conflator(object):
                     futures.append(future)
                 #for thread in concurrent.futures.wait(futures, return_when='ALL_COMPLETED'):
                 for future in concurrent.futures.as_completed(futures):
-                    log.debug(f"Waiting for thread to complete.. {future.result()}")
+                    log.debug(f"Waiting for thread to complete..")
                     alldata += future.result()
 
             executor.shutdown()
 
-        # async with asyncio.TaskGroup() as tg:
-        #     for block in range(0, entries, chunk):
-        #         log.debug(f"Dispatching thread {block}:{block + chunk}")
-        #         # task = tg.create_task(conflateThread(odkdata[block:block + chunk - 1], osmdata))
-        #         # tasks.append(task)
-        #         tasks.append(tg.create_task(conflateThread(odkdata[block:block + chunk - 1], osmdata)))
         timer.stop()
 
-        # return await conflateThread(odkdata, osmdata, threshold)
         return alldata
 
     def dump(self):
@@ -709,28 +724,34 @@ class Conflator(object):
         # return alldata
 
     def writeOSM(self,
-                 data: dict,
+                 data: list,
                  filespec: str,
                  ):
         """
         Write the data to an OSM XML file.
 
         Args:
-            data (dict): The list of GeoJson features
+            data (list): The list of GeoJson features
             filespec (str): The output file name
         """
         osm = OsmFile(filespec)
+        negid = -100
+        id = -1
+        out = str()
         for entry in data:
-            id = -1
-            if "osm_id" in entry["properties"]:
-                id = entry["properties"]["osm_id"]
-            elif "id" in entry["properties"]:
-                id = entry["properties"]["id"]
-            try:
-                attrs = {"id": id, "version": entry["properties"]["version"]}
-            except:
-                breakpoint()
+            version = 1
             tags = entry["properties"]
+            if "osm_id" in tags:
+                id = tags["osm_id"]
+            elif "id" in tags:
+                id = tags["id"]
+            elif "id" not in tags:
+                # There is no id or version for non OSM features
+                id -= 1
+            if "version" in entry["properties"]:
+                version = int(entry["properties"]["version"])
+                version += 1
+            attrs = {"id": id, "version": version}
             # These are OSM attributes, not tags
             if "id" in tags:
                 del tags["id"]
@@ -738,7 +759,7 @@ class Conflator(object):
                 del tags["version"]
             item = {"attrs": attrs, "tags": tags}
             # if entry["geometry"]["type"] == "LineString" or entry["geometry"]["type"] == "Polygon":
-            print(entry)
+            # print(entry)
             if 'refs' in tags:
             # if "geometry" not in entry:
                 # OSM ways don't have a geometry, just references to node IDs.
@@ -751,8 +772,8 @@ class Conflator(object):
                         item["refs"] = tags["refs"]
                     del tags["refs"]
                     out = osm.createWay(item, True)
-            else:
-                out = osm.createNode(item, True)
+                elif "geometry" in entry and entry["geometry"] is not None:
+                    out = osm.createNode(item, True)
             if len(out) > 0:
                 osm.write(out)
 
@@ -836,7 +857,7 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
     parser.add_argument("-c", "--config", default="highway", help="The config file for the SQL query")
     parser.add_argument("-s", "--source", required=True, help="The external data to conflate")
     parser.add_argument("-t", "--threshold", default=1, help="Threshold for distance calculations")
-    parser.add_argument("-o", "--outfile", default="out.geojson", help="Output file from the conflation")
+    parser.add_argument("-o", "--outfile", default="conflated.geojson", help="Output file from the conflation")
     parser.add_argument("-b", "--boundary", help="Optional boundary polygon to limit the data size")
 
     args = parser.parse_args()

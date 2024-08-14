@@ -73,6 +73,7 @@ nav:
   - Conflation Guides:
       - General: conflation.md
       - ODK: odkconflation.md
+      - Highways: highways.md
   - Utilities:
       - OSM Merge: osm-merge.md
       - Utilities: utilities.md
