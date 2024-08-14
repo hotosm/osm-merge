@@ -149,7 +149,8 @@ class USGS(object):
                 continue
             
             # These are for the highways data
-            props["highway"] = "unclassified"
+            if "highway" not in entry["properties"]:
+                props["highway"] = "unclassified"
             if entry["properties"] is None or entry is None:
                 continue
             if entry['properties']['source_ori'] is not None:
@@ -193,12 +194,12 @@ class USGS(object):
                     name = name.replace(" Rd", " Road")
                     name = name.replace(" Hwy", " Highway")
                     name = name.replace(" Ln", " Lane")
+                    name = name.replace(" Mnt", " Mountain ")
                     name = name.replace("E ", "East ")
                     name = name.replace("W ", "West ")
                     name = name.replace("N ", "North ")
                     name = name.replace("S ", "South ")
                     props["name"] = name
-                print(f"\tBAR: {props}")
 
             if len(props) == 0 or geom is None:
                 continue
@@ -232,6 +233,7 @@ async def main():
 
         file = open(args.outfile, "w")
         geojson.dump(data, file)
+        log.info(f"Wrote {args.outfile}")
         
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""

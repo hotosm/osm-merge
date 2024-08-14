@@ -88,6 +88,10 @@ class MVUM(object):
                 # Fix some common abbreviations
                 if " Cr " in title:
                     name = name.replace(" Cr ", " Creek ")
+                elif " Cr." in title:
+                    name = name.replace(" Cr. ", " Creek ")
+                elif " Crk" in title:
+                    name = name.replace(" Crk ", " Creek ")
                 elif " Cg " in title:
                     name = name.replace(" Cg ", " Campground ")
                 elif " Rd. " in title:
@@ -99,7 +103,7 @@ class MVUM(object):
                 if name.find("Road") <= 0:
                     props["name"] = f"{name} Road"
             if "OPERATIONA" in entry["properties"] and entry["properties"]["OPERATIONA"] is not None:
-                op = int(entry["properties"]["OPERATIONA"][:1])
+                op = int(entry["properties"]["OPERATIONALMAINTLEVEL"][:1])
                 if op == 1:
                     props["access"] = "no"
                 elif op == 2:
@@ -111,28 +115,59 @@ class MVUM(object):
                 elif op == 5:
                     props["smoothness"] = "excellent"
 
+            if "SBS_SYMBOL_NAME" in entry["properties"]:
+                if entry["properties"]["SBS_SYMBOL_NAME"] is None:
+                    continue
+                op = entry["properties"]["SBS_SYMBOL_NAME"][:4]
+                if op == "Road":
+                    props["smoothness"] = "very bad"
+                elif op == "Pave":
+                    props["smoothness"] = "good"
+                elif op == "High":
+                    props["smoothness"] = "excellent"
+                elif op == "Dirt":
+                    props["surface"] = "dirt"
+                elif op == "Grav":
+                    props["surface"] = "gravel"
+                elif op == "Pave":
+                    props["surface"] = "paved"
+
             # if "SBS_SYMBOL" in entry["properties"] and op is None:
             #     if "Not Maintained for" in entry["properties"]["SBS_SYMBOL"]:
             #         props["smoothness"] = "very bad"
             #     else:
             #         sym = entry["properties"]
             if "SURFACETYP" in entry["properties"]:
-                surface = entry["properties"]["SURFACETYP"]
-                if surface is None:
-                    continue
-                if surface[:3] == "NAT":
-                    props["surface"] = "dirt"
-                if surface[:3] == "IMP" or surface[:5] == "CSOIL":
-                    props["surface"] = "gravel"
-                    props["surface"] = "compacted"
-                elif surface[:3] == "AGG":
-                    props["surface"] = "gravel"
-                elif surface[:2] == "AC":
-                    props["surface"] = "gravel"
-                elif surface[:3] == "BST" or surface[:2] == "P ":
-                    props["surface"] = "paved"
+                surface = entry["properties"]["SURFACETYPE"]
+                if surface is not None:
+                    if surface[:3] == "NAT":
+                        props["surface"] = "dirt"
+                    elif surface[:3] == "IMP" or surface[:5] == "CSOIL":
+                        props["surface"] = "gravel"
+                        props["surface"] = "compacted"
+                    elif surface[:3] == "AGG":
+                        props["surface"] = "gravel"
+                    elif surface[:2] == "AC":
+                        props["surface"] = "gravel"
+                    elif surface[:3] == "BST" or surface[:2] == "P ":
+                        props["surface"] = "paved"
 
-            highways.append(Feature(geometry=geom, properties=props))
+            if "HIGHCLEARANCEVEHICLE" in entry["properties"]:
+                if entry["properties"]["HIGHCLEARANCEVEHICLE"] is not None:
+                    props["4wd_only"] = "yes"
+
+            if "SEASONAL" in entry["properties"]:
+                if entry["properties"]["SEASONAL"] is None:
+                    continue
+                elif "yearlong" == entry["properties"]["SEASONAL"]:
+                    props["seasonal"] = "no"
+                elif "seasonal" == entry["properties"]["SEASONAL"].lower():
+                    props["seasonal"] = "yes"
+                else:
+                    props["seasonal"] = "yes"
+
+            if geom is not None:
+                highways.append(Feature(geometry=geom, properties=props))
             #print(props)
 
         return FeatureCollection(highways)
@@ -162,17 +197,18 @@ good to avoid any highway with a smoothness of "very bad" or worse.
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("-i", "--infile", required=True, help="Output file from the conflation")
-    parser.add_argument("-c", "--convert", action="store_true", help="Convert MVUM feature to OSM feature")
+    parser.add_argument("-c", "--convert", default=True, action="store_true", help="Convert MVUM feature to OSM feature")
     parser.add_argument("-o", "--outfile", default="out.geojson", help="Output file")
 
     args = parser.parse_args()
 
     mvum = MVUM()
-    if args.convert:
+    if args.convert and args.convert:
         data = mvum.convert(args.infile)
 
-    file = open(args.outfile, "w")
-    geojson.dump(data, file)
+        file = open(args.outfile, "w")
+        geojson.dump(data, file)
+        log.info(f"Wrote {args.outfile}")
         
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
