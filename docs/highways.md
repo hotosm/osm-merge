@@ -6,6 +6,7 @@ primary goal of improving OpenStreetMap data in remote areas as these
 are used for emergency response. Most of these roads and trails are in
 OSM already, some from past imports, some traced off of satellite imagery. 
 
+
 I did a talk at SOTM-US in Tucson about this project called
 [OSM For Fire
 Fighting](https://www.youtube.com/watch?v=qgk9al1rluE). This
@@ -14,6 +15,8 @@ highway data in OpenStreetMap. This is not an import of new data, only
 updating existing features with a focus on improved
 navigation. Importing new features from these datasets uses a
 different process, so it's better to not mix the two.
+
+![Blank Sign](images/video.png){width=300 height=200}
 
 While there are details in the the datasets that would be useful, the
 initial set is the name, the reference number, and the vehicle class
@@ -112,6 +115,8 @@ furthur split that into the size you want for mapping.
 Then the real fun starts after the drudgery of getting ready to do
 conflation.
 
+![Blank Sign](images/20200726_103229.jpg){width=300 height=200}
+
 ### MVUM Roads
 
 This is all the highways in National Forests. The data contains
@@ -204,6 +209,8 @@ national forests. But this is the type of thing you'd really need to
 ground-truth, and luckily doesn't effect navigation when you are out
 in a network of unmaintained dirt roads.
 
+![Blank Sign](images/20210913_113539.jpg){width=300 height=200}
+
 ### Editing in JOSM
 
 Unfortunately manually validating the data is very time consuming, but
@@ -232,7 +239,7 @@ than the other, so it's good to be flexible.
 #### Editing OSM XML
 
 The conflation process produces an output file in OSM XML format. This
-file has incremented the version number and added *action=modify" to
+file has incremented the version number and added *action=modify* to
 the attributes for the feature. When loaded into OSM, no data is
 initially visible. If you go to the File menu, go down and execute
 *update modified*. This will download all the nodes for the ways, and
