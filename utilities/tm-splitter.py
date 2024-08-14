@@ -175,7 +175,7 @@ def ogrgrid(outputGridfn: str,
 async def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
-        prog="conflator",
+        prog="tm-splitter",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="This program extracts boundaries from USDA datasets",
     )
