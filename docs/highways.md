@@ -273,12 +273,31 @@ rado or phone, and have somebody looking on a map find that
 location. Much easier than using GPS coordinates.
 
 For the highways that were traced off of satellite imagery, there is
-often a problem with forks in the road. Often tree cover of poor
+often a problem with forks in the road. Often tree cover or poor
 resolution imagery makes it hard to see the highway. And a lot of the
 highways go through an area with an entire network of other dirt
 roads, so the reference number may just group a bunch of highway
-segments. Often the most visible highway imagery at a fork is not the
-actual road. In this case the highway has to be split at the fork, and
-the new segment tagged for it's actual value, and the actual highway
-segment gets tagged correctly. This is critical if you want navigation
-to work.
+segments. Often the most visible highway branch in the imagery at a
+fork is not the actual road. In this case the highway has to be split
+at the fork, and the new segment tagged for it's actual value, and the
+actual highway segment gets tagged correctly. This is critical if you
+want navigation to work.
+
+## Ground-truthing
+
+If you really want detailed and accurate maps, ground-truthing is an
+important part of the process. Road conditions change, especially the
+unmaintained dirt roads. Years of erosion, off-road vehicle abuse,
+etc... all change. For this reason the *surface*, *smoothness* and
+*tracktype* tags are not merged, as what is in the external datasets
+is likely out of date. Also sometimes parts of a dirt road get paved,
+or access is closed off completely.
+
+This is a good excuse to go there for some hiking and camping fun. You
+can load data into [StreetComplete](https://streetcomplete.app/) when
+online, and then use that in the field since will likely be no cell
+phone connection. Depending on the software used to collect the data,
+that may need conflation before uploading, for example OpenDataKit
+data. Some detail on that process is in this [Highway
+Mapping](https://www.senecass.com/projects/Mapping/tech/HighwayMappingwithODK.html)
+blog post about a field mapping trip.
