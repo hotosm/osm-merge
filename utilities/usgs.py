@@ -227,6 +227,17 @@ async def main():
 
     args = parser.parse_args()
 
+    # if verbose, dump to the terminal.
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(threadName)10s - %(name)s - %(levelname)s - %(message)s"
+        )
+        ch.setFormatter(formatter)
+        log.addHandler(ch)
+
     usgs = USGS()
     if args.convert and args.convert:
         data = usgs.convert(args.state, args.infile)
