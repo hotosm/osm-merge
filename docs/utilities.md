@@ -38,9 +38,21 @@ conflation.
 This converts the [Road Core](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.RoadCore_FS.zip) vehicle map. This contains data on all
 highways in a national forest. It's similar to the MVUM dataset.
 
-## Trails.py
+## trails.py
 
 This converts the [NPSPublish](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.TrailNFS_Publish.zip) Trail dataset. These are hiking trails
 not open to motor vehicles. Currently much of this dataset has empty
 fields, but the trail name and reference number is useful. This
 utility is to support the OpenStreetMap US [Trails Initiative](https://openstreetmap.us/our-work/trails/).
+
+## usgs.py
+
+This converts the raw data used to print Topographical maps in the
+US. This obviously is a direct source when it comes to names if you
+want to be accurate. Although things do change over time, so you still
+have to validate it all. The files are available from the
+[National
+Map](https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/TopoMapVector/). I
+use the Shapefiles, as the different categories are in separate files
+inside the zip. Each one covers a 7.5 quad square on a topo map. These
+have to be merged together into a single file to be practical.
