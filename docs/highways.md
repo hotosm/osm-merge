@@ -264,8 +264,8 @@ paste the tags into the feature.
 
 In national forest lands, the reference number changes at every major
 intersection. Side roads that branch off have an additional modifier
-added. or example, the main road may be called *ref:usfs="FR 505",
-with a change to *ref:usfs="FR 505.1" when it crosses a state
+added. or example, the main road may be called *ref:usfs="FR 505"*,
+with a change to *ref:usfs="FR 505.1"* when it crosses a state
 line. Spur roads (often to campsites) get a letter attached, so the
 spur road is *ref:usfgs="FR 505.1A". Understanding how the reference
 numbers are assigned makes it easy to transmit your location over a
