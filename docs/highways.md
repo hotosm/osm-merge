@@ -282,7 +282,11 @@ Unfortunately manually validating the data is very time consuming, but
 it's important to get it right. I use the *TODO* plugin and also a
 data filter so I just select highways. With the TODO plugin, I add the
 selected features, ideally the entire task. Then I just go through all
-the features one at a time.
+the features one at a time. When the OSM XML dataset is loaded,
+nothing will appear in JOSM. This is because the OSM XML file produced
+by conflation has the refs for the way, but lack the nodes. All it
+takes is selecting the *update modified* menu itm under the *File*
+menu and all the nodes get downloaded, and the highways appear.
 
 I often have the original datasets loaded as layers, since sometimes
 it's useful to refer back to when you find issues with the
