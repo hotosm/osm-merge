@@ -56,3 +56,16 @@ Map](https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/TopoMapVe
 use the Shapefiles, as the different categories are in separate files
 inside the zip. Each one covers a 7.5 quad square on a topo map. These
 have to be merged together into a single file to be practical.
+
+## fixnames.py
+
+On the OSM wiki, there is a list of [incorrect
+tagging](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#National_Forest_Road_System)
+for forest highway names. Basically the name shouldn't be something
+like *"Forest Service Road 123.4A"*. That's actually a reference
+number, not a name. This is primarily a problem with existing OSM
+data. These would all have to get manually fixed when validating in
+JOSM, so this program automates the process so you only have to
+validate, and not edit the feature. After conflation, process the
+output file with this utility to produce an improved version.
+

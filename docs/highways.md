@@ -36,7 +36,8 @@ Although most of the fields in these datasets aren't useful for OSM,
 some are like is it a seasonal road, various off road vehicle access
 permissions, etc... since this is also useful for navigation. Any tags
 added or edited will follow the [OSM Tagging
-Guidelines](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#Tagging_Forest_Roads)
+Guidelines](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#Tagging_Forest_Roads)lh
+
 for forest roads.
 
 # The Datasets
@@ -57,6 +58,8 @@ in the past, so it's relatively easy to match the
 geometries. Conflation then is mostly working through the name and
 reference fields between multiple files, which sometimes don't agree
 on the proper name.
+
+And OpenStreetMap of course.
 
 ## Processing The Datasets
 
@@ -112,10 +115,72 @@ clipped properly at the boundary. These task boundary polygons can
 then be used to create the project in the Tasking Manager, which will
 furthur split that into the size you want for mapping.
 
+### The OpenStreetMap Extract
+
+This step is unnecessary if you plan to manually conflate with a
+GeoJson file, so jump ahead to the next section.
+
+To conflate against OSM data with the goal of automatically merging
+the tags into the feature you have to prepare the dataset. Each
+feature needs to be validated anyway, merging tags is more efficient
+than cut & paste. Since this project is processing data from multiple
+US states, it exceeds the [Overpass](https://overpass-turbo.eu/) data
+size.
+
+I download the states I want to conflate from
+[Geofabrik](http://download.geofabrik.de/north-america.html), and then
+use [osmium
+merge](https://docs.osmcode.org/osmium/latest/osmium-merge.html) to
+turn it into one big file. I have to do this because most of the
+national forest cross state lines. You'll get duplicate ID errors if
+you download these files on different days, so grab all the ones you
+plan to merge at the same time. Geofabrik updates every 24 hours. When
+dealing with files too large for JOSM or QGIS,
+[osmium](https://osmcode.org/osmium-tool/) is the tool to use. There
+is also [osmfilter](https://wiki.openstreetmap.org/wiki/Osmfilter) and
+[osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert) which can
+be used as well. [Ogr2ogr](https://gdal.org/programs/ogr2ogr.html)
+can't be used as it can't write the OSM XML format. To merge multiple
+files with osmium, do this:
+
+	osmium merge --overwrite -o outdata.osm *.osm.pbf
+  
+The next step is to delete everything but highways from the OSM XML
+file. When conflating highways, we don't care about amenities or
+waterways.
+
+	osmium tags-filter --overwrite --remove-tags -o outdata.osm indata.osm w/highway=track,service,unclassified,primary,tertiary,secondary,path,residential,abandoned,footway,motorway,trunk
+
+Finally I clip this large file into separate datasets, one for each
+national forest.
+
+	osmium extract --overwrite --polygon boundary.geojson -o outdata-roads.osm 
+
 Then the real fun starts after the drudgery of getting ready to do
 conflation.
 
 ![Blank Sign](images/20200726_103229.jpg){width=300 height=200}
+
+#### Forest Road Names
+
+The names and reference number in OSM now have a wide variety of
+[incorrect
+tagging](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#National_Forest_Road_System)
+when it comes to names. *"Forest Service Road 123.4A"* is not a name,
+it is a reference number. Same for *"County Road 43"*.  The
+[fixname.py](https://github.com/hotosm/osm-merge/blob/tagging/utilities/fixnames.py)
+utility scan the OSM extract and when it see incorrect tagging,
+correct it to the OSM standard. Since the external datasets already
+follow the same guidelines, this increases the chance of a good match
+when conflating, since comparing names is part of the process.
+
+#### TIGER Tag Deletion
+
+Since there is community consensus that the *tiger:* tags added back
+in 2008 when the TIGER data was imported are meaningless, so should be
+deleted as bloat. The *fixnames.py* utility used for correct the name
+alos deletes these from each feature so you don't have to manually do
+it.
 
 ### MVUM Roads
 
@@ -217,7 +282,11 @@ Unfortunately manually validating the data is very time consuming, but
 it's important to get it right. I use the *TODO* plugin and also a
 data filter so I just select highways. With the TODO plugin, I add the
 selected features, ideally the entire task. Then I just go through all
-the features one at a time.
+the features one at a time. When the OSM XML dataset is loaded,
+nothing will appear in JOSM. This is because the OSM XML file produced
+by conflation has the refs for the way, but lack the nodes. All it
+takes is selecting the *update modified* menu itm under the *File*
+menu and all the nodes get downloaded, and the highways appear.
 
 I often have the original datasets loaded as layers, since sometimes
 it's useful to refer back to when you find issues with the
@@ -232,9 +301,24 @@ the JOSM validators find many existing issues. I fix anything that is
 an error, and mostly ignore all the warning as that's a whole other
 project.
 
-There are two primary ways to validate the conflation
-output. Depending on the amount of data, sometimes one way is better
-than the other, so it's good to be flexible.
+If you are editing with the OSM XML file produced by conflation, when
+the file is opened, there will be some conflicts. This is usually due
+to things like the incorrect forest road name getting deleted, since
+now it's a proper *ref:usfs* reference number. And the tiger tags are
+gone as well if the *fixnames.py* utility is used. To fix the
+conflicts, I just select them all, and click on *resolve to my
+version*. Then I load all the ways into the
+[TODO](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/TODO_list)
+plugin.
+
+Usng the plugin to validate a feature all I have to do is click on the
+entry. Sometimes there will be issues that need to be manually
+fixed. If conflation has changed the name, the old one is still in the
+feature so a manual comparison can be done. Sometimes there are weird
+typos that have slipped through the process. But many times for these
+remote highways you can just mark it as done, and go on to the next
+one. This lkets you validate a large number of features relatively
+quickly without sacrifing quality.
 
 #### Editing OSM XML
 
@@ -245,10 +329,11 @@ initially visible. If you go to the File menu, go down and execute
 *update modified*. This will download all the nodes for the ways, and
 all the highways will become visible. Highways that have multiple tags
 already in OSM will become a conflict. These can be resolved easier in
-JOSM using the conflict dialog box. No geometries have change, just
+JOSM using the conflict dialog box. No geometries have changed, just
 tags, so you have to manually select the tags to be merged. Features
 without tags beyond **highway=something** merge automatically. which
-makes validating these features quick and easy.
+makes validating these features quick and easy. Note that every
+feature needs to be validated indivigually.
 
 #### Editing GeoJson
 
