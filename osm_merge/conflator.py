@@ -19,6 +19,7 @@ import argparse
 import logging
 import sys
 import os
+import re
 from sys import argv
 from osm_fieldwork.osmfile import OsmFile
 from geojson import Point, Feature, FeatureCollection, dump, Polygon, load
@@ -74,8 +75,8 @@ def distSort(data: list):
     """
     return data['dist']
 
-def conflateThread(odkdata: list,
-                   osmdata: list,
+def conflateThread(primary: list,
+                   secondary: list,
                    threshold: float = 7.0,
                    spellcheck: bool = True,
                    ) -> list:
@@ -83,8 +84,8 @@ def conflateThread(odkdata: list,
     Conflate features from ODK against all the features in OSM.
 
     Args:
-        odkdata (list): The features from ODK to conflate
-        osmdata (list): The existing OSM data
+        primary (list): The external dataset to conflate
+        seconday (list): The secondzry dataset, probably existing OSM data
         threshold (int): Threshold for distance calculations
         spellcheck (bool): Whether to also spell check string values
 
@@ -115,23 +116,21 @@ def conflateThread(odkdata: list,
     cutils = Conflator()
     i = 0
     # Progress bar
-    pbar = tqdm.tqdm(odkdata)
+    pbar = tqdm.tqdm(primary)
     for entry in pbar:
-    # for entry in odkdata:
+    # for entry in primary:
         i += 1
         timer.start()
         confidence = 0
         maybe = list()
-        # if "attrs" in entry:
-        #     odk = cutils.osmToFeature(entry)
-        # else:
-        #     odk = entry
 
-        for existing in osmdata:
+        for existing in secondary:
             odktags = dict()
             osmtags = dict()
             feature = dict()
             newtags = dict()
+            # log.debug(f"ENTRY: {entry["properties"]}")
+            # log.debug(f"EXISTING: {existing["properties"]}")
             geom = None
             # We could probably do this using GeoPandas or gdal, but that's
             # going to do the same brute force thing anyway.
@@ -157,9 +156,9 @@ def conflateThread(odkdata: list,
                 #breakpoint()
 
             if dist <= threshold:
-                # log.debug(f"DIST: {dist / 1000}km. {dist}m")
-                # log.debug(f"ENTRY: {entry["properties"]}")
-                # log.debug(f"EXISTING: {existing["properties"]}")
+                log.debug(f"DIST: {dist / 1000}km. {dist}m")
+                log.debug(f"PRIMARY: {entry["properties"]}")
+                log.debug(f"SECONDARY : {existing["properties"]}")
                 if dist <= 0.0:
                     # Probably an exact hit, likely from data imported
                     # into OSM from the same source.
@@ -194,7 +193,8 @@ def conflateThread(odkdata: list,
             if maybe[0]["dist"] >= 0.0:
                 hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
                 # log.debug(f"TAGS: {hits}: {tags}")
-            tags['fixme'] = "Don't upload this to OSM without validation!"
+            # osmfile.py add this as a note tag
+            # tags['fixme'] = "Don't upload this to OSM without validation!"
             if "refs" in maybe[0]["osm"]["properties"]:
                 tags["refs"] = maybe[0]["osm"]["properties"]["refs"]
             geom = maybe[0]["odk"]["geometry"]
@@ -210,6 +210,7 @@ def conflateThread(odkdata: list,
             # If no hits, it's new data. ODK data is always just a POI for now
         else:
             entry["properties"]["version"] = 1
+            entry["properties"]["informal"] = "yes"
             entry["properties"]["fixme"] = "New features should be imported following OSM guidelines."
             newdata.append(entry)
 
@@ -312,78 +313,61 @@ class Conflator(object):
             (dict): The updated tags
         """
         match_threshold = 80
-        keep = ["surface",
-                "name",
-                "ref",
-                "ref:usfs",
-                "smoothness",
-                "highway",
-                "tracktype"]
+        match = ["name", "ref", "ref:usfs"]
         hits = 0
         props = dict()
         id = 0
         version = 0
-        for key, value in extfeat['properties'].items():
-            if key not in keep:
-                # Reduce the amount of tags needed for a match since some of
-                # the OSM data is bloated.
-                continue
-            if key in osm["properties"]:
-                if key == "title" or key == "label":
-                    # ODK data extracts have an title and image tags,
-                    # which is usually just a duplicate of the name,
-                    # so drop those.
-                    continue
-                elif key == "osm_id" or key == "id":
-                    # External data not from an OSM source always has
-                    # negative IDs to distinguish it from current OSM data.
-                    if value <= 0:
-                        id = int(osm["properties"][key])
-                    else:
-                        id = int(value)
-                    props["id"] = id
-                    continue
-                elif key == "version":
-                    # Always use the OSM version, since it gets incremented
-                    # so JOSM see it's been modified.
-                    version = int(osm["properties"][key])
-                    props["version"] = version
-                    continue
-                # Name may also be name:en, name:np, etc... There may also be
-                # multiple name:* values in the tags.
-                elif key[:4] == "name":
-                    # Usually it's the name field that has the most variety in
-                    # in trying to match strings. This often is differences in
-                    # capitalization, singular vs plural, and typos from using
-                    # your phone to enter the name. Course names also change
-                    # too so if it isn't a match, use the new name from the
-                    # external dataset.
-                    ratio = fuzz.ratio(value.lower(), osm["properties"][key].lower())
-                    if ratio > match_threshold:
-                        hits += 1
-                        props["ratio"] = ratio
-                        props[key] = value
-                        if value != osm["properties"][key]:
-                            props[f"old_{key}"] = osm["properties"][key]
-                    else:
-                        if key != 'note':
-                            props[key] = value
-                else:
-                    # All the other keys are usually a defined OSM tag.
-                    # Course the new value is probably more up to data
-                    # than what is in OSM. Keep both in the properties
-                    # for debugging tag conflation.
-                    if key == "title" or key == "label":
-                        continue
-                    props[key] = value
-                    if value != osm["properties"][key]:
-                        props[f"old_{key}"] = osm["properties"][key]
-                    else:
-                        hits += 1
-            else:
-                # Add the tag from the new data since it isn't in OSM yet.
-                props[key] = value
+        props = extfeat['properties'] | osm['properties']
+        # ODK Collect adds these two tags we don't need.
+        if "title" in props:
+            del props["title"]
+        if "label" in props:
+            del props["label"]
 
+        if "id" in props:
+            # External data not from an OSM source always has
+            # negative IDs to distinguish it from current OSM data.
+            id = int(props["id"])
+        else:
+            id -= 1
+            props["id"] = id
+
+        if "version" in props:
+            # Always use the OSM version if it exists, since it gets
+            # incremented so JOSM see it's been modified.
+            props["version"] = int(version)
+            # Name may also be name:en, name:np, etc... There may also be
+            # multiple name:* values in the tags.
+        else:
+            props["version"] = 1
+
+        for key in match:
+            if "highway" in osm["properties"]:
+                # Always use the value in the secondary, which is
+                # likely in OSM.
+                props["highway"] = osm["properties"]["highway"]
+            if key not in props:
+                continue
+                # Usually it's the name field that has the most variety in
+                # in trying to match strings. This often is differences in
+                # capitalization, singular vs plural, and typos from using
+                # your phone to enter the name. Course names also change
+                # too so if it isn't a match, use the new name from the
+                # external dataset.
+            if key in osm["properties"] and key in extfeat["properties"]:
+                ratio = fuzz.ratio(extfeat["properties"][key].lower(), osm["properties"][key].lower())
+                if ratio > match_threshold:
+                    hits += 1
+                    props["ratio"] = ratio
+                    props[key] = extfeat["properties"][key]
+                    if ratio != 100:
+                        # For a fuzzy match, cache the value from the
+                        # secondary dataset and use the value in the
+                        # primary dataset.
+                        props[f"old_{key}"] = osm["properties"][key]
+
+        # print(props)
         return hits, props
 
     def loadFile(
@@ -428,6 +412,10 @@ class Conflator(object):
             if "tag" in node:
                 for tag in node["tag"]:
                     if type(tag) == dict:
+                        # Drop all the TIGER tags based on
+                        # https://wiki.openstreetmap.org/wiki/TIGER_fixup
+                        if properties[tag["@k"]][:7] == "tiger:":
+                            continue
                         properties[tag["@k"]] = tag["@v"].strip()
                         # continue
                     else:
@@ -593,9 +581,9 @@ class Conflator(object):
         tasks = list()
 
         # Make threading optional for easier debugging
-        single = False
+        single = False # True
         if single:
-            conflateThread(odkdata, osmdata)
+            alldata = conflateThread(odkdata, osmdata)
         else:
             futures = list()
             with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
@@ -617,7 +605,9 @@ class Conflator(object):
         return alldata
 
     def dump(self):
-        """Dump internal data"""
+        """
+        Dump internal data for debugging.
+        """
         print(f"Data source is: {self.dburi}")
         print(f"There are {len(self.data)} existing features")
         # if len(self.versions) > 0:
@@ -627,6 +617,15 @@ class Conflator(object):
     def parseFile(self,
                 filespec: str,
                 ) ->list:
+        """
+        Parse the input file based on it's format.
+
+        Args:
+            filespec (str): The file to parse
+
+        Returns:
+            (list): The parsed data from the file
+        """
         odkpath = Path(filespec)
         odkdata = list()
         if odkpath.suffix == '.geojson':
@@ -852,10 +851,10 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
         """,
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
-    parser.add_argument("-e", "--extract", help="The base OSM data")
+    parser.add_argument("-s", "--secondary", help="The secondary dataset")
     parser.add_argument("-q", "--query", help="Custom SQL when using a database")
     parser.add_argument("-c", "--config", default="highway", help="The config file for the SQL query")
-    parser.add_argument("-s", "--source", required=True, help="The external data to conflate")
+    parser.add_argument("-p", "--primary", required=True, help="The primary dataset")
     parser.add_argument("-t", "--threshold", default=1, help="Threshold for distance calculations")
     parser.add_argument("-o", "--outfile", default="conflated.geojson", help="Output file from the conflation")
     parser.add_argument("-b", "--boundary", help="Optional boundary polygon to limit the data size")
@@ -875,7 +874,7 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
         ch.setFormatter(formatter)
         log.addHandler(ch)
 
-    if not args.extract and not args.uri:
+    if not args.secondary and not args.uri:
         parser.print_help()
         log.error("You must supply a database URI or a data extract file!")
         quit()
@@ -891,24 +890,24 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
     else:
         toplevel = Path(args.source)
 
-    conflate = Conflator(args.extract, args.boundary)
-    if args.extract[:3].lower() == "pg:":
-        await conflate.initInputDB(args.config, args.extract[3:])
+    conflate = Conflator(args.secondary, args.boundary)
+    if args.secondary[:3].lower() == "pg:":
+        await conflate.initInputDB(args.config, args.secondary[3:])
 
-    if args.source[:3].lower() == "pg:":
-        await conflate.initInputDB(args.config, args.source[3:])
+    if args.primary[:3].lower() == "pg:":
+        await conflate.initInputDB(args.config, args.secondary[3:])
 
-    data = await conflate.conflateData(args.source, args.extract, float(args.threshold))
+    data = await conflate.conflateData(args.primary, args.secondary, float(args.threshold))
 
-    path = Path(args.outfile)
-    jsonout = f"{path.stem}-out.geojson"
-    osmout = f"{path.stem}-out.osm"
+    # path = Path(args.outfile)
+    jsonout = args.outfile.replace(".geojson", "-out.geojson")
+    osmout  = args.outfile.replace(".geojson", "-out.osm")
 
     conflate.writeOSM(data, osmout)
     conflate.writeGeoJson(data, jsonout)
 
     log.info(f"Wrote {osmout}")
-    log.info(f"Wrote {args.outfile}")
+    log.info(f"Wrote {jsonout}")
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
