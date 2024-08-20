@@ -223,6 +223,8 @@ async def main():
         for feature in grid['features']:
             if "FORESTNAME" in feature["properties"]:
                 name = feature["properties"]["FORESTNAME"].replace(' ', '_')
+            elif "UNIT_NAME" in feature["properties"]:
+                name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
             else:
                 name = f"{path.stem}_{index}"
                 index += 1
