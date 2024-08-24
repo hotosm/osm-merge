@@ -81,7 +81,18 @@ class MVUM(object):
             if entry["properties"] is None or entry is None:
                 continue
             if "ID" in entry["properties"]:
-                props["ref:usfs"] = f"FR {entry['properties']['ID']}"
+                # FIXME: this needs to be verifed by ground-truthing, but
+                # there appears to be a bug in the MVUM reference numbers
+                # that don't match any other dataseta. Nameily many major
+                # MVUM roads have a .1 appended, which is not what is on
+                # the topo maps or dataset. Any legit suffix would include
+                # a latter, ie... "491.1B", which does match the other
+                # datasets.
+                id = f"FR {entry['properties']['ID']}"
+                if id[-1].isalpha():
+                    props["ref:usfs"] = id
+                elif id.find('.') and id[-1] == '1':
+                    props["ref:usfs"] = id[:-2]
             if "NAME" in entry["properties"] and entry["properties"]["NAME"] is not None:
                 title = entry["properties"]["NAME"].title()
                 name = str()
