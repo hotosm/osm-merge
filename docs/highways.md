@@ -115,6 +115,12 @@ clipped properly at the boundary. These task boundary polygons can
 then be used to create the project in the Tasking Manager, which will
 furthur split that into the size you want for mapping.
 
+Something to be consious of is these external datasets are also full
+of obscure bugs. Some of the data I think hasn't been updated since
+the government discovered digital mapping a few decades ago. The
+conversion utilities will handle all of these problems in these
+datasets.
+
 ### The OpenStreetMap Extract
 
 This step is unnecessary if you plan to manually conflate with a
@@ -204,6 +210,13 @@ subjective based on ones off-road driving experience. These are
 typically jeep trails of varying quality, but very useful for
 backcountry rescues or wildland fires.
 
+There appears to be a bug in the MVUM reference numbers that don't
+match any other datasets. Nameily many major MVUM roads have a .1
+appended, which is not what is on the topo maps or dataset. Any legit
+suffix would include a latter, ie... "491.1B", which does match the
+other datasets. So I removed the suffix where it doesn't have a
+letter at tne end.
+
 ### Mvum Trails
 
 These are Multi Vehicle Use Maps (MVUM), which define the class of
@@ -243,6 +256,14 @@ contained in this project is then run to filter the input data file
 into GeoJson with OSM tagging schema. The topographical data is
 especially useful for conflation, since the name and reference number
 match the paper or GeoPDF maps many people use.
+
+I found a few problems processing the ShapeFiles due to font encoding
+issues, and also with converting directly to GeoJson. I do this as
+a two step process, first make a unified ShapeFile from all the other
+ShapeFiles, and then convert it to GeoJson, which seems to work best.
+
+	ogrmerge.py -nln highways -single -o highways.shp VECTOR_*/Shape/Trans_Road*.shp -lco ENCODING=""
+	ogr2ogr highways.geojson highways.shp
 
 ## Conflation
 
