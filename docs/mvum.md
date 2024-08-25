@@ -87,7 +87,7 @@ dataset highway names. OpenStreetMap should be using the full
 value. These were all found by the conflation software when trying to
 match names between two features. Since much of the MVUM data is of
 varying quality, there's probably a few not captured here that will
-have to be fixed when editing the data. This however improves good
+have to be fixed when editing the data. This however improves the
 conflation results to limit manual editing.
 
 * " Cr " is " Creek "
@@ -97,7 +97,6 @@ conflation results to limit manual editing.
 * " Rd. " is " Road"
 * " Mt " is " Mountain"
 * " Mtn " is " Mountain"
-
 
 # Tag values
 
@@ -153,6 +152,12 @@ ground-truthing, but it converted as another aid for route planning.
 * CSOIL -COMPACTED SOIL becomes *surface=compacted*
 * NAT -NATIVE MATERIAL becomes *surface=dirt*
 * P - PAVED becomes *surface=paved*
+
+## Name
+
+The name is always in all capitol letters, so this is converted to a
+standard first letter of every word is upper case, the rest is lower
+case.
 
 ## Options
 
