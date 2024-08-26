@@ -86,7 +86,7 @@ class Trails(object):
                 if "TRLNAME" in entry["properties"]:
                     props["name"] = entry["properties"]["TRLNAME"]
                 if "TRLALTNAME" in entry["properties"]:
-                    if entry["properties"]["TRLALTNAME"] != "Unknown:
+                    if entry["properties"]["TRLALTNAME"] != "Unknown":
                         props["alt_name"] = entry["properties"]["TRLALTNAME"].title()
                 if "TRLCLASS"  in entry["properties"]:
                     if entry["properties"]["TRLCLASS"] == "Class1":
@@ -142,9 +142,6 @@ class Trails(object):
                             props["motor_vehicle"] = "yes"
                         elif usage == "Wheelchair Accessible Trail":
                             props["wheelchair"] = "yes"
-                        # if usage == "Hike" or usage == "Hiker/Pedestrian":
-                        # I think this is an assumed use
-                        #    props[""] = "yes"
                     if "TRLSURFACE" in entry["properties"]:
                         types = ["metal",
                                  "rubber",
@@ -156,20 +153,23 @@ class Trails(object):
                                  "wood",
                                  "sand",
                                  ]
-                        surface = entry["properties"]["TRLSURFACE"]
-                        if surface[:7].lower() == "gravel":
+                        surface = entry["properties"]["TRLSURFACE"].lower()
+                        if surface[:7] == "gravel":
                             props["surface"] = "gravel"
-                        elif surface.lower() == "Native":
+                        elif surface == "Native":
                             props["surface"] = "ground"
-                        elif surface.lower() == "earth" or surface.lower() == "dirt" or surface.lower() == "soil":
+                        elif surface == "earth" or surface == "dirt" or surface == "soil":
                             props["surface"] = "dirt"
-                        elif surface.lower() == "Aggregate":
+                        elif surface == "Aggregate":
                             props["surface"] = "chipseal"
-                        elif surface.lower() == "Bituminous":
+                        elif surface == "Bituminous":
                             props["surface"] = "asphalt"
-                        elif surface.lower() in types:
+                        elif surface in types:
                             # Catch everything in the list
                             props["surface"] = surface.lower()
+                    if "SEASONAL" in entry["properties"]:
+                        props["seasonal"] = "yes"
+
             else:
                 # This is the USFS dataset
                 spin.next()
@@ -184,9 +184,20 @@ class Trails(object):
                 for key, value in entry["properties"].items():
                     if value == "N/A" or value is None:
                         continue
-                    print(key, value)
+                    # print(key, value)
                     if key == "TRAIL_NO":
-                        props["ref:usfs"] = f"FR {value}"
+                        # There appears to be a bug in the trail reference numbers
+                        # that don't match any other dataseta. Namely many major
+                        # trails roads have a .1 appended, which is not what is on
+                        # the topo maps or dataset. Any legit suffix would include
+                        # a latter, ie... "491.1B", which does match the other
+                        # datasets. Also the paper topo map or PDF version of this
+                        # dataset has the correct number without the .1.
+                        id = f"FR {entry['properties']['TRAIL_NO']}"
+                        if id[-1].isalpha():
+                            props["ref:usfs"] = id
+                        elif id.find('.') and id[-1] == '1':
+                            props["ref:usfs"] = f"{id[:-2]}"
                     elif key == "TRAIL_NAME":
                         props["name"] = value.title()
                     if key[:-6] == "_ACCPT" and value == "Y":
