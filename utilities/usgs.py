@@ -25,17 +25,11 @@ from geojson import Point, Feature, FeatureCollection, dump, Polygon, load
 import geojson
 from shapely.geometry import shape, LineString, Polygon, mapping
 import shapely
-from shapely.ops import transform
-import pyproj
 import asyncio
 from codetiming import Timer
-import concurrent.futures
-from cpuinfo import get_cpu_info
 from time import sleep
-from thefuzz import fuzz, process
 from pathlib import Path
-from tqdm import tqdm
-import tqdm.asyncio
+from progress.bar import Bar, PixelBar
 
 
 # ogrmerge.py -single -o trails.shp VECTOR_*/Shape/Trans_TrailSegment.shp
@@ -43,14 +37,6 @@ import tqdm.asyncio
 # https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/TopoMapVector/
 # Instantiate logger
 log = logging.getLogger(__name__)
-
-# The number of threads is based on the CPU cores
-info = get_cpu_info()
-cores = info['count']
-
-# shut off warnings from pyproj
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#Tagging_Forest_Roads
 
@@ -86,9 +72,13 @@ class USGS(object):
         data = geojson.load(file)
 
         highways = list()
+        spin = Bar('Processing...', max=len(data['features']))
         for entry in data["features"]:
             geom = entry["geometry"]
             props = dict()
+            spin.next()
+            if "name" in entry["properties"]:
+                props["name"] =  entry["properties"]["name"]
             if "sourceorig" in entry["properties"]:
                 props["highway"] = "path"
                 # These are for the trail data
@@ -100,27 +90,27 @@ class USGS(object):
                 if "bicycle" in entry['properties']:
                     if entry['properties']['bicycle'] is not None:
                         if entry['properties']['bicycle'] == "Y":
-                            props["bicycle"] = "yes"
-                        else:
-                            props["bicycle"] = "no"
+                            props["bicycle"] = "designated"
+                        # else:
+                        #     props["bicycle"] = "no"
                 if "atv" in entry['properties']:
                     if entry['properties']['atv'] is not None:
                         if entry['properties']['atv'] == "Y":
-                            props["atv"] = "yes"
-                        else:
-                            props["atv"] = "no"
+                            props["atv"] = "designated"
+                        # else:
+                        #     props["atv"] = "no"
                 if "packsaddle" in entry['properties']:
                     if entry['properties']['packsaddle'] is not None:
                         if entry['properties']['packsaddle'] == "Y":
-                            props["horse"] = "yes"
-                        else:
-                            props["horse"] = "no"
+                            props["horse"] = "designated"
+                        # else:
+                        #     props["horse"] = "no"
                 if "motorcycle" in entry['properties']:
                     if entry['properties']['motorcycle'] is not None:
                         if entry['properties']['motorcycle'] == "Y":
-                            props["motorcycle"] = "yes"
-                        else:
-                            props["motorcycle"] = "no"
+                            props["motorcycle"] = "designated"
+                        # else:
+                        #     props["motorcycle"] = "no"
                 if 'snowshoe' in entry['properties']:
                     if entry['properties']['snowshoe'] is not None:
                         if entry['properties']['snowshoe'] == "Y":
@@ -140,16 +130,16 @@ class USGS(object):
                 if "snowmobile"in entry['properties']:
                     if entry['properties']['snowmobile'] is not None:
                         if entry['properties']['snowmobile'] == "Y":
-                            props["snowmobile"] = "yes"
-                        else:
-                            props["snowmobile"] = "no"
-                if "motorized" in entry['properties']:
+                            props["snowmobile"] = "designated"
+                        # else:
+                        #     props["snowmobile"] = "no"
+                if "motorizedw" in entry['properties']:
                     if entry['properties']['motorizedw'] is not None:
                         # FIXME: there's a better tag
-                        if entry['properties']['motorized'] == "Y":
-                            props["motorized"] = "yes"
-                        else:
-                            props["motorized"] = "no"
+                        if entry['properties']['motorizedw'] == "Y":
+                            props["motorized"] = "designated"
+                        # else:
+                        #     props["motorized"] = "no"
                 if len(props) == 0:
                     continue
                 if geom is not None:
@@ -259,7 +249,7 @@ async def main():
         data = usgs.convert(args.state, args.infile)
 
         file = open(args.outfile, "w")
-        geojson.dump(data, file)
+        geojson.dump(data, file, indent=4)
         log.info(f"Wrote {args.outfile}")
         
 if __name__ == "__main__":
