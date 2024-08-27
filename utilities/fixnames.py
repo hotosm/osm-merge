@@ -114,12 +114,10 @@ async def main():
                 tags["ref:usfs"] = tmp[1]
 
         if name is None:
+            features.append(feature)
             continue
 
-        log.debug(f"NAME: {name}")
-
-        # if name == "415.3A":
-        #    breakpoint()
+        # log.debug(f"NAME: {name}")
         ref = "[0-9]+[.a-z]"
         pat = re.compile(ref)
         if pat.match(name.lower()):
@@ -265,7 +263,7 @@ async def main():
                 del entry["tags"]["tiger:upload_uuid"]
             if "name_1" in entry["tags"]:
                 del entry["tags"]["name_1"]
-            if "refs" in entry:
+            if "lat" not in entry["attrs"]:
                 out.append(osm.createWay(entry, True))
             else:
                 out.append(osm.createNode(entry, True))
