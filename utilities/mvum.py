@@ -36,6 +36,7 @@ from thefuzz import fuzz, process
 from pathlib import Path
 from tqdm import tqdm
 import tqdm.asyncio
+from progress.bar import Bar, PixelBar
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -68,8 +69,11 @@ class MVUM(object):
 
         data = geojson.load(file)
 
+        spin = Bar('Processing...', max=len(data['features']))
+
         highways = list()
         for entry in data["features"]:
+            # spin.next()
             geom = entry["geometry"]
             id = 0
             sym = 0
@@ -81,44 +85,74 @@ class MVUM(object):
             if entry["properties"] is None or entry is None:
                 continue
             if "ID" in entry["properties"]:
-                props["ref:usfs"] = f"FR {entry['properties']['ID']}"
+                # There appears to be a bug in the MVUM reference numbers
+                # that don't match any other dataseta. Namely many major
+                # MVUM roads have a .1 appended, which is not what is on
+                # the topo maps or dataset. Any legit suffix would include
+                # a latter, ie... "491.1B", which does match the other
+                # datasets. Also the paper MVUM or PDF version of this
+                # dataset has the correct number without the .1.
+                id = f"FR {entry['properties']['ID']}"
+                if id[-1].isalpha():
+                    props["ref:usfs"] = id
+                elif id.find('.') and id[-1] == '1':
+                    props["ref:usfs"] = id[:-2]
             if "NAME" in entry["properties"] and entry["properties"]["NAME"] is not None:
                 title = entry["properties"]["NAME"].title()
                 name = str()
                 # Fix some common abbreviations
                 if " Cr " in title:
-                    name = name.replace(" Cr ", " Creek ")
+                    name = title.replace(" Cr ", " Creek ")
                 elif " Cr." in title:
-                    name = name.replace(" Cr. ", " Creek ")
+                    name = title.replace(" Cr. ", " Creek ")
                 elif " Crk" in title:
-                    name = name.replace(" Crk ", " Creek ")
+                    name = title.replace(" Crk ", " Creek ")
                 elif " Cg " in title:
-                    name = name.replace(" Cg ", " Campground ")
+                    name = title.replace(" Cg ", " Campground ")
+                elif " Cg" in title:
+                    name = title.replace(" Cg", " Campground")
+                elif " Rd" in title:
+                    name = title.replace(" Rd", " Road")
+                elif " Disp " in title:
+                    name = title.replace(" Disp ", " Dispersed ")
                 elif " Rd. " in title:
-                    name = name.replace(" Rd. ", " Road")
+                    name = title.replace(" Rd. ", " Road")
+                elif " Mt " in title:
+                    name = title.replace(" Mt ", " Mountain")
                 elif " Mtn " in title:
-                    name = name.replace(" Mtn", " Mountain")
+                    name = title.replace(" Mtn ", " Mountain ")
                 else:
                     name = title
-                if name.find("Road") <= 0:
+                if name.find(" Road") <= 0:
                     props["name"] = f"{name} Road"
-            if "OPERATIONA" in entry["properties"] and entry["properties"]["OPERATIONA"] is not None:
-                op = int(entry["properties"]["OPERATIONALMAINTLEVEL"][:1])
-                if op == 1:
-                    props["access"] = "no"
-                elif op == 2:
-                    props["smoothness"] = "very bad"
-                elif op == 3:
-                    props["smoothness"] = "good"     
-                elif op == 4:
-                    props["smoothness"] = "bad"
-                elif op == 5:
-                    props["smoothness"] = "excellent"
+                else:
+                    props["name"] = name
+                # log.debug(f"NAME: {props["name"]}")
 
-            if "SBS_SYMBOL_NAME" in entry["properties"]:
-                if entry["properties"]["SBS_SYMBOL_NAME"] is None:
+            if "OPER_MAINT_LEVEL" in entry["properties"] and entry["properties"]["OPER_MAINT_LEVEL"] is not None:
+                if entry["properties"]["OPER_MAINT_LEVEL"][:3] != "NA ":
+                    op = int(entry["properties"]["OPER_MAINT_LEVEL"][:1])
+                    if op == 1:
+                        props["access"] = "no"
+                    elif op == 2:
+                        props["smoothness"] = "very bad"
+                    elif op == 3:
+                        props["smoothness"] = "good"
+                    elif op == 4:
+                        props["smoothness"] = "bad"
+                    elif op == 5:
+                        props["smoothness"] = "excellent"
+
+            if "PRIMARY_MAINTAINER" in entry["properties"] and  entry["properties"]["PRIMARY_MAINTAINER"] is not None:
+                if entry["properties"]["PRIMARY_MAINTAINER"] == "FS - FOREST SERVICE":
+                    props["operator"] = "US Forest Service"
+                else:
+                    props["operator"] = entry["properties"]["PRIMARY_MAINTAINER"].title()
+
+            if "SYMBOL_NAME" in entry["properties"]:
+                if entry["properties"]["SYMBOL_NAME"] is None:
                     continue
-                op = entry["properties"]["SBS_SYMBOL_NAME"][:4]
+                op = entry["properties"]["SYMBOL_NAME"][:4]
                 if op == "Road":
                     props["smoothness"] = "very bad"
                 elif op == "Pave":
@@ -137,13 +171,12 @@ class MVUM(object):
             #         props["smoothness"] = "very bad"
             #     else:
             #         sym = entry["properties"]
-            if "SURFACETYP" in entry["properties"]:
-                surface = entry["properties"]["SURFACETYPE"]
+            if "SURFACE_TYPE" in entry["properties"]:
+                surface = entry["properties"]["SURFACE_TYPE"]
                 if surface is not None:
                     if surface[:3] == "NAT":
                         props["surface"] = "dirt"
                     elif surface[:3] == "IMP" or surface[:5] == "CSOIL":
-                        props["surface"] = "gravel"
                         props["surface"] = "compacted"
                     elif surface[:3] == "AGG":
                         props["surface"] = "gravel"
@@ -152,8 +185,8 @@ class MVUM(object):
                     elif surface[:3] == "BST" or surface[:2] == "P ":
                         props["surface"] = "paved"
 
-            if "HIGHCLEARANCEVEHICLE" in entry["properties"]:
-                if entry["properties"]["HIGHCLEARANCEVEHICLE"] is not None:
+            if "HIGH_CLEARANCE_VEHICLE" in entry["properties"]:
+                if entry["properties"]["HIGH_CLEARANCE_VEHICLE"] is not None:
                     props["4wd_only"] = "yes"
 
             if "SEASONAL" in entry["properties"]:
@@ -218,7 +251,7 @@ good to avoid any highway with a smoothness of "very bad" or worse.
         data = mvum.convert(args.infile)
 
         file = open(args.outfile, "w")
-        geojson.dump(data, file)
+        geojson.dump(data, file, indent=4)
         log.info(f"Wrote {args.outfile}")
         
 if __name__ == "__main__":
