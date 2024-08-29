@@ -22,46 +22,16 @@ import os
 import re
 from sys import argv
 from osm_fieldwork.osmfile import OsmFile
-from geojson import Point, Feature, FeatureCollection, dump, Polygon, load
-import geojson
-from shapely.geometry import shape, LineString, Polygon, mapping
-import shapely
-from shapely.ops import transform
-from shapely import wkt
-from progress.bar import Bar, PixelBar
-from progress.spinner import PixelSpinner
-from osm_fieldwork.osmfile import OsmFile
-from osm_fieldwork.parsers import ODKParsers
-import pyproj
-import asyncio
 from codetiming import Timer
-import concurrent.futures
-from cpuinfo import get_cpu_info
-from time import sleep
-from haversine import haversine, Unit
-from thefuzz import fuzz, process
 from pathlib import Path
-from osm_fieldwork.parsers import ODKParsers
-from pathlib import Path
-from spellchecker import SpellChecker
-from osm_rawdata.pgasync import PostgresClient
-from tqdm import tqdm
-import tqdm.asyncio
 import xmltodict
-import math
-from threading import Thread
+from progress.bar import Bar, PixelBar
 
 # Instantiate logger
 log = logging.getLogger(__name__)
 
-# The number of threads is based on the CPU cores
-info = get_cpu_info()
-# Try doubling the number of cores, since the CPU load is
-# still reasonable.
-cores = info['count']
 
-
-async def main():
+def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
         prog="fix names",
@@ -98,6 +68,10 @@ async def main():
         log.error("Unsupport file type!")
 
     features = list()
+    if "features" in data:
+        spin = Bar('Processing...', max=len(data['features']))
+    else:
+        spin = Bar('Processing...', max=len(data))
     for feature in data:
         tags = {"name": None, "ref:usfs": None, "ref": None}
         matched = False
@@ -113,23 +87,27 @@ async def main():
         elif "tags" in feature:
             if "name" in feature["tags"]:
                 name = feature["tags"]["name"]
+            if "name" not in feature["tags"] and "name_1" in feature["tags"]:
+                name = feature["tags"]["name_1"]
             if "ref" in feature["tags"]:
                 ref = feature["tags"]["ref"]
 
         if ref is not None:
             if ref.find(';') > 0:
-                tmp = ref.split(';')
-                log.debug(f"REF: {ref}")
-                tags["ref"] = tmp[0]
-                tags["ref:usfs"] = tmp[1]
+                # log.debug(f"REFS: {ref}")
+                for item in ref.split(';'):
+                    if item[:3] == "CR " or item[:3] == "US ":
+                        tags["ref"] = item
+                    elif item[:3] == "FS " or item[:3] == "FR ":
+                        tags["ref:usfs"] = item
+                    elif item[:3] == "NF ":
+                        tags["ref:usfs"] = item.replace('NF ', 'FR ')
 
         if name is None:
+            features.append(feature)
             continue
 
         # log.debug(f"NAME: {name}")
-
-        # if name == "415.3A":
-        #    breakpoint()
         ref = "[0-9]+[.a-z]"
         pat = re.compile(ref)
         if pat.match(name.lower()):
@@ -151,41 +129,56 @@ async def main():
             tags["ref"] = f"CR {tmp[2].title()}"
             matched = True
 
-        pat = re.compile(f"fs road")
+        pat = re.compile(f"fs.* road")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
             tmp = name.split(' ')
             tags["ref:usfs"] = f"FR {tmp[2].title()}"
             matched = True
 
-        pat = re.compile(f"fr road")
+        pat = re.compile(f"fs[hr] ")
+        if pat.match(name.lower()) and not matched:
+            # log.debug(f"MATCHED: {pat.pattern}")
+            tmp = name.split(' ')
+            tags["ref:usfs"] = f"FR {tmp[1].title()}"
+            matched = True
+
+        # pat = re.compile(f"fsr road")
+        # if pat.match(name.lower()) and not matched:
+        #     # log.debug(f"MATCHED: {pat.pattern}")
+        #     tmp = name.split(' ')
+        #     tags["ref:usfs"] = f"FR {tmp[2].title()}"
+        #     matched = True
+
+        pat = re.compile(f"usf.* road")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
             tmp = name.split(' ')
             tags["ref:usfs"] = f"FR {tmp[2].title()}"
             matched = True
 
-        pat = re.compile(f"usfs road")
+        pat = re.compile(f"national forest road")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
             tmp = name.split(' ')
-            tags["ref:usfs"] = f"FR {tmp[2].title()}"
+            tags["ref:usfs"] = f"FR {tmp[3].title()}"
             matched = True
 
         pat = re.compile(f".*forest service road")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
-            tmp = name.split(' ')
-            if len(tmp) == 3:
-                tags["ref:usfs"] = f"FR {tmp[2].title()}"
-            elif len(tmp) == 4:
-                tags["ref:usfs"] = f"FR {tmp[3].title()}"
+            space  = name.rfind(' ')
+            sub  = name.rfind(' ', 0, space)
+            if len(name) - space <= 3:
+                ref = name[sub:].replace(' ', '')
+            tmp = ref.split(' ')
+            tags["ref:usfs"] = f"FR {ref.title()}"
             matched = True
 
         pat = re.compile(f"fr ")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
-            tags["ref:usfs"] = f"FR {tmp[1].title()}"
+            tags["ref:usfs"] = f"FR {name.title()}"
             matched = True
 
         pat = re.compile(f"fs ")
@@ -193,6 +186,13 @@ async def main():
             # log.debug(f"MATCHED: {pat.pattern}")
             tmp = name.split(' ')
             tags["ref:usfs"] =  f"FR {tmp[1].title()}"
+            matched = True
+
+        pat = re.compile(f"forest road ")
+        if pat.match(name.lower()) and not matched:
+            # log.debug(f"MATCHED: {pat.pattern}")
+            tmp = name.split(' ')
+            tags["ref:usfs"] =  f"FR {tmp[2].title()}"
             matched = True
 
         pat = re.compile(f"usfs trail ")
@@ -232,7 +232,7 @@ async def main():
         log.info(f"Wrote {args.outfile}")
     else:
         path = Path(args.outfile)
-        outosm = OsmFile(f"{path.stem}.osm")
+        outosm = OsmFile(f"{path.stem}-out.osm")
         out = list()
         for entry in features:
             if "tiger:cfcc" in entry["tags"]:
@@ -257,7 +257,9 @@ async def main():
                 del entry["tags"]["tiger:separated"]
             if "tiger:upload_uuid" in entry["tags"]:
                 del entry["tags"]["tiger:upload_uuid"]
-            if "refs" in entry:
+            if "name_1" in entry["tags"]:
+                del entry["tags"]["name_1"]
+            if "lat" not in entry["attrs"]:
                 out.append(osm.createWay(entry, True))
             else:
                 out.append(osm.createNode(entry, True))
@@ -267,6 +269,7 @@ async def main():
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
+    main()
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    # loop.run_until_complete(main())
