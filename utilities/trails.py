@@ -36,6 +36,7 @@ from thefuzz import fuzz, process
 from pathlib import Path
 from tqdm import tqdm
 import tqdm.asyncio
+from progress.bar import Bar, PixelBar
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ cores = info['count']
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-class MVUM(object):
+class Trails(object):
     def __init__(self,
                  filespec: str = None,
                  ):
@@ -69,58 +70,153 @@ class MVUM(object):
         data = geojson.load(file)
 
         highways = list()
+        spin = Bar('Processing...', max=len(data["features"]))
         for entry in data["features"]:
+            spin.next()
             geom = entry["geometry"]
-            id = 0
-            sym = 0
-            op = None
-            surface = str()
-            name = str()
             props = dict()
             # These are the defaults for all trail features
             props["highway"] = "path"
-            props["operator"] = "National Forest Service"
-            props["access"] = "public"
-            props["informal"] = "no"
-            # print(entry["properties"])
-            for key, value in entry["properties"].items():
-                if value == "N/A" or value is None:
-                    continue
-                # print(key, value)
-                if key == "TRAIL_NO":
-                    props["ref:usfs"] = f"FR {value}"
-                if key == "TRAIL_NAME":
-                    props["name"] = value.title()
-                if key == "SNOWMOBILE_ACCPT" or key == "SNOWMOBILE_MANAGED":
-                    props["snowmobile"] = "yes"
-                if key == key == "SNOWMOBILE_RESTRICTED":
-                    props["snowmobile"] = "no"
-                if key == "HIKER_PEDESTRIAN_MANAGED" or key == "HIKER_PEDESTRIAN_ACCPT":
-                    props["access"] = "public"
-                if key == "BICYCLE_MANAGED" or key == "_BICYCLEACCPT":
-                    props["bicycle"] = "yes"
-                if key == "BICYCLE_RESTRICTED":
-                    props["bicycle"] = "no"
-                if key == "ATV_MANAGED" or key == "ATV_ACCPT":
-                    props["atv"] = "yes"
-                if key == "ATV_RESTRICTED":
-                    props["atv"] = "no"
-                if key == "MOTORCYCLE_MANAGED" or key == "MOTORCYCLE_ACCPT":
-                    props["motorcycle"] = "yes"
-                if key == "MOTORCYCLE_RESTRICTED":
-                    props["motorcycle"] = "no"
-                if key == "PACK_SADDLE_MANAGED" or key == "PACK_SADDLE_ACCPT:":
-                    props["horse"] = "yes"
-                if key == "PACK_SADDLE_RESTRICTED":
-                    props["horse"] = "no"
-                if key == "SNOWSHOE_MANAGED" or key == "SNOWSHOE_ACCPT":
-                    props["snowshoe"] = "yes"
-                if key == "SNOWSHOE_RESTRICTED":
-                    props["snowshoe"] = "no"
-                if key == "XCOUNTRY_SKI_MANAGED" or key == "XCOUNTRY_SKI_ACCPT":
-                    props["ski"] = "yes"
-                if key == "XCOUNTRY_SKI_RESTRICTED":
-                    props["ski"] = "no"
+            props["foot"] = "designated"
+            props["bicyle"] = "no"
+            props["motor_vehicle"] = "no"
+            if "MAINTAINER" in entry["properties"]:
+                # This is the NPS trail dataset
+                props["operator"] = entry["properties"]["MAINTAINER"]
+                if "TRLNAME" in entry["properties"]:
+                    props["name"] = entry["properties"]["TRLNAME"]
+                if "TRLALTNAME" in entry["properties"]:
+                    if entry["properties"]["TRLALTNAME"] != "Unknown":
+                        props["alt_name"] = entry["properties"]["TRLALTNAME"].title()
+                if "TRLCLASS"  in entry["properties"]:
+                    if entry["properties"]["TRLCLASS"] == "Class1":
+                        pass
+                    elif entry["properties"]["TRLCLASS"] == "Class2":
+                        pass
+                    elif entry["properties"]["TRLCLASS"] == "Class3":
+                        pass
+                    elif entry["properties"]["TRLCLASS"] == "Class4":
+                        pass
+                    elif entry["properties"]["TRLCLASS"] == "Class5":
+                        pass
+                if "TRLUSE" in entry["properties"]:
+                    for usage in entry["properties"]["TRLUSE"].strip().split('|'):
+                        if usage == "Unknown":
+                            continue
+                        elif usage == "Bike" or usage == "Bicycle":
+                            props["bicycle"] = "yes"
+                        elif usage == "ATV" or usage[:12] == "All-Terrain":
+                            props["atv"] = "yes"
+                        elif usage == "Motorcycle":
+                            props["motorcycle"] = "yes"
+                        elif usage == "ADA":
+                            # FIXME on this tag
+                            props["wheelchair"] = "yes"
+                        elif usage.find("Saddle") > 0:
+                            props["horse"] = "yes"
+                        elif usage == "Bicycle/Motorized":
+                            props["bicycle"] = "yes"
+                            props["motor_vehicle"] = "yes"
+                        elif usage == "Cross-Country Ski":
+                            props["ski"] = "yes"
+                        elif usage == "Dog Sled":
+                            props["dog_sled"] = "yes"
+                        elif usage == "Foot/Bicycle/Motorized":
+                            props["bicycle"] = "yes"
+                            props["motor_vehicle"] = "yes"
+                        elif usage.find("Four-Wheel") > 0:
+                            props["4wd_only"] = "yes"
+                        elif usage == "Snowmobile":
+                            props["snowmobile"] = "yes"
+                        elif usage == "Snowshoe":
+                            props["snowshoe"] = "yes"
+                        elif usage == "Horse and Hiking" or usage == "Horse/Hiking":
+                            props["horse"] = "yes"
+                        elif usage == "Horse, Hiking, and Bicycle":
+                            props["horse"] = "yes"
+                            props["bicycle"] = "yes"
+                        elif usage == "Horse/Motorized":
+                            props["horse"] = "yes"
+                            props["motor_vehicle"] = "yes"
+                        elif usage == "Motorized":
+                            props["motor_vehicle"] = "yes"
+                        elif usage == "Wheelchair Accessible Trail":
+                            props["wheelchair"] = "yes"
+                    if "TRLSURFACE" in entry["properties"]:
+                        types = ["metal",
+                                 "rubber",
+                                 "snow",
+                                 "clay",
+                                 "brick",
+                                 "concrete",
+                                 "asphalt",
+                                 "wood",
+                                 "sand",
+                                 ]
+                        surface = entry["properties"]["TRLSURFACE"].lower()
+                        if surface[:7] == "gravel":
+                            props["surface"] = "gravel"
+                        elif surface == "Native":
+                            props["surface"] = "ground"
+                        elif surface == "earth" or surface == "dirt" or surface == "soil":
+                            props["surface"] = "dirt"
+                        elif surface == "Aggregate":
+                            props["surface"] = "chipseal"
+                        elif surface == "Bituminous":
+                            props["surface"] = "asphalt"
+                        elif surface in types:
+                            # Catch everything in the list
+                            props["surface"] = surface.lower()
+                    if "SEASONAL" in entry["properties"]:
+                        props["seasonal"] = "yes"
+
+            else:
+                # This is the USFS dataset
+                spin.next()
+                props["operator"] = "US Forest Service"
+                id = 0
+                sym = 0
+                op = None
+                surface = str()
+                name = str()
+                # props["informal"] = "no"
+                # print(entry["properties"])
+                for key, value in entry["properties"].items():
+                    if value == "N/A" or value is None:
+                        continue
+                    # print(key, value)
+                    if key == "TRAIL_NO":
+                        id = f"FR {entry['properties']['TRAIL_NO']}"
+                        # For consistency, capitalize the last character
+                        props["ref:usfs"] = id.upper()
+                    elif key == "TRAIL_NAME":
+                        props["name"] = value.title()
+                    if key[:-6] == "_ACCPT" and value == "Y":
+                        value = "yes"
+                    elif key[:-5] == "_DISC" and value == "Y":
+                        value = "discouraged"
+                    elif key[:-12] == "_ACCPT_DISC" and value == "Y":
+                        value = "permissive"
+                    elif key[:-9] == "_MANAGED" and value == "Y":
+                        value = "designated"
+                    elif key[:-11] == "_RESTRICTED" and value == "Y":
+                        value = "no"
+                    if key[:16] == "HIKER_PEDESTRIAN" and value == "Y":
+                        props["foot"] = value
+                    elif key[:11] == "SNOWMOBILE" and value == "Y":
+                        props["snowmobile"] = value
+                    elif key[:7] == "BICYCLE" and value == "Y":
+                        props["bicyclMAINTAINERe"] = value
+                    elif key[:3] == "ATV" and value == "Y":
+                        props["atv"] = value
+                    elif key[:10] == "MOTORCYCLE" and value == "Y":
+                        props["motorcycle"] = value
+                    elif key[:11] == "PACK_SADDLE" and value == "Y":
+                        props["horse"] = "yes"
+                    elif key[:8] == "SNOWSHOE" and value == "Y":
+                        props["snowshoe"] = value
+                    elif key[:13] == "XCOUNTRY_SKI" and value == "Y":
+                        props["ski"] = value
 
             if geom is not None:
                 highways.append(Feature(geometry=geom, properties=props))
@@ -169,12 +265,12 @@ good to avoid any highway with a smoothness of "very bad" or worse.
         ch.setFormatter(formatter)
         log.addHandler(ch)
 
-    mvum = MVUM()
+    trails = Trails()
     if args.convert and args.convert:
-        data = mvum.convert(args.infile)
+        data = trails.convert(args.infile)
 
         file = open(args.outfile, "w")
-        geojson.dump(data, file)
+        geojson.dump(data, file, indent=4)
         log.info(f"Wrote {args.outfile}")
         
 if __name__ == "__main__":
