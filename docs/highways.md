@@ -16,7 +16,7 @@ updating existing features with a focus on improved
 navigation. Importing new features from these datasets uses a
 different process, so it's better to not mix the two.
 
-![Blank Sign](images/video.png){width=300 height=200}
+![Blank Sign](https://github.com/hotosm/osm-merge/assets/video.png){width=300 height=200}
 
 While there are details in the the datasets that would be useful, the
 initial set is the name, the reference number, and the vehicle class
@@ -36,8 +36,7 @@ Although most of the fields in these datasets aren't useful for OSM,
 some are like is it a seasonal road, various off road vehicle access
 permissions, etc... since this is also useful for navigation. Any tags
 added or edited will follow the [OSM Tagging
-Guidelines](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#Tagging_Forest_Roads)lh
-
+Guidelines](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#Tagging_Forest_Roads)
 for forest roads.
 
 # The Datasets
@@ -63,7 +62,7 @@ And OpenStreetMap of course.
 
 ## Processing The Datasets
 
-Since the files are very large with different schemas, a critical
+Since the files are very large with different schema, a critical
 part of the conflation process is preparing the data. Some of these
 files are so large neither QGIS or JOSM can load them without
 crashing. I use two primary tools for splitting up the
@@ -75,9 +74,9 @@ tags into an existing feature. If conflating with OSM data using the
 GeoJson format, you need to manually cut & paste the new tags onto the
 existing feature.
 
-As you furthur reduce large datasets to smaller more manageble pieces,
+As you further reduce large datasets to smaller more manageable pieces,
 this can generate many files. The top level choice is the largest
-category. I use National Forests bopundaries as they can cross state
+category. I use National Forests boundaries as they can cross state
 lines.
 
 All of the datasets have issues with some features lacking a
@@ -93,15 +92,15 @@ GDB files to GeoJson like this:
 This generates a clean GeoJson file. It has many fields we don't want,
 so I run a simple [conversion program](utilities.md) that parses the
 fields are defined in the original file, and converts the few fields
-we want for conflation into the OSM equivalant tag/value. For
+we want for conflation into the OSM equivalent tag/value. For
 conflation to work really well, all the datasets must use the same
 schema for the tags and values.
 
 Since the MVUM dataset covers the entire country, I build a directory
 tree in which the deeper you go, the smaller the datasets are. I have
-the Nationl Forest Service Administrative boundaries unpacked into a
+the National Forest Service Administrative boundaries unpacked into a
 top level directory. From there I chop the national dataset into just
-the data for a forest. This is still a large file, but manageble to
+the data for a forest. This is still a large file, but manageable to
 edit. Sometimes with rural highway mapping, a large area works
 better. If there are plans to use the [Tasking
 Manager](https://tasks.openstreetmap.us/), The files are still too
@@ -113,7 +112,13 @@ that'll be under the 5000km limit. I used the
 use the national forest boundary and break it into squares, and
 clipped properly at the boundary. These task boundary polygons can
 then be used to create the project in the Tasking Manager, which will
-furthur split that into the size you want for mapping.
+further split that into the size you want for mapping.
+
+Something to be conscious of is these external datasets are also full
+of obscure bugs. Some of the data I think hasn't been updated since
+the government discovered digital mapping a few decades ago. The
+conversion utilities will handle all of these problems in these
+datasets.
 
 ### The OpenStreetMap Extract
 
@@ -159,7 +164,7 @@ national forest.
 Then the real fun starts after the drudgery of getting ready to do
 conflation.
 
-![Blank Sign](images/20200726_103229.jpg){width=300 height=200}
+![Blank Sign](https://github.com/hotosm/osm-merge/assets//20200726_103229.jpg){width=300 height=200}
 
 #### Forest Road Names
 
@@ -179,16 +184,16 @@ when conflating, since comparing names is part of the process.
 Since there is community consensus that the *tiger:* tags added back
 in 2008 when the TIGER data was imported are meaningless, so should be
 deleted as bloat. The *fixnames.py* utility used for correct the name
-alos deletes these from each feature so you don't have to manually do
+also deletes these from each feature so you don't have to manually do
 it.
 
 ### MVUM Roads
 
 This is all the highways in National Forests. The data contains
-several fields that wopuld be useful in OSM. This dataset has a
+several fields that would be useful in OSM. This dataset has a
 grading of 1-5 for the type of vehicle that can drive the road, as
 well as a field for high clearance vehicles only. This is roughly
-equivalant to the *smoothness* tag in OSM. The surfce type is also
+equivalent to the *smoothness* tag in OSM. The surface type is also
 included, which is the same as the OSM *surface* tag. There are other
 fields for seasonal access, and seasonal road closures. Roads tagged
 as needing a high clearance vehicle generate a *4wd_only* tag for OSM.
@@ -202,13 +207,20 @@ thousands of these...
 The type of vehicle that can be driven on a particular road is a bit
 subjective based on ones off-road driving experience. These are
 typically jeep trails of varying quality, but very useful for
-backcountry rescues or wildland fires.
+back-country rescues or wildland fires.
+
+There appears to be a bug in the MVUM reference numbers that don't
+match any other datasets. Namely many major MVUM roads have a .1
+appended, which is not what is on the topo maps or dataset. Any legit
+suffix would include a latter, ie... "491.1B", which does match the
+other datasets. So I removed the suffix where it doesn't have a
+letter at the end.
 
 ### Mvum Trails
 
 These are Multi Vehicle Use Maps (MVUM), which define the class of
 vehicle appropriate to drive a road. The trails dataset contains
-additional highways, as some hikiing trails are also forest service
+additional highways, as some hiking trails are also forest service
 roads. These are primarily for hiking, but allow vehicle use,
 primarily specialized off-road vehicles like an ATV or UTV. They
 suffer from the same bad data as the MVUM roads.
@@ -244,9 +256,17 @@ into GeoJson with OSM tagging schema. The topographical data is
 especially useful for conflation, since the name and reference number
 match the paper or GeoPDF maps many people use.
 
+I found a few problems processing the ShapeFiles due to font encoding
+issues, and also with converting directly to GeoJson. I do this as
+a two step process, first make a unified ShapeFile from all the other
+ShapeFiles, and then convert it to GeoJson, which seems to work best.
+
+	ogrmerge.py -nln highways -single -o highways.shp VECTOR_*/Shape/Trans_Road*.shp -lco ENCODING=""
+	ogr2ogr highways.geojson highways.shp
+
 ## Conflation
 
-Once all the datasets are broken into manageble peices, and everything
+Once all the datasets are broken into manageable pieces, and everything
 is using the OSM tagging schema conflation can start. There are two
 datasets specified, one is the primary, and the other is the
 secondary. The tag values in the primary will override the values in
@@ -274,7 +294,13 @@ national forests. But this is the type of thing you'd really need to
 ground-truth, and luckily doesn't effect navigation when you are out
 in a network of unmaintained dirt roads.
 
-![Blank Sign](images/20210913_113539.jpg){width=300 height=200}
+![Blank Sign](https://github.com/hotosm/osm-merge/assets/20210913_113539.jpg){width=300 height=200}
+
+The conflation algorithm is relatively simple at the high level, just
+find all other highways within a short distance, and then check the
+slope to eliminate a side road that may be touching. At the lower
+level, there is a lot of support for dealing with the bugs in the
+external datasets.
 
 ### Editing in JOSM
 
@@ -285,7 +311,7 @@ selected features, ideally the entire task. Then I just go through all
 the features one at a time. When the OSM XML dataset is loaded,
 nothing will appear in JOSM. This is because the OSM XML file produced
 by conflation has the refs for the way, but lack the nodes. All it
-takes is selecting the *update modified* menu itm under the *File*
+takes is selecting the *update modified* menu item under the *File*
 menu and all the nodes get downloaded, and the highways appear.
 
 I often have the original datasets loaded as layers, since sometimes
@@ -311,14 +337,14 @@ version*. Then I load all the ways into the
 [TODO](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/TODO_list)
 plugin.
 
-Usng the plugin to validate a feature all I have to do is click on the
+Using the plugin to validate a feature all I have to do is click on the
 entry. Sometimes there will be issues that need to be manually
 fixed. If conflation has changed the name, the old one is still in the
 feature so a manual comparison can be done. Sometimes there are weird
 typos that have slipped through the process. But many times for these
 remote highways you can just mark it as done, and go on to the next
-one. This lkets you validate a large number of features relatively
-quickly without sacrifing quality.
+one. This lets you validate a large number of features relatively
+quickly without sacrificing quality.
 
 #### Editing OSM XML
 
@@ -333,7 +359,7 @@ JOSM using the conflict dialog box. No geometries have changed, just
 tags, so you have to manually select the tags to be merged. Features
 without tags beyond **highway=something** merge automatically. which
 makes validating these features quick and easy. Note that every
-feature needs to be validated indivigually.
+feature needs to be validated individually.
 
 #### Editing GeoJson
 
@@ -345,6 +371,19 @@ highways, I don't use the TODO plugin. I then cut the tags and values
 for a feature from the GeoJson file, then switch to the OSM layer, and
 paste the tags into the feature.
 
+## Validating
+
+Here's an example of the results of a 3 way conflation. This was
+between the MVUM data, the topographical data, and OSM data.
+
+* highway=unclassified
+* lanes=2
+* name=Whisky Park Road
+* operator=US Forest Service
+* ref:usfs=FR 503
+* smoothness=good
+* surface=gravel
+
 #### Splitting Highways
 
 In national forest lands, the reference number changes at every major
@@ -352,9 +391,9 @@ intersection. Side roads that branch off have an additional modifier
 added. or example, the main road may be called *ref:usfs="FR 505"*,
 with a change to *ref:usfs="FR 505.1"* when it crosses a state
 line. Spur roads (often to campsites) get a letter attached, so the
-spur road is *ref:usfgs="FR 505.1A". Understanding how the reference
+spur road is *ref:usfs="FR 505.1A". Understanding how the reference
 numbers are assigned makes it easy to transmit your location over a
-rado or phone, and have somebody looking on a map find that
+radio or phone, and have somebody looking on a map find that
 location. Much easier than using GPS coordinates.
 
 For the highways that were traced off of satellite imagery, there is
@@ -386,3 +425,4 @@ that may need conflation before uploading, for example OpenDataKit
 data. Some detail on that process is in this [Highway
 Mapping](https://www.senecass.com/projects/Mapping/tech/HighwayMappingwithODK.html)
 blog post about a field mapping trip.
+
