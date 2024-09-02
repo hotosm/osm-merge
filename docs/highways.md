@@ -179,6 +179,21 @@ correct it to the OSM standard. Since the external datasets already
 follow the same guidelines, this increases the chance of a good match
 when conflating, since comparing names is part of the process.
 
+#### Forest Road Reference Nunmbers
+
+I'm a huge believer that the name and reference number in OSM should
+match the street sign, since that's often what is used for
+navigation. Unfortunately the MVUM data has many highways with a *.1*
+suffix, which some street signs don't display. Also, depending on the
+age of the paper maps or digital files, older maps lack the *.1*
+suffix, but newer datasets so have the *.1* suffix. Since a *.1*
+suffix may be a spur road of questionable quality, it's an important
+detail, so included when updating the reference numbers.
+
+A minor note, the USGS Topographical basemap for JOSM also sometimes
+lacks the *.1* suffix, so can't be used to validate it.
+
+
 #### TIGER Tag Deletion
 
 Since there is community consensus that the *tiger:* tags added back
@@ -331,20 +346,32 @@ If you are editing with the OSM XML file produced by conflation, when
 the file is opened, there will be some conflicts. This is usually due
 to things like the incorrect forest road name getting deleted, since
 now it's a proper *ref:usfs* reference number. And the tiger tags are
-gone as well if the *fixnames.py* utility is used. To fix the
-conflicts, I just select them all, and click on *resolve to my
-version*. Then I load all the ways into the
+gone as well if the *fixnames.py* utility is used.
+
+To fix the conflicts, I just select them all, and click on *resolve to
+my version*. Since all the new tags and old tags are preserved, you
+can edit them directly in the tags window in JOSM. Then I load all the
+ways into the
 [TODO](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/TODO_list)
-plugin.
+plugin. You can also use the conflict dialog box to edit the merged
+tags, but I find the other way more efficient.
 
 Using the plugin to validate a feature all I have to do is click on the
 entry. Sometimes there will be issues that need to be manually
 fixed. If conflation has changed the name, the old one is still in the
-feature so a manual comparison can be done. Sometimes there are weird
-typos that have slipped through the process. But many times for these
-remote highways you can just mark it as done, and go on to the next
-one. This lets you validate a large number of features relatively
-quickly without sacrificing quality.
+feature so a manual comparison can be done. Often validating a feature
+is just deleting a few tags. But this is the important detail for
+machine editing. Somebody (not AI) must manually validate each changed
+feature. This is why the efficiency of mapping is important if you
+want to update a large area, like an entire national forest.
+
+Sometimes there are weird typos that have slipped through the
+process. This is where the time goes since you have to manually edit
+the falues. But many times for these remote highways you can just mark
+it as done, and go on to the next one. Many of these highways in OISM
+have no tags beyond **highway=track**, so mo conflicts.This lets you
+validate a large number of features relatively quickly without
+sacrificing quality.
 
 #### Editing OSM XML
 
