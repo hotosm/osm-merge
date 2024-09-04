@@ -224,13 +224,6 @@ subjective based on ones off-road driving experience. These are
 typically jeep trails of varying quality, but very useful for
 back-country rescues or wildland fires.
 
-There appears to be a bug in the MVUM reference numbers that don't
-match any other datasets. Namely many major MVUM roads have a .1
-appended, which is not what is on the topo maps or dataset. Any legit
-suffix would include a latter, ie... "491.1B", which does match the
-other datasets. So I removed the suffix where it doesn't have a
-letter at the end.
-
 ### Mvum Trails
 
 These are Multi Vehicle Use Maps (MVUM), which define the class of
