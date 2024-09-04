@@ -121,13 +121,14 @@ class MVUM(object):
                     props["name"] = name.replace('  ', ' ').strip()
                 # log.debug(f"NAME: {props["name"]}")
 
+            # https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf
             if "OPER_MAINT_LEVEL" in entry["properties"] and entry["properties"]["OPER_MAINT_LEVEL"] is not None:
                 if entry["properties"]["OPER_MAINT_LEVEL"][:3] != "NA ":
                     op = int(entry["properties"]["OPER_MAINT_LEVEL"][:1])
                     if op == 1:
                         props["access"] = "no"
                     elif op == 2:
-                        props["smoothness"] = "very bad"
+                        props["smoothness"] = "very_bad"
                     elif op == 3:
                         props["smoothness"] = "good"
                     elif op == 4:
