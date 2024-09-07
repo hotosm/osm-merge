@@ -85,18 +85,48 @@ split_aoi() {
     for state in ${states}; do
 	echo "Processing ${state} public lands..."
 	for land in ${datasets["${state}"]}; do
-	    echo "    Making task boundaries for ${land}"
+	    echo "    Making TM sized projects for ${land}"
 	    if test $(echo ${land} | grep -c "_Park" ) -gt 0; then
 		aoi="${boundaries}/NationalParks/${land}.geojson"
 	    else
 		aoi="${boundaries}/NationalForests/${land}.geojson"
 	    fi
-	    # FIXME: for some weird reason using the -o option
-	    # generate a bogus single Polygon, but the default name
-	    # seems to work fine
-	    fmtm-splitter -v -b ${aoi} -m ${tmmax}
+	    # fmtm-splitter -v -b ${aoi} -m ${tmmax}
+	    # This generates a grid of roughly 5000sq km tasks,
+	    # which is the maximum TM supports. Some areas are
+	    # smaller than this, so only one polygon.
+	    ${tmsplitter} --grid --infile ${aoi} --threshold 0.7
 	    # Make a multipolygon even if just one task
-	    ogr2ogr -nlt MULTIPOLYGON -makevalid ${state}/${land}_Tasks.geojson fmtm.geojson
+	    ogr2ogr -nlt MULTIPOLYGON -makevalid -clipsrc ${aoi} ${state}/${land}_Tasks.geojson output.geojson
+	    echo "Wrote ${state}/${land}_Tasks.geojson"
+	done
+    done
+}
+
+make_sub_tasks() {
+    # Split the polygon of the task into smaller sizes, each to fit
+    # a small TM task. These are used to make small task sized
+    # data extracts of the post conflated data to avoid lots of
+    # cut & paste.
+    tmmax=8000
+    for state in ${states}; do
+	echo "Processing public lands in ${state}..."
+	for land in ${datasets["${state}"]}; do
+	    echo "    Making task boundaries for clipping to ${land}"
+	    for task in ${state}/${land}_Tasks/${land}*_Tasks*.geojson; do
+		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		base=$(echo ${task} | cut -d '.' -f 1)
+		short=$(basename ${base} | sed -e "s/National.*Tasks/Task/")
+		if test ! -e ${base}; then
+		    mkdir -p ${base}
+		fi
+		# fmtm-splitter -v -b ${task} -m ${tmmax}
+		echo "    Making sub task boundaries for ${task}"
+		${tmsplitter} --grid --infile ${task} --threshold 0.1
+		ogr2ogr -nlt MULTIPOLYGON -makevalid -clipsrc ${task} ${base}/${short}_Tasks.geojson output.geojson
+		${tmsplitter} -v --split --infile ${base}/${short}_Tasks.geojson
+		mv -f ${short}*.geojson ${base}
+	    done
 	done
     done
 }
@@ -112,6 +142,19 @@ make_tasks() {
 	    mv ${land}_Tasks*.geojson ${state}/${land}_Tasks/
 	done
     done	
+}
+
+make_sub_mvum() {
+    for state in ${states}; do
+	echo "Processing public lands in ${state}..."
+	for land in ${datasets["${state}"]}; do
+	    echo "    Making task boundaries for clipping to ${land}"
+	    for task in ${state}/${land}_Tasks/${land}*_Tasks*.geojson; do
+		echo "FOO"
+		${dryrun} echo ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
+	    done
+	done
+    done
 }
 
 make_mvum_extract() {
@@ -356,9 +399,11 @@ while test $# -gt 0; do
 	    states=$1
 	    ;;
 	-p|--parks)
+	    make_sub_tasks
 	    # process_parks
 	    ;;
 	-f|--forests)
+	    make_sub_mvum
 	    # process_forests
 	    ;;
 	-d|--datasets)
@@ -368,10 +413,11 @@ while test $# -gt 0; do
 	    clean_tasks
 	    ;;
 	-e|--extract)
-	    # make_osm_extract ${basesets} yes
+	    make_osm_extract ${basesets} yes
 	    make_mvum_extract ${basesets} yes
 	    ;;
 	-a|--all)
+	    split_aoi
 	    make_tasks
 	    make_osm_extract ${basesets} yes
 	    make_mvum_extract ${basesets} yes
