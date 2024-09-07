@@ -1,6 +1,6 @@
 #!/bin/python3
 
-# Copyright (c) 2022 Humanitarian OpenStreetMap Team
+# Copyright (c) 2024 Humanitarian OpenStreetMap Team
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -102,8 +102,8 @@ def ogrgrid(outputGridfn: str,
     https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-fishnet-grid
     
     """
-    timer = Timer(text="ogrgrid() took {seconds:.0f}s")
-    timer.start()
+    # timer = Timer(text="ogrgrid() took {seconds:.0f}s")
+    # timer.start()
 
     # convert sys.argv to float
     xmin = extent[0]
@@ -169,7 +169,7 @@ def ogrgrid(outputGridfn: str,
     # Save and close DataSources
     outDataSource = None
 
-    timer.stop()
+    # timer.stop()
     return outLayer
 
 async def main():
@@ -234,7 +234,7 @@ async def main():
             geojson.dump(FeatureCollection([feature]), file)
             file.close()
     elif args.grid:
-        log.info(f"Generating the grid may take a long time...")
+        log.debug(f"Generating the grid may take a long time...")
         path = Path(args.outfile)
         #grid2 = partition(grid, float(1.1))
         driver = ogr.GetDriverByName("GeoJson")
@@ -264,31 +264,26 @@ async def main():
         # 1 meters is this factor in degrees
         meter = 0.0000114
 
-        for poly in folayer:
-            geom = poly.GetGeometryRef()
-            for i in range(0, geom.GetGeometryCount()):
-                task = geom.GetGeometryRef(i)
-                area = task.GetArea() * meter
-                log.debug(f"Area is: {area/1000}")
-                memlayer = memdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
-                outfile = f"foobar_{index}.geojson"
-                if os.path.exists(outfile):
-                    os.remove(outfile)
-                outdata = driver.CreateDataSource(outfile)
-                outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
-                outFeature = ogr.Feature(indefn)
-                outFeature.SetGeometry(task)
-                memlayer.CreateFeature(outFeature)
-                inlayer.Clip(memlayer, outlayer)
-                outdata.Destroy()
-                index += 1
-            #for feature in result:
-            #    outlayer.CreateFeature(feature)
-        # if args.extract:
-        #     grid = split_by_square(grid, meters=args.threshold, outfile=args.outfile, osm_extract=args.extract)
-        # else:
-        #     grid = split_by_square(grid, meters=args.threshold, outfile=args.outfile)
-            log.info(f"Wrote {args.outfile}")
+        # for poly in folayer:
+        #     geom = poly.GetGeometryRef()
+        #     for i in range(0, geom.GetGeometryCount()):
+        #         task = geom.GetGeometryRef(i)
+        #         # area = task.GetArea() * meter
+        #         # log.debug(f"Area is: {area/1000}")
+        #         memlayer = memdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
+        #         outfile = f"foobar_{index}.geojson"
+        #         if os.path.exists(outfile):
+        #             os.remove(outfile)
+        #         outdata = driver.CreateDataSource(outfile)
+        #         outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
+        #         outFeature = ogr.Feature(indefn)
+        #         outFeature.SetGeometry(task)
+        #         memlayer.CreateFeature(outFeature)
+        #         inlayer.Clip(memlayer, outlayer)
+        #         outdata.Destroy()
+        #         index += 1
+
+        log.debug(f"Wrote {args.outfile}")
 
     if args.extract:
         # Use gdal, as it was actually easier than geopandas or pyclir
@@ -316,6 +311,8 @@ async def main():
             #outlayer.Destroy()
             
             index += 1
+
+        log.info(f"Wrote {args.outfile}")
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
