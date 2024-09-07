@@ -28,11 +28,11 @@ boundaries="../../Boundaries/"
 fixname="~/projects/HOT/osm-merge.git/trails/utilities/fixnames.py"
 tmsplitter="/home/rob/projects/HOT/osm-merge.git/test/utilities/tm-splitter.py"
 
-debug=""
+dryrun=""		     # echo
 
 # The base datasets
 osmdata="../wy-co-ut.osm"
-mvumhighway="../Road_MVUM-out.geojson"
+mvumhighways="../Road_MVUM-out.geojson"
 mvumtrails="../Trail_MVUM-out.geojson"
 topohighways="../USGS_Topo_Roads-out.geojson"
 topotrails="../USGS_Topo_Trails-out.geojson"
@@ -41,7 +41,8 @@ utah="Dixie_National_Forest \
       Bryce_Canyon_National_Park \
       Zion_National_Park \
       Capitol_Reef_National_Park \
-      Arches_National_Park"
+      Arches_National_Park \
+      Manti_La_Sal_National_Forest"
 
 colorado="Arapaho_and_Roosevelt_National_Forests \
           Medicine_Bow_Routt_National_Forest \
@@ -101,6 +102,8 @@ split_aoi() {
 }
 
 make_tasks() {
+    # Split the multipolygon from fmtm-splitter into indivigual files
+    # for ogr2ogr and osmium.
     for state in ${states}; do
 	echo "Processing public lands in ${state}..."
 	for land in ${datasets["${state}"]}; do
@@ -112,8 +115,45 @@ make_tasks() {
 }
 
 make_mvum_extract() {
-	    rm -f ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson /play/MapData/SourceData/Road_MVUM-out.geojson
+    # Make the data extract for the public land from MVUM
+    # $1 is whether to make the huge data extract for all tasks
+    # $2 is whether to make smaller task extracts from the big one
+    base="${1-yes}"
+    tasks="${2-yes}"
+    for state in ${states}; do
+     	echo "Processing MVUM data in ${state}..."
+     	for land in ${datasets["${state}"]}; do
+     	    if test $(echo ${land} | grep -c "_Park" ) -gt 0; then
+		clip="NationalParks"
+	    else
+		clip="NationalForests"
+	    fi
+	    if test x"${base}" == x"yes"; then
+		rm -f ${land}_Tasks/${land}_MVUM_Roads.geojson
+		echo "    Making ${land}_MVUM_Roads.geojson"
+		ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson ${mvumhighways}
+
+		echo "    Making ${land}_MVUM_Trails.geojson"
+		rm -f ${forest}_Tasks/${land}_MVUM_Trails.geojson
+		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Trails.geojson ${mvumtrails}
+
+		# Merge the MVUM roads and trails together, since in OSM they
+		# are both in the data extract used for vconflation.
+		echo "    Merging MVUM Trails and Roads together"
+		rm -f ${state}/${land}_Tasks/mvum.geojson
+		${dryrun} ogrmerge.py -nln mvum -o ${state}/${land}_Tasks/mvum.geojson ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson
+		${dryrun} ogrmerge.py -nln mvum -append -o ${state}/${land}_Tasks/mvum.geojson ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson
+	    fi
+
+	    if test x"${tasks}" == x"yes"; then
+		for task in ${state}/${land}_Tasks/*_Tasks*.geojson; do
+		    echo "    Processing MVUM task ${task}..."
+		    num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		    ${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
+		done
+	    fi
+    	done
+    done
 }
 
 make_osm_extract() {
@@ -125,26 +165,26 @@ make_osm_extract() {
     for state in ${states}; do
 	echo "Extracting ${state} public lands from OSM..."
 	for land in ${datasets["${state}"]}; do
-	    if test ! -e ${state}/${land}; then
-		mkdir -p ${state}/${land}_Tasks
-	    fi
+	    # if test ! -e ${state}/${land}_Tasks; then
+	    # 	mkdir -p ${state}/${land}_Tasks
+	    # fi
 	    if test x"${base}" == x"yes"; then
-		echo "    Clipping ${land}..."
+		echo "    Clipping OSM data for ${land}..."
 		if test $(echo ${land} | grep -c "_Park" ) -gt 0; then
-		    ${debug} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalParks/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways.osm ${osmdata}
+		    ${dryrun} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalParks/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways.osm ${osmdata}
 		else
-		    ${debug} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways.osm ${osmdata}
+		    ${dryrun} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways.osm ${osmdata}
 		fi
 	    fi
 
 	    if test x"${tasks}" == x"yes"; then
 		for task in ${state}/${land}_Tasks/*_Tasks*.geojson; do
-		    echo "    Processing task ${task}..."
+		    echo "    Processing OSM task ${task}..."
 		    num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		    if test $(echo ${land} | grep -c "_Park" ) -gt 0; then
-		       ${debug} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalParks/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
+		       ${dryrun} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalParks/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
 		    else
-			${debug} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
+			${dryrun} osmium extract -s smart --overwrite --polygon ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
 		    fi
 		done
 	    fi
@@ -172,96 +212,96 @@ make_baseset() {
     done	
 }
 
-process_forests() {
-    for forest in ${forests}; do
-	if test "x${basesets}" = "xyes"; then
-	    echo "    Making ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson"
-	    rm -f ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson /play/MapData/SourceData/Road_MVUM-out.geojson
+# process_forests() {
+#     for forest in ${forests}; do
+# 	if test "x${basesets}" = "xyes"; then
+# 	    echo "    Making ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson"
+# 	    rm -f ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson
+# 	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson /play/MapData/SourceData/Road_MVUM-out.geojson
 
-	    echo "    Making ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson"
-	    rm -f ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson /play/MapData/SourceData/Trail_MVUM-out.geojson
+# 	    echo "    Making ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson"
+# 	    rm -f ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson
+# 	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson /play/MapData/SourceData/Trail_MVUM-out.geojson
 
-	    # Merge the MVUM roads and trails together, since in OSM they
-	    # are both.
-	    rm -f ${forest}_Tasks/${forest}_USFS_MVUM.geojson
-	    ogrmerge.py -nln mvum -o ${forest}_Tasks/mvum.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson
-	    ogrmerge.py -nln mvum -append -o ${forest}_Tasks/mvum.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson
+# 	    # Merge the MVUM roads and trails together, since in OSM they
+# 	    # are both.
+# 	    rm -f ${forest}_Tasks/${forest}_USFS_MVUM.geojson
+# 	    ogrmerge.py -nln mvum -o ${forest}_Tasks/mvum.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Trails.geojson
+# 	    ogrmerge.py -nln mvum -append -o ${forest}_Tasks/mvum.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson
 	    
-	    echo "    Making ${forest}_Tasks/${forest}_USFS_Trails.geojson"
-	    rm -f ${forest}_Tasks/${forest}_USFS_Trails.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_Trails.geojson /play/MapData/SourceData/USFS_Trails-out.geojson
+# 	    echo "    Making ${forest}_Tasks/${forest}_USFS_Trails.geojson"
+# 	    rm -f ${forest}_Tasks/${forest}_USFS_Trails.geojson
+# 	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_Trails.geojson /play/MapData/SourceData/USFS_Trails-out.geojson
 
-	    # echo "    Making ${forest}_Tasks/${forest}_USFS_MVUM.geojson"
-	    # rm -f ${forest}_Tasks/${forest}_USFS_Trails.geojson
-	    # ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM.geojson ${forest}.geojson ${forest}_Tasks/mvum.geojson 
+# 	    # echo "    Making ${forest}_Tasks/${forest}_USFS_MVUM.geojson"
+# 	    # rm -f ${forest}_Tasks/${forest}_USFS_Trails.geojson
+# 	    # ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM.geojson ${forest}.geojson ${forest}_Tasks/mvum.geojson 
 
-	    echo "    Making ${forest}_Tasks/${forest}_USGS_Topo_Roads.geojson"
-	    rm -f ${forest}_Tasks/${forest}_USGS_Topo_Roads.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USGS_Topo_Roads.geojson /play/MapData/SourceData/USGS_Topo_Roads-out.geojson
+# 	    echo "    Making ${forest}_Tasks/${forest}_USGS_Topo_Roads.geojson"
+# 	    rm -f ${forest}_Tasks/${forest}_USGS_Topo_Roads.geojson
+# 	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USGS_Topo_Roads.geojson /play/MapData/SourceData/USGS_Topo_Roads-out.geojson
 
-	    echo "    Making ${forest}_Tasks/${forest}_USGS_Topo_Trails.geojson"
-	    rm -f ${forest}_Tasks/${forest}_USGS_Topo_Trails.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USGS_Topo_Trails.geojson /play/MapData/SourceData/USGS_Topo_Trails-out.geojson
-	    osmium extract -s smart --overwrite --polygon ${forest}.geojson -o ${forest}_Tasks/${forest}_OSM_Roads.osm ../wy-co-ut.osm
-	fi
+# 	    echo "    Making ${forest}_Tasks/${forest}_USGS_Topo_Trails.geojson"
+# 	    rm -f ${forest}_Tasks/${forest}_USGS_Topo_Trails.geojson
+# 	    ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USGS_Topo_Trails.geojson /play/MapData/SourceData/USGS_Topo_Trails-out.geojson
+# 	    osmium extract -s smart --overwrite --polygon ${forest}.geojson -o ${forest}_Tasks/${forest}_OSM_Roads.osm ../wy-co-ut.osm
+# 	fi
 
-	for task in ${forest}_Tasks/*Tasks_[0-9].geojson; do
-            base=$(echo ${task} | sed -e 's/Tasks_[0-9]*.geojson//')
-            num=$(echo ${task} | grep -o "Tasks_[0-9]*")
-            echo "    Processing task ${task}"
-            for dataset in ${source}; do
-		echo "        Processing dataset ${dataset}..."
-		new="${base}_${num}_${dataset}.geojson"
-		rm -f ${new}
-		if test ${dataset} == "OSM_Roads"; then
-                    osmium extract -s smart --overwrite --polygon ${task} -o ${base}_${num}_OSM_Roads.osm ${base}_${dataset}.osm
-		elif test ${dataset} == "USFS_MVUM"; then
-                    ogr2ogr -explodecollections -clipsrc ${task} ${new} mvum.geojson
-		else
-                    ogr2ogr -explodecollections -clipsrc ${task} ${new} ${base}_${dataset}.geojson
-		fi
-            done
-	done
-    done
-}
+# 	for task in ${forest}_Tasks/*Tasks_[0-9].geojson; do
+#             base=$(echo ${task} | sed -e 's/Tasks_[0-9]*.geojson//')
+#             num=$(echo ${task} | grep -o "Tasks_[0-9]*")
+#             echo "    Processing task ${task}"
+#             for dataset in ${source}; do
+# 		echo "        Processing dataset ${dataset}..."
+# 		new="${base}_${num}_${dataset}.geojson"
+# 		rm -f ${new}
+# 		if test ${dataset} == "OSM_Roads"; then
+#                     osmium extract -s smart --overwrite --polygon ${task} -o ${base}_${num}_OSM_Roads.osm ${base}_${dataset}.osm
+# 		elif test ${dataset} == "USFS_MVUM"; then
+#                     ogr2ogr -explodecollections -clipsrc ${task} ${new} mvum.geojson
+# 		else
+#                     ogr2ogr -explodecollections -clipsrc ${task} ${new} ${base}_${dataset}.geojson
+# 		fi
+#             done
+# 	done
+#     done
+# }
 
-process_parks() {
-    source="National_Park_Service Trails USGS_Topo_Trails"
-    for park in ${parks}; do
-	echo "Processing national park ${park}, making base datasets..."
-	if test "x${basesets}" = "xyes"; then
-	    rm -f ${park}_Tasks/${park}_USGS_Topo_Trails-out.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_USGS_Topo_Trails.geojson /play/MapData/SourceData/USGS_Topo_Trails-out.geojson
+# process_parks() {
+#     source="National_Park_Service Trails USGS_Topo_Trails"
+#     for park in ${parks}; do
+# 	echo "Processing national park ${park}, making base datasets..."
+# 	if test "x${basesets}" = "xyes"; then
+# 	    rm -f ${park}_Tasks/${park}_USGS_Topo_Trails-out.geojson
+# 	    ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_USGS_Topo_Trails.geojson /play/MapData/SourceData/USGS_Topo_Trails-out.geojson
 
-	    rm -f ${park}_Tasks/${park}_NPS_Trails.geojson
-	    ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_NPS_Trails.geojson /play/MapData/SourceData/National_Park_Service_Trails-out.geojson
+# 	    rm -f ${park}_Tasks/${park}_NPS_Trails.geojson
+# 	    ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_NPS_Trails.geojson /play/MapData/SourceData/National_Park_Service_Trails-out.geojson
 
-	    osmium extract -s smart --overwrite --polygon ${park}.geojson -o ${park}_Tasks/${park}_OSM_Trails.osm ../wy-co-ut.osm
-	fi
+# 	    osmium extract -s smart --overwrite --polygon ${park}.geojson -o ${park}_Tasks/${park}_OSM_Trails.osm ../wy-co-ut.osm
+# 	fi
 
-	for task in ${park}_Tasks/*Tasks_[0-9].geojson; do
-	    base=$(echo ${task} | sed -e 's/Tasks_[0-9]*.geojson//')
-	    num=$(echo ${task} | grep -o "Tasks_[0-9]*")
-	    echo "    Processing task ${task}"
-	    for dataset in ${source}; do
-		echo "        Processing dataset ${dataset}..."
-		new="${base}_${num}_${dataset}.geojson"
-		rm -f ${park}_Tasks/${park}_${num}_NPS_Trails.geojson
-		ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_${num}_NPS_Trails.geojson ${park}_Tasks/${park}_NPS_Trails.geojson
+# 	for task in ${park}_Tasks/*Tasks_[0-9].geojson; do
+# 	    base=$(echo ${task} | sed -e 's/Tasks_[0-9]*.geojson//')
+# 	    num=$(echo ${task} | grep -o "Tasks_[0-9]*")
+# 	    echo "    Processing task ${task}"
+# 	    for dataset in ${source}; do
+# 		echo "        Processing dataset ${dataset}..."
+# 		new="${base}_${num}_${dataset}.geojson"
+# 		rm -f ${park}_Tasks/${park}_${num}_NPS_Trails.geojson
+# 		ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_${num}_NPS_Trails.geojson ${park}_Tasks/${park}_NPS_Trails.geojson
 
-		rm -f ${park}_Tasks/${park}_${num}_USGS_Topo_Trails.geojson
-		ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_${num}_USGS_Topo_Trails.geojson ${park}_Tasks/${park}_USGS_Topo_Trails.geojson
+# 		rm -f ${park}_Tasks/${park}_${num}_USGS_Topo_Trails.geojson
+# 		ogr2ogr -explodecollections -makevalid -clipsrc ${park}.geojson ${park}_Tasks/${park}_${num}_USGS_Topo_Trails.geojson ${park}_Tasks/${park}_USGS_Topo_Trails.geojson
 
-		# osmium extract --no-progress --overwrite --polygon ${task} -o ${base}_${num}_OSM_Trails.osm ${base}_OSM_Trails.osm
-		osmium extract -s smart --overwrite --polygon ${task} -o ${num}_OSM_Trails.osm ${base}_OSM_Trails.osm
-		osmium tags-filter --overwrite -o ${base}_${num}_OSM_Trails.osm ${num}_OSM_Trails.osm w/highway=path
-		# rm -f ${num}_OSM_Trails.osm
-	    done
-	done
-    done
-}
+# 		# osmium extract --no-progress --overwrite --polygon ${task} -o ${base}_${num}_OSM_Trails.osm ${base}_OSM_Trails.osm
+# 		osmium extract -s smart --overwrite --polygon ${task} -o ${num}_OSM_Trails.osm ${base}_OSM_Trails.osm
+# 		osmium tags-filter --overwrite -o ${base}_${num}_OSM_Trails.osm ${num}_OSM_Trails.osm w/highway=path
+# 		# rm -f ${num}_OSM_Trails.osm
+# 	    done
+# 	done
+#     done
+# }
 
 fixnames() {
     # Fix the OSM names
@@ -305,7 +345,6 @@ while test $# -gt 0; do
 	-b|--base)
 	    basesets="yes"
 	    make_baseset
-	    echo $datasets
 	    ;;
 	-s|--split)
 	    split_aoi
@@ -317,10 +356,10 @@ while test $# -gt 0; do
 	    states=$1
 	    ;;
 	-p|--parks)
-	    process_parks
+	    # process_parks
 	    ;;
 	-f|--forests)
-	    process_forests
+	    # process_forests
 	    ;;
 	-d|--datasets)
 	    basesets="no"
@@ -329,15 +368,17 @@ while test $# -gt 0; do
 	    clean_tasks
 	    ;;
 	-e|--extract)
-	    make_osm_extract no yes
+	    # make_osm_extract ${basesets} yes
+	    make_mvum_extract ${basesets} yes
 	    ;;
 	-a|--all)
-	    process_forests
-	    process_parks
+	    make_tasks
+	    make_osm_extract ${basesets} yes
+	    make_mvum_extract ${basesets} yes
 	    ;;
 	*)
-	    process_forests
-	    process_parks
+	    # process_forests
+	    # process_parks
 	    ;;
     esac
     shift
