@@ -189,6 +189,7 @@ class Trails(object):
                         id = f"FR {entry['properties']['TRAIL_NO']}"
                         # For consistency, capitalize the last character
                         props["ref:usfs"] = id.upper()
+
                     elif key == "TRAIL_NAME":
                         props["name"] = value.title()
                     if key[:-6] == "_ACCPT" and value == "Y":

@@ -118,6 +118,9 @@ def conflateThread(primary: list,
     cutils = Conflator()
     i = 0
 
+    log.info(f"The primary dataset has {len(primary)} entries")
+    log.info(f"The secondary dataset has {len(secondary)} entries")
+    
     # Progress bar
     pbar = tqdm.tqdm(primary)
     for entry in pbar:
@@ -157,6 +160,7 @@ def conflateThread(primary: list,
             dist = float()
             slope = float()
             hits = 0
+
             try:
                 dist = cutils.getDistance(entry, existing)
             except:
@@ -208,7 +212,6 @@ def conflateThread(primary: list,
                 if len(maybe) >= 5:
                     log.debug(f"Have enough  matches.")
                     break
-
 
         # Compare tags for everything that got cached
         hits = 0
@@ -295,16 +298,15 @@ class Conflator(object):
         # timer.start()
         #old = numpy.array(olddata["geometry"]["coordinates"])
         oldline = shape(olddata["geometry"])
-
         angle = 0.0
         newline = LineString()
         if newdata["geometry"]["type"] == "MultiLineString":
             new = shape(newdata["geometry"])
+
             line = shapely.line_merge(new)
 
         #new = numpy.array(newdata["geometry"]["coordinates"])
         newline = shape(newdata["geometry"])
-
         points = shapely.get_num_points(newline)
         offset = 2
         # Get slope of the new line
@@ -320,6 +322,7 @@ class Conflator(object):
 
         # Get slope of the old line
         start = shapely.get_point(oldline, offset)
+
         if not start:
             return float()
         x1 = start.x
@@ -345,7 +348,7 @@ class Conflator(object):
         if math.isnan(angle):
             angle = 0.0
         return slope, angle
-
+      
     def getDistance(self,
             newdata: Feature,
             olddata: Feature,
@@ -712,6 +715,7 @@ class Conflator(object):
 
         # Make threading optional for easier debugging
         single = False
+
         if single:
             alldata = conflateThread(odkdata, osmdata)
         else:
@@ -902,6 +906,7 @@ class Conflator(object):
                         item["refs"] = tags["refs"]
                     del tags["refs"]
                     out = osm.createWay(item, True)
+
 #            elif "geometry" in entry and entry["geometry"] is not None:
 #                out = osm.createNode(item, True)
             if len(out) > 0:

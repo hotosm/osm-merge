@@ -310,6 +310,12 @@ slope to eliminate a side road that may be touching. At the lower
 level, there is a lot of support for dealing with the bugs in the
 external datasets.
 
+The conflation algorithm is relatively simple at the high level, just
+find all other highways within a short distance, and then check the
+slope to eliminate a side road that may be touching. At the lower
+level, there is a lot of support for dealing with the bugs in the
+external datasets.
+
 ### Editing in JOSM
 
 Unfortunately manually validating the data is very time consuming, but
@@ -352,6 +358,7 @@ tags, but I find the other way more efficient.
 Using the plugin to validate a feature all I have to do is click on the
 entry. Sometimes there will be issues that need to be manually
 fixed. If conflation has changed the name, the old one is still in the
+
 feature so a manual comparison can be done. Often validating a feature
 is just deleting a few tags. But this is the important detail for
 machine editing. Somebody (not AI) must manually validate each changed

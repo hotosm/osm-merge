@@ -74,6 +74,7 @@ class MVUM(object):
         highways = list()
         for entry in data["features"]:
             spin.next()
+
             geom = entry["geometry"]
             id = 0
             sym = 0
@@ -134,6 +135,7 @@ class MVUM(object):
                 # log.debug(f"NAME: {props["name"]}")
 
             # https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf
+
             if "OPER_MAINT_LEVEL" in entry["properties"] and entry["properties"]["OPER_MAINT_LEVEL"] is not None:
                 if entry["properties"]["OPER_MAINT_LEVEL"][:3] != "NA ":
                     op = int(entry["properties"]["OPER_MAINT_LEVEL"][:1])
