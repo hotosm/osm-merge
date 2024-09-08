@@ -289,6 +289,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#conflatorpy" class="md-nav__link">
+    conflator.py
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#conflatebuildingspy" class="md-nav__link">
     conflateBuildings.py
   </a>
@@ -583,7 +590,7 @@
             
   
   <span class="md-ellipsis">
-    Datasets
+    Utilities
   </span>
   
 
@@ -592,109 +599,6 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            Datasets
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="mvum/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    MVUM Highways
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="trails/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Trails
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="usgs/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Topographical
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  <span class="md-ellipsis">
-    Utilities
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Utilities
           </label>
@@ -766,6 +670,25 @@
   
 
     
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="apidocs/html/classes.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Class Hierarchy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -808,6 +731,13 @@
   
     <nav class="md-nav" aria-label="Programs">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conflatorpy" class="md-nav__link">
+    conflator.py
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#conflatebuildingspy" class="md-nav__link">
@@ -892,7 +822,13 @@
 with the ultimate goal of importing it into
 <a href="https://www.openstreetmap.org">OpenStreetMap</a>. It
 is oriented towards processing non OSM external datasets.</p>
+<p><img alt="MVUM Street Sign" height="200" src="assets/20210913_113539.jpg" width="300" /></p>
 <h2 id="programs">Programs<a class="headerlink" href="#programs" title="Permanent link">&para;</a></h2>
+<h3 id="conflatorpy">conflator.py<a class="headerlink" href="#conflatorpy" title="Permanent link">&para;</a></h3>
+<p>This program doesn't require a database, unlike the other conflation
+programs. It is focused on conflation OpenDataKit with OpenStreetMap,
+as well as conflating rural highways. It'll conflate any two datasets
+in either GeoJson or OSM XML format.</p>
 <h3 id="conflatebuildingspy">conflateBuildings.py<a class="headerlink" href="#conflatebuildingspy" title="Permanent link">&para;</a></h3>
 <p>This looks for duplicate buildings both in the
 external dataset, and in OSM. This has been used with
