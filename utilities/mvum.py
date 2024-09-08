@@ -97,6 +97,8 @@ class MVUM(object):
                         name += "Creek "
                     elif "Cr." == word:
                         name += "Creek "
+                    elif "Ck." == word:
+                        name += "Creek "
                     elif "Crk" == word:
                         name += "Creek "
                     elif "Cg" == word:
@@ -109,6 +111,16 @@ class MVUM(object):
                         name += "Road"
                     elif "Mt" == word:
                         name += "Mountain"
+                    elif "Lk" == word:
+                        name += "Lake"
+                    elif "N" == word:
+                        name += "North"
+                    elif "W" == word:
+                        name += "West"
+                    elif "E" == word:
+                        name += "East"
+                    elif "S" == word:
+                        name += "South"
                     elif "Mtn" == word:
                         name += "Mountain"
                     else:
