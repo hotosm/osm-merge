@@ -97,9 +97,9 @@ def main():
                 # log.debug(f"REFS: {ref}")
                 for item in ref.split(';'):
                     if item[:3] == "CR " or item[:3] == "US ":
-                        tags["ref"] = item
+                        tags["ref"] = item.upper()
                     elif item[:3] == "FS " or item[:3] == "FR ":
-                        tags["ref:usfs"] = item
+                        tags["ref:usfs"] = item.upper()
                     elif item[:3] == "NF ":
                         tags["ref:usfs"] = item.replace('NF ', 'FR ')
 
