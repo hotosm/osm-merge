@@ -177,7 +177,27 @@ async def main():
     parser = argparse.ArgumentParser(
         prog="tm-splitter",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="This program extracts boundaries from USDA datasets",
+        description="This program manages tasks splitting",
+        epilog="""
+        This program implements some HOT Tasking Manager style functions
+for use in other programs. This can generate a grid of tasks from an
+AOI, and it can also split the multipolygon of that grid into seperate
+files to use for clipping with ogr2ogr.
+
+For Example, this will create a multipolygon file of the grid. ).1 is
+about the right size for TM task within the project.
+
+	tm-splitter.py --grid --infile aoi.geojson --threshold 0.1
+
+To break up a large public land boundary, a threshold of 0.7 gives
+us a grid of just under 5000 sq km, which is the TM limit.
+
+	tm-splitter.py --grid --infile boundary.geojson --threshold 0.7
+
+To split the file into tasks, split it:
+
+	tm-splitter.py --split --infile tasks.geojson
+"""
     )
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="verbose output")
@@ -190,7 +210,7 @@ async def main():
     parser.add_argument("-o", "--outfile", default="output.geojson",
                         help="Output filename")
     parser.add_argument("-e", "--extract", default=False, help="Split Dataset with Multipolygon")
-    parser.add_argument("-t", "--threshold", default=1.1,
+    parser.add_argument("-t", "--threshold", default=0.1,
                         help="Threshold")
     # parser.add_argument("-s", "--size", help="Grid size in kilometers")
 
