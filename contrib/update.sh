@@ -123,7 +123,7 @@ make_sub_tasks() {
 		# fmtm-splitter -v -b ${task} -m ${tmmax}
 		echo "    Making sub task boundaries for ${task}"
 		${tmsplitter} --grid --infile ${task} --threshold 0.1
-		ogr2ogr -nlt MULTIPOLYGON -makevalid -clipsrc ${task} ${base}/${short}_Tasks.geojson output.geojson
+		ogr2ogr -nlt POLYGON -makevalid -clipsrc ${task} ${base}/${short}_Tasks.geojson output.geojson
 		${tmsplitter} -v --split --infile ${base}/${short}_Tasks.geojson
 		mv -f ${short}*.geojson ${base}
 	    done
@@ -150,11 +150,57 @@ make_sub_mvum() {
 	for land in ${datasets["${state}"]}; do
 	    echo "    Making task boundaries for clipping to ${land}"
 	    for task in ${state}/${land}_Tasks/${land}*_Tasks*.geojson; do
-		echo "FOO"
-		${dryrun} echo ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
+		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
+		dir=$(echo ${task} | cut -d '.' -f 1)
+		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		for sub in ${dir}/*; do
+		    subnum=$(echo ${sub} | grep -o "Task_[0-9]*_Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		    echo "Making sub task MVUM extract for $(basename ${sub})"
+		    out=$(echo ${sub} | sed -e "s/_Task_/_MVUM_Task_/")
+		    ${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${sub} ${out} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson
+		done
 	    done
 	done
     done
+}
+
+make_sub_osm() {
+    # Make the data extract for the public land from OSM
+    for state in ${states}; do
+	echo "Processing public lands in ${state}..."
+	for land in ${datasets["${state}"]}; do
+	    echo "    Making task boundaries for clipping to ${land}"
+	    for task in ${state}/${land}_Tasks/${land}*_Tasks*.geojson; do
+		${dryrun} osmium extract -s smart --overwrite --polygon ${task} -o ${state}/${land}_Tasks/${land}_OSM_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
+		dir=$(echo ${task} | cut -d '.' -f 1)
+		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		short=$(basename ${dir} | sed -e "s/National.*Tasks/Task/")
+		for sub in ${dir}/${short}*; do
+		    subnum=$(echo ${sub} | grep -o "Task_[0-9]*_Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		    echo "Making sub task OSM extract for $(basename ${sub})"
+		    out=$(echo ${sub} | sed -e "s/_Task_/_OSM_Task_/" | cut -d '.' -f 1)
+		    ${dryrun} osmium extract -s smart --overwrite --polygon ${sub} -o ${out}.osm ${state}/${land}_Tasks/${land}_OSM_Highways_${num}.osm
+		done
+	    done
+	done
+    done
+}
+
+make_nps_extract() {
+    echo "make_nps_extract()
+ unimplemented"
+}
+
+make_sub_nps() {
+    echo "make_sub_nps() unimplemented"
+}
+
+make_topo_extract() {
+    echo "make_topo_extract() unimplemented"
+}
+
+make_sub_topo() {
+    echo "make_sub_topo() unimplemented"
 }
 
 make_mvum_extract() {
@@ -363,14 +409,13 @@ clean_tasks() {
 usage() {
     echo "This program builds all the smaller datasets from the"
     echo "larger source datasets."
+    echo "--tasks (-t): Split tasks boundaries into files for ogr2ogr"
     echo "--base (-b): build all base datasets, which is slow"
-    echo "--parks (-p): Build only the National Parks"
     echo "--forests (-f): Build only the National Forests"
     echo "--datasets (-d): Build only this dataset for all boundaries"
     echo "--split (-s): Split the AOI into tasks, also very slow"
     echo "--extract (-e): Make a data extract from OSM"
     echo "--only (-o): Only process one state"
-    echo "--tasks (-t): Split tasks boundaries into files for ogr2ogr"
     echo "--clean (-c): Remove generated task files"
 }
 
@@ -388,22 +433,23 @@ while test $# -gt 0; do
 	-b|--base)
 	    basesets="yes"
 	    make_baseset
+	    break
 	    ;;
 	-s|--split)
 	    split_aoi
+	    break
 	    ;;
 	-t|--tasks)
 	    make_tasks
+	    make_sub_tasks
+	    break
 	    ;;
 	-o|--only)
 	    states=$1
 	    ;;
-	-p|--parks)
-	    make_sub_tasks
-	    # process_parks
-	    ;;
 	-f|--forests)
 	    make_sub_mvum
+	    break
 	    # process_forests
 	    ;;
 	-d|--datasets)
@@ -411,16 +457,27 @@ while test $# -gt 0; do
 	    ;;
 	-c|--clean)
 	    clean_tasks
+	    break
 	    ;;
 	-e|--extract)
-	    make_osm_extract ${basesets} yes
-	    make_mvum_extract ${basesets} yes
+	    # make_osm_extract ${basesets} yes
+	    make_sub_osm ${basesets} yes
+	    # make_mvum_extract ${basesets} yes
+	    # make_sub_mvum
+	    make_nps_extract
+	    make_sub_nps
+	    make_topo_extract
+	    make_sub_topo
+	    break
 	    ;;
 	-a|--all)
 	    split_aoi
 	    make_tasks
+	    make_sub_tasks
 	    make_osm_extract ${basesets} yes
+	    # make_sub_osm
 	    make_mvum_extract ${basesets} yes
+	    # make_sub_mvum
 	    ;;
 	*)
 	    # process_forests
