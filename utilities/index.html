@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.8">
     
     
       
@@ -28,7 +28,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.35e1ed30.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.4b4a2bd9.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.356b1318.min.css">
@@ -626,6 +626,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#fixnamespy" class="md-nav__link">
+    fixnames.py
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -736,6 +743,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#fixnamespy" class="md-nav__link">
+    fixnames.py
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -801,13 +815,23 @@ Map</a>. I
 use the Shapefiles, as the different categories are in separate files
 inside the zip. Each one covers a 7.5 quad square on a topo map. These
 have to be merged together into a single file to be practical.</p>
+<h2 id="fixnamespy">fixnames.py<a class="headerlink" href="#fixnamespy" title="Permanent link">&para;</a></h2>
+<p>On the OSM wiki, there is a list of <a href="https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#National_Forest_Road_System">incorrect
+tagging</a>
+for forest highway names. Basically the name shouldn't be something
+like <em>"Forest Service Road 123.4A"</em>. That's actually a reference
+number, not a name. This is primarily a problem with existing OSM
+data. These would all have to get manually fixed when validating in
+JOSM, so this program automates the process so you only have to
+validate, and not edit the feature. After conflation, process the
+output file with this utility to produce an improved version.</p>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 14, 2024</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 19, 2024</span>
       
     
   </small>
@@ -885,7 +909,7 @@ have to be merged together into a single file to be practical.</p>
     <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.aecac24b.min.js"></script>
+      <script src="../assets/javascripts/bundle.81fa17fe.min.js"></script>
       
     
   </body>
