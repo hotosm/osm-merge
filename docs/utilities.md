@@ -23,6 +23,14 @@ There are other fields in the datasets we might want, like surface
 type, is it 4wd only, etc... but often the OSM data is more up to
 date. And to really get that right, you need to ground truth it.
 
+## tm-splitter.py
+
+This is a simple task splitting utility similar to what the Tasking
+Manager does. It will split a multipolygon of task grids into
+standalone files for ogr2ogr to use for clipping. It will also
+generate the initial grid of tasks. This enables creating data files
+that only cover a small area, and are easier to work with.
+
 ## mvum.py
 
 This converts the [Motor Vehicle Use Map(MVUM)](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.Road_MVUM.zip) dataset that contains
