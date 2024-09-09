@@ -16,7 +16,7 @@ updating existing features with a focus on improved
 navigation. Importing new features from these datasets uses a
 different process, so it's better to not mix the two.
 
-![Blank Sign](https://github.com/hotosm/osm-merge/assets/video.png){width=300 height=200}
+![Blank Sign](assets/video.png){width=300 height=200}
 
 While there are details in the the datasets that would be useful, the
 initial set is the name, the reference number, and the vehicle class
@@ -164,7 +164,7 @@ national forest.
 Then the real fun starts after the drudgery of getting ready to do
 conflation.
 
-![Blank Sign](https://github.com/hotosm/osm-merge/assets//20200726_103229.jpg){width=300 height=200}
+![Blank Sign](assets/20200726_103229.jpg){width=300 height=200}
 
 #### Forest Road Names
 
@@ -301,8 +301,6 @@ it is a residential road. There's a lot of nice cabins way out in most
 national forests. But this is the type of thing you'd really need to
 ground-truth, and luckily doesn't effect navigation when you are out
 in a network of unmaintained dirt roads.
-
-![Blank Sign](https://github.com/hotosm/osm-merge/assets/20210913_113539.jpg){width=300 height=200}
 
 The conflation algorithm is relatively simple at the high level, just
 find all other highways within a short distance, and then check the
