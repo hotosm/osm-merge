@@ -2,9 +2,6 @@
 
 <!-- markdownlint-disable -->
 <p align="center">
-  <img src="https://github.com/hotosm/fmtm/blob/main/images/hot_logo.png?raw=true" style="width: 200px;" alt="HOT"></a>
-</p>
-<p align="center">
   <em>Merge features and tags into existing OSM data.</em>
 </p>
 <p align="center">
@@ -51,20 +48,54 @@ with the ultimate goal of importing it into
 [OpenStreetMap](https://www.openstreetmap.org). It
 is oriented towards processing non OSM external datasets.
 
+This project uses a huge amount of data (and disk space) if you start
+from the original nation wide datasets, which are too large to
+edit. There is a contrib script in the git sources I use to start
+breaking down the huge files into managable pieces.
+
+The goal of this project is two-fold. One is to support field data
+collection using OpenDataKit. The
+[osm-fieldwork](https://hotosm.github.io/osm-fieldwork/) project can
+be used to convert the ODK data files into GeoJson and OSM XML. This
+project then supports conflating that field collected data with
+current OpenStreetMap. Otherwise this is a time-consuming process to
+do manually.
+
+The other goal is focused on emergency access in remote areas. This is
+improving the Motor Vehicle Use Map (MVUM) datasets of all highways
+(mostly jeep trails) in OpenStreetMap.  The current data in OSM was
+often imported complete with bugs in the original dataset, or the only
+details are *highway=track*. All of these have a US forest service
+reference number and name. Adding those makes it much easier to
+communicate a location.
+
+![Blank Sign](assets/20210913_113539.jpg){width=300 height=200}
+
 ## Programs
 
-### conflateBuildings.py
+### conflator.py
 
-This looks for duplicate buildings both in the
-external dataset, and in OSM. This has been used with
-multiple datasets, namely the Microsoft ML Building
-footprints, Overture, and others.
+This program doesn't require a database, unlike the other conflation
+programs. It is focused on [conflation OpenDataKit](odkconflation.md)
+with OpenStreetMap, as well as conflating [rural
+highways](highways.md). It'll conflate any two datasets in either GeoJson
+or OSM XML format. While this is currently under heavy development and
+debugging by processing large amounts of data to track down all the
+obscure bugs in the original datasets, or the conflation process.
 
-### conflatePOI.py
+### The Data
 
-This looks to find a building when the data is only a POI. Many
-external datasets are a list of buildings, like schools or
-hospitals. In OSM the only metadata for the feature may be
-_building=yes_. Also field collected data with ODK Collect is also a
-POI, and we want the data that was collected to be merged with any
-existing OSM features.
+Much of the process of conflation is splitting huge datasets into
+managable sized files. Since that process is [mostly
+automated](https://github.com/hotosm/osm-merge/tree/main/contrib), I
+have a collection of files where I have done that part. Since
+conflation also requires converting the original datasets, the
+original files are included, the converted files to OSM XML & GeoJson,
+and the results of conflation. Not all the national forests and parks
+have been conflated yet, but the data is there for others that may
+wish to try. The [Map
+Data](https://www.senecass.com/projects/Mapping/SourceData/States/) is
+on a slow server, sorry. Disk space is cheaper than network bandwidth.
+
+![Blank Sign](assets/skippedsegments.png){width=300 height=200}
+
