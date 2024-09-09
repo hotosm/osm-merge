@@ -296,15 +296,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#conflatebuildingspy" class="md-nav__link">
-    conflateBuildings.py
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#conflatepoipy" class="md-nav__link">
-    conflatePOI.py
+  <a href="#the-data" class="md-nav__link">
+    The Data
   </a>
   
 </li>
@@ -760,15 +753,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#conflatebuildingspy" class="md-nav__link">
-    conflateBuildings.py
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#conflatepoipy" class="md-nav__link">
-    conflatePOI.py
+  <a href="#the-data" class="md-nav__link">
+    The Data
   </a>
   
 </li>
@@ -861,24 +847,22 @@ communicate a location.</p>
 <h2 id="programs">Programs<a class="headerlink" href="#programs" title="Permanent link">&para;</a></h2>
 <h3 id="conflatorpy">conflator.py<a class="headerlink" href="#conflatorpy" title="Permanent link">&para;</a></h3>
 <p>This program doesn't require a database, unlike the other conflation
-programs. It is focused on <a href="odkconflation">conflation OpenDataKit</a>
-with OpenStreetMap, as well as conflating <a href="highways">rural
+programs. It is focused on <a href="odkconflation/">conflation OpenDataKit</a>
+with OpenStreetMap, as well as conflating <a href="highways/">rural
 highways</a>. It'll conflate any two datasets in either GeoJson
-or OSM XML format. This will eventually replace the other two
-conflation programs since the require a postgres database, and this
-works with files.</p>
-<h3 id="conflatebuildingspy">conflateBuildings.py<a class="headerlink" href="#conflatebuildingspy" title="Permanent link">&para;</a></h3>
-<p>This looks for duplicate buildings both in the
-external dataset, and in OSM. This has been used with
-multiple datasets, namely the Microsoft ML Building
-footprints, Overture, and others.</p>
-<h3 id="conflatepoipy">conflatePOI.py<a class="headerlink" href="#conflatepoipy" title="Permanent link">&para;</a></h3>
-<p>This looks to find a building when the data is only a POI. Many
-external datasets are a list of buildings, like schools or
-hospitals. In OSM the only metadata for the feature may be
-<em>building=yes</em>. Also field collected data with ODK Collect is also a
-POI, and we want the data that was collected to be merged with any
-existing OSM features.</p>
+or OSM XML format. </p>
+<h3 id="the-data">The Data<a class="headerlink" href="#the-data" title="Permanent link">&para;</a></h3>
+<p>Much of the process of conflation is splitting huge datasets into
+managable sized files. Since that process is <a href="https://github.com/hotosm/osm-merge/tree/main/contrib">mostly
+automated</a>, I
+have a collection of files where I have done that part. Since
+conflation also requires converting the original datasets, the
+original files are included, the converted files to OSM XML &amp; GeoJson,
+and the results of conflation. Not all the national forests and parks
+have been conflated yet, but the data is there for others that may
+wish to try. The <a href="https://www.senecass.com/projects/Mapping/SourceData/States/">Map
+Data</a> is
+on a slow server, sorry. Disk space is cheaper than network bandwidth.</p>
 <p><img alt="Blank Sign" height="200" src="assets/skippedsegments.png" width="300" /></p>
 
   <hr>
