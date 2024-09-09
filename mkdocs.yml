@@ -72,10 +72,13 @@ nav:
       - Versioning: https://docs.hotosm.org/dev-guide/repo-management/version-control/#creating-releases
   - Conflation Guides:
       - General: conflation.md
-      - ODK: odkconflation.md
       - Highways: highways.md
+      - Trails: trails.md
+      - ODK: odkconflation.md
+  - Deep Dives:
+      - MVUM Roads: mvum.md
+      - Trails: trails.md
   - Utilities:
       - OSM Merge: osm-merge.md
       - Utilities: utilities.md
   - API: api.md
-  - Class Hierarchy: apidocs/html/classes.html
