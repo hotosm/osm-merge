@@ -73,7 +73,8 @@ class MVUM(object):
 
         highways = list()
         for entry in data["features"]:
-            # spin.next()
+            spin.next()
+
             geom = entry["geometry"]
             id = 0
             sym = 0
@@ -85,49 +86,55 @@ class MVUM(object):
             if entry["properties"] is None or entry is None:
                 continue
             if "ID" in entry["properties"]:
-                # There appears to be a bug in the MVUM reference numbers
-                # that don't match any other dataseta. Namely many major
-                # MVUM roads have a .1 appended, which is not what is on
-                # the topo maps or dataset. Any legit suffix would include
-                # a latter, ie... "491.1B", which does match the other
-                # datasets. Also the paper MVUM or PDF version of this
-                # dataset has the correct number without the .1.
                 id = f"FR {entry['properties']['ID']}"
-                if id[-1].isalpha():
-                    props["ref:usfs"] = id
-                elif id.find('.') and id[-1] == '1':
-                    props["ref:usfs"] = id[:-2]
+                # For consistency, capitalize the last character
+                props["ref:usfs"] = id.upper()
             if "NAME" in entry["properties"] and entry["properties"]["NAME"] is not None:
                 title = entry["properties"]["NAME"].title()
                 name = str()
                 # Fix some common abbreviations
-                if " Cr " in title:
-                    name = title.replace(" Cr ", " Creek ")
-                elif " Cr." in title:
-                    name = title.replace(" Cr. ", " Creek ")
-                elif " Crk" in title:
-                    name = title.replace(" Crk ", " Creek ")
-                elif " Cg " in title:
-                    name = title.replace(" Cg ", " Campground ")
-                elif " Cg" in title:
-                    name = title.replace(" Cg", " Campground")
-                elif " Rd" in title:
-                    name = title.replace(" Rd", " Road")
-                elif " Disp " in title:
-                    name = title.replace(" Disp ", " Dispersed ")
-                elif " Rd. " in title:
-                    name = title.replace(" Rd. ", " Road")
-                elif " Mt " in title:
-                    name = title.replace(" Mt ", " Mountain")
-                elif " Mtn " in title:
-                    name = title.replace(" Mtn ", " Mountain ")
-                else:
+                for word in title.split():
+                    if "Cr" == word:
+                        name += "Creek "
+                    elif "Cr." == word:
+                        name += "Creek "
+                    elif "Ck." == word:
+                        name += "Creek "
+                    elif "Crk" == word:
+                        name += "Creek "
+                    elif "Cg" == word:
+                        name += "Campground "
+                    elif "Rd" == word:
+                        name += "Road"
+                    elif "Disp" == word:
+                        name += "Dispersed "
+                    elif "Rd." == word:
+                        name += "Road"
+                    elif "Mt" == word:
+                        name += "Mountain"
+                    elif "Lk" == word:
+                        name += "Lake"
+                    elif "N" == word:
+                        name += "North"
+                    elif "W" == word:
+                        name += "West"
+                    elif "E" == word:
+                        name += "East"
+                    elif "S" == word:
+                        name += "South"
+                    elif "Mtn" == word:
+                        name += "Mountain"
+                    else:
+                        name += f" {word} "
+                if len(name) == 0:
                     name = title
                 if name.find(" Road") <= 0:
-                    props["name"] = f"{name} Road"
+                    props["name"] = f"{name} Road".replace('  ', ' ').strip()
                 else:
-                    props["name"] = name
+                    props["name"] = name.replace('  ', ' ').strip()
                 # log.debug(f"NAME: {props["name"]}")
+
+            # https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf
 
             if "OPER_MAINT_LEVEL" in entry["properties"] and entry["properties"]["OPER_MAINT_LEVEL"] is not None:
                 if entry["properties"]["OPER_MAINT_LEVEL"][:3] != "NA ":
@@ -135,7 +142,7 @@ class MVUM(object):
                     if op == 1:
                         props["access"] = "no"
                     elif op == 2:
-                        props["smoothness"] = "very bad"
+                        props["smoothness"] = "very_bad"
                     elif op == 3:
                         props["smoothness"] = "good"
                     elif op == 4:
@@ -201,10 +208,9 @@ class MVUM(object):
 
             if geom is not None:
                 highways.append(Feature(geometry=geom, properties=props))
-            #print(props)
+            # print(props)
 
         return FeatureCollection(highways)
-        
     
 async def main():
     """This main function lets this class be run standalone by a bash script"""

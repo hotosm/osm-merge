@@ -22,30 +22,16 @@ import os
 import re
 from sys import argv
 from osm_fieldwork.osmfile import OsmFile
-from geojson import Point, Feature, FeatureCollection, dump, Polygon, load
-import geojson
-from shapely.geometry import shape, LineString, Polygon, mapping
-import shapely
-from shapely.ops import transform
-from shapely import wkt
-from osm_fieldwork.osmfile import OsmFile
-from osm_fieldwork.parsers import ODKParsers
-import asyncio
 from codetiming import Timer
 from pathlib import Path
-from osm_fieldwork.parsers import ODKParsers
-from pathlib import Path
-from spellchecker import SpellChecker
-from osm_rawdata.pgasync import PostgresClient
 import xmltodict
-from threading import Thread
 from progress.bar import Bar, PixelBar
 
 # Instantiate logger
 log = logging.getLogger(__name__)
 
 
-async def main():
+def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
         prog="fix names",
@@ -108,10 +94,14 @@ async def main():
 
         if ref is not None:
             if ref.find(';') > 0:
-                tmp = ref.split(';')
-                log.debug(f"REF: {ref}")
-                tags["ref"] = tmp[0]
-                tags["ref:usfs"] = tmp[1]
+                # log.debug(f"REFS: {ref}")
+                for item in ref.split(';'):
+                    if item[:3] == "CR " or item[:3] == "US ":
+                        tags["ref"] = item.upper()
+                    elif item[:3] == "FS " or item[:3] == "FR ":
+                        tags["ref:usfs"] = item.upper()
+                    elif item[:3] == "NF ":
+                        tags["ref:usfs"] = item.replace('NF ', 'FR ')
 
         if name is None:
             features.append(feature)
@@ -167,22 +157,28 @@ async def main():
             tags["ref:usfs"] = f"FR {tmp[2].title()}"
             matched = True
 
-        pat = re.compile(f".*forest service road")
+        pat = re.compile(f"national forest road")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
             tmp = name.split(' ')
-            if len(tmp) == 3:
-                tags["ref:usfs"] = f"FR {tmp[2].title()}"
-            elif len(tmp) == 4:
-                tags["ref:usfs"] = f"FR {tmp[3].title()}"
-            elif len(tmp) == 5:
-                tags["ref:usfs"] = f"FR {tmp[4].title()}"
+            tags["ref:usfs"] = f"FR {tmp[3].title()}"
+            matched = True
+
+        pat = re.compile(f".*forest service road")
+        if pat.match(name.lower()) and not matched:
+            # log.debug(f"MATCHED: {pat.pattern}")
+            space  = name.rfind(' ')
+            sub  = name.rfind(' ', 0, space)
+            if len(name) - space <= 3:
+                ref = name[sub:].replace(' ', '')
+            tmp = ref.split(' ')
+            tags["ref:usfs"] = f"FR {ref.title()}"
             matched = True
 
         pat = re.compile(f"fr ")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
-            tags["ref:usfs"] = f"FR {tmp[1].title()}"
+            tags["ref:usfs"] = f"FR {name.title()}"
             matched = True
 
         pat = re.compile(f"fs ")
@@ -273,6 +269,7 @@ async def main():
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
+    main()
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    # loop.run_until_complete(main())

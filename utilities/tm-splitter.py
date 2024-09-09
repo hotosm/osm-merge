@@ -1,6 +1,6 @@
 #!/bin/python3
 
-# Copyright (c) 2022 Humanitarian OpenStreetMap Team
+# Copyright (c) 2024 Humanitarian OpenStreetMap Team
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -102,8 +102,8 @@ def ogrgrid(outputGridfn: str,
     https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-fishnet-grid
     
     """
-    timer = Timer(text="ogrgrid() took {seconds:.0f}s")
-    timer.start()
+    # timer = Timer(text="ogrgrid() took {seconds:.0f}s")
+    # timer.start()
 
     # convert sys.argv to float
     xmin = extent[0]
@@ -169,7 +169,7 @@ def ogrgrid(outputGridfn: str,
     # Save and close DataSources
     outDataSource = None
 
-    timer.stop()
+    # timer.stop()
     return outLayer
 
 async def main():
@@ -177,7 +177,27 @@ async def main():
     parser = argparse.ArgumentParser(
         prog="tm-splitter",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="This program extracts boundaries from USDA datasets",
+        description="This program manages tasks splitting",
+        epilog="""
+        This program implements some HOT Tasking Manager style functions
+for use in other programs. This can generate a grid of tasks from an
+AOI, and it can also split the multipolygon of that grid into seperate
+files to use for clipping with ogr2ogr.
+
+For Example, this will create a multipolygon file of the grid. ).1 is
+about the right size for TM task within the project.
+
+	tm-splitter.py --grid --infile aoi.geojson --threshold 0.1
+
+To break up a large public land boundary, a threshold of 0.7 gives
+us a grid of just under 5000 sq km, which is the TM limit.
+
+	tm-splitter.py --grid --infile boundary.geojson --threshold 0.7
+
+To split the file into tasks, split it:
+
+	tm-splitter.py --split --infile tasks.geojson
+"""
     )
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="verbose output")
@@ -190,7 +210,7 @@ async def main():
     parser.add_argument("-o", "--outfile", default="output.geojson",
                         help="Output filename")
     parser.add_argument("-e", "--extract", default=False, help="Split Dataset with Multipolygon")
-    parser.add_argument("-t", "--threshold", default=1.1,
+    parser.add_argument("-t", "--threshold", default=0.1,
                         help="Threshold")
     # parser.add_argument("-s", "--size", help="Grid size in kilometers")
 
@@ -234,7 +254,7 @@ async def main():
             geojson.dump(FeatureCollection([feature]), file)
             file.close()
     elif args.grid:
-        log.info(f"Generating the grid may take a long time...")
+        log.debug(f"Generating the grid may take a long time...")
         path = Path(args.outfile)
         #grid2 = partition(grid, float(1.1))
         driver = ogr.GetDriverByName("GeoJson")
@@ -264,31 +284,26 @@ async def main():
         # 1 meters is this factor in degrees
         meter = 0.0000114
 
-        for poly in folayer:
-            geom = poly.GetGeometryRef()
-            for i in range(0, geom.GetGeometryCount()):
-                task = geom.GetGeometryRef(i)
-                area = task.GetArea() * meter
-                log.debug(f"Area is: {area/1000}")
-                memlayer = memdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
-                outfile = f"foobar_{index}.geojson"
-                if os.path.exists(outfile):
-                    os.remove(outfile)
-                outdata = driver.CreateDataSource(outfile)
-                outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
-                outFeature = ogr.Feature(indefn)
-                outFeature.SetGeometry(task)
-                memlayer.CreateFeature(outFeature)
-                inlayer.Clip(memlayer, outlayer)
-                outdata.Destroy()
-                index += 1
-            #for feature in result:
-            #    outlayer.CreateFeature(feature)
-        # if args.extract:
-        #     grid = split_by_square(grid, meters=args.threshold, outfile=args.outfile, osm_extract=args.extract)
-        # else:
-        #     grid = split_by_square(grid, meters=args.threshold, outfile=args.outfile)
-            log.info(f"Wrote {args.outfile}")
+        # for poly in folayer:
+        #     geom = poly.GetGeometryRef()
+        #     for i in range(0, geom.GetGeometryCount()):
+        #         task = geom.GetGeometryRef(i)
+        #         # area = task.GetArea() * meter
+        #         # log.debug(f"Area is: {area/1000}")
+        #         memlayer = memdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
+        #         outfile = f"foobar_{index}.geojson"
+        #         if os.path.exists(outfile):
+        #             os.remove(outfile)
+        #         outdata = driver.CreateDataSource(outfile)
+        #         outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
+        #         outFeature = ogr.Feature(indefn)
+        #         outFeature.SetGeometry(task)
+        #         memlayer.CreateFeature(outFeature)
+        #         inlayer.Clip(memlayer, outlayer)
+        #         outdata.Destroy()
+        #         index += 1
+
+        log.debug(f"Wrote {args.outfile}")
 
     if args.extract:
         # Use gdal, as it was actually easier than geopandas or pyclir
@@ -316,6 +331,8 @@ async def main():
             #outlayer.Destroy()
             
             index += 1
+
+        log.info(f"Wrote {args.outfile}")
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""

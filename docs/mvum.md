@@ -32,6 +32,26 @@ dataset has the correct version without the .1 appended. Obviously
 this dataset is not used to produce the maps you can get from the
 Forest Service.
 
+### Doesn't Match The Sign
+
+There is an issue with the MVUM reference numbers not matching the
+sign. This is luckily limited to whether there is a *.1* appended to
+the reference number without an letter at the end. Usually a reference
+without a *.1* is a primary road, and the *.1* gets appended for a
+major branch off that road. While out ground-truthing MVUM roads
+recently I saw multiple examples where the reference numnber in the
+MVUM data (and often in OSM) has the *.1*, so I use that value
+regardless of what the sign says. It's still quite obviously what the
+reference number is since the only difference is the *.1* suffix.
+
+This gets more interesting when you compare with other data sources,
+ie... paper and digital maps. Older data source seem to drop the *.1*,
+whereas the same road in a newer version of the dataset has the *.1*
+suffix. So I figure anyone navigating remote roads that checks their
+other maps would figure out which way to go. So anyway, when way out
+on remote *very_bad* or *horrible* MVUM roads, you should have
+multiple maps if you don't want to get confused.
+
 ### Missing Geometry
 
 There are features with no geometry at all, but the tags all match an
@@ -103,8 +123,16 @@ conflation results to limit manual editing.
 ## OPER_MAINT_LEVEL
 
 This field is used to determine the smoothness of
-the highway. This is not used to edit the existing smoothness value,
-but it's included to help with route planning for ground-truthing.
+the highway. Using the official forest service guidelines for this
+field, convienently they publish a [Road Maintaince
+Guidelines](https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf),
+complete with muiltiple pictures and detaild technical information on
+each level. The coorelate these values, I did some ground-truthing on
+MVUM and I'd agree that *level 2* is definetely high clearance
+vehicle only, and that it fits the [definition
+here](https://wiki.openstreetmap.org/wiki/Key:smoothness) for
+**very_bad**, although some sections were more **horrible**, deeply
+rutted, big rocks, lots of erosion.
 
 * 5 -HIGH DEGREE OF USER COMFORT: 
 Assigned to roads that provide a high degree of user comfort and

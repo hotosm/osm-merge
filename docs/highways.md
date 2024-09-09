@@ -16,7 +16,7 @@ updating existing features with a focus on improved
 navigation. Importing new features from these datasets uses a
 different process, so it's better to not mix the two.
 
-![Blank Sign](images/video.png){width=300 height=200}
+![Blank Sign](https://github.com/hotosm/osm-merge/assets/video.png){width=300 height=200}
 
 While there are details in the the datasets that would be useful, the
 initial set is the name, the reference number, and the vehicle class
@@ -164,7 +164,7 @@ national forest.
 Then the real fun starts after the drudgery of getting ready to do
 conflation.
 
-![Blank Sign](images/20200726_103229.jpg){width=300 height=200}
+![Blank Sign](https://github.com/hotosm/osm-merge/assets//20200726_103229.jpg){width=300 height=200}
 
 #### Forest Road Names
 
@@ -178,6 +178,21 @@ utility scan the OSM extract and when it see incorrect tagging,
 correct it to the OSM standard. Since the external datasets already
 follow the same guidelines, this increases the chance of a good match
 when conflating, since comparing names is part of the process.
+
+#### Forest Road Reference Nunmbers
+
+I'm a huge believer that the name and reference number in OSM should
+match the street sign, since that's often what is used for
+navigation. Unfortunately the MVUM data has many highways with a *.1*
+suffix, which some street signs don't display. Also, depending on the
+age of the paper maps or digital files, older maps lack the *.1*
+suffix, but newer datasets so have the *.1* suffix. Since a *.1*
+suffix may be a spur road of questionable quality, it's an important
+detail, so included when updating the reference numbers.
+
+A minor note, the USGS Topographical basemap for JOSM also sometimes
+lacks the *.1* suffix, so can't be used to validate it.
+
 
 #### TIGER Tag Deletion
 
@@ -208,13 +223,6 @@ The type of vehicle that can be driven on a particular road is a bit
 subjective based on ones off-road driving experience. These are
 typically jeep trails of varying quality, but very useful for
 back-country rescues or wildland fires.
-
-There appears to be a bug in the MVUM reference numbers that don't
-match any other datasets. Namely many major MVUM roads have a .1
-appended, which is not what is on the topo maps or dataset. Any legit
-suffix would include a latter, ie... "491.1B", which does match the
-other datasets. So I removed the suffix where it doesn't have a
-letter at the end.
 
 ### Mvum Trails
 
@@ -294,7 +302,13 @@ national forests. But this is the type of thing you'd really need to
 ground-truth, and luckily doesn't effect navigation when you are out
 in a network of unmaintained dirt roads.
 
-![Blank Sign](images/20210913_113539.jpg){width=300 height=200}
+![Blank Sign](https://github.com/hotosm/osm-merge/assets/20210913_113539.jpg){width=300 height=200}
+
+The conflation algorithm is relatively simple at the high level, just
+find all other highways within a short distance, and then check the
+slope to eliminate a side road that may be touching. At the lower
+level, there is a lot of support for dealing with the bugs in the
+external datasets.
 
 The conflation algorithm is relatively simple at the high level, just
 find all other highways within a short distance, and then check the
@@ -331,20 +345,33 @@ If you are editing with the OSM XML file produced by conflation, when
 the file is opened, there will be some conflicts. This is usually due
 to things like the incorrect forest road name getting deleted, since
 now it's a proper *ref:usfs* reference number. And the tiger tags are
-gone as well if the *fixnames.py* utility is used. To fix the
-conflicts, I just select them all, and click on *resolve to my
-version*. Then I load all the ways into the
+gone as well if the *fixnames.py* utility is used.
+
+To fix the conflicts, I just select them all, and click on *resolve to
+my version*. Since all the new tags and old tags are preserved, you
+can edit them directly in the tags window in JOSM. Then I load all the
+ways into the
 [TODO](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/TODO_list)
-plugin.
+plugin. You can also use the conflict dialog box to edit the merged
+tags, but I find the other way more efficient.
 
 Using the plugin to validate a feature all I have to do is click on the
 entry. Sometimes there will be issues that need to be manually
 fixed. If conflation has changed the name, the old one is still in the
-feature so a manual comparison can be done. Sometimes there are weird
-typos that have slipped through the process. But many times for these
-remote highways you can just mark it as done, and go on to the next
-one. This lets you validate a large number of features relatively
-quickly without sacrificing quality.
+
+feature so a manual comparison can be done. Often validating a feature
+is just deleting a few tags. But this is the important detail for
+machine editing. Somebody (not AI) must manually validate each changed
+feature. This is why the efficiency of mapping is important if you
+want to update a large area, like an entire national forest.
+
+Sometimes there are weird typos that have slipped through the
+process. This is where the time goes since you have to manually edit
+the falues. But many times for these remote highways you can just mark
+it as done, and go on to the next one. Many of these highways in OISM
+have no tags beyond **highway=track**, so mo conflicts.This lets you
+validate a large number of features relatively quickly without
+sacrificing quality.
 
 #### Editing OSM XML
 
@@ -370,6 +397,19 @@ task, and load them into the TODO plugin. Sometimes there are so few
 highways, I don't use the TODO plugin. I then cut the tags and values
 for a feature from the GeoJson file, then switch to the OSM layer, and
 paste the tags into the feature.
+
+## Validating
+
+Here's an example of the results of a 3 way conflation. This was
+between the MVUM data, the topographical data, and OSM data.
+
+* highway=unclassified
+* lanes=2
+* name=Whisky Park Road
+* operator=US Forest Service
+* ref:usfs=FR 503
+* smoothness=good
+* surface=gravel
 
 #### Splitting Highways
 
@@ -412,3 +452,4 @@ that may need conflation before uploading, for example OpenDataKit
 data. Some detail on that process is in this [Highway
 Mapping](https://www.senecass.com/projects/Mapping/tech/HighwayMappingwithODK.html)
 blog post about a field mapping trip.
+

@@ -186,18 +186,10 @@ class Trails(object):
                         continue
                     # print(key, value)
                     if key == "TRAIL_NO":
-                        # There appears to be a bug in the trail reference numbers
-                        # that don't match any other dataseta. Namely many major
-                        # trails roads have a .1 appended, which is not what is on
-                        # the topo maps or dataset. Any legit suffix would include
-                        # a latter, ie... "491.1B", which does match the other
-                        # datasets. Also the paper topo map or PDF version of this
-                        # dataset has the correct number without the .1.
                         id = f"FR {entry['properties']['TRAIL_NO']}"
-                        if id[-1].isalpha():
-                            props["ref:usfs"] = id
-                        elif id.find('.') and id[-1] == '1':
-                            props["ref:usfs"] = f"{id[:-2]}"
+                        # For consistency, capitalize the last character
+                        props["ref:usfs"] = id.upper()
+
                     elif key == "TRAIL_NAME":
                         props["name"] = value.title()
                     if key[:-6] == "_ACCPT" and value == "Y":

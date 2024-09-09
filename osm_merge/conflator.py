@@ -44,7 +44,7 @@ from thefuzz import fuzz, process
 from pathlib import Path
 from osm_fieldwork.parsers import ODKParsers
 from pathlib import Path
-from spellchecker import SpellChecker
+# from spellchecker import SpellChecker
 from osm_rawdata.pgasync import PostgresClient
 from tqdm import tqdm
 import tqdm.asyncio
@@ -120,7 +120,7 @@ def conflateThread(primary: list,
 
     log.info(f"The primary dataset has {len(primary)} entries")
     log.info(f"The secondary dataset has {len(secondary)} entries")
-
+    
     # Progress bar
     pbar = tqdm.tqdm(primary)
     for entry in pbar:
@@ -159,6 +159,8 @@ def conflateThread(primary: list,
 
             dist = float()
             slope = float()
+            hits = 0
+
             try:
                 dist = cutils.getDistance(entry, existing)
             except:
@@ -166,24 +168,30 @@ def conflateThread(primary: list,
                 #breakpoint()
 
             if dist <= threshold:
-                log.debug(f"DIST: {dist / 1000}km. {dist}m")
+                # slope, angle = cutils.getSlope(entry, existing)
+                angle = 0.0
+                slope = cutils.getSlope(entry, existing)
+                # FIXME: this is a hack till we figure out why a single value
+                # is returned instead of an array.
+                if type(slope) == float:
+                    slope = slope
+                    continue
+                else:
+                    if abs(slope[0]) > 2.0 and abs(slope[1]) > 3.0:
+                        continue
+                # print(f"SLOPE: {abs(slope)}")
                 log.debug(f"PRIMARY: {entry["properties"]}")
                 log.debug(f"SECONDARY : {existing["properties"]}")
-                slope = cutils.getSlope(entry, existing)
-                print(f"SLOPE: {abs(slope)}")
-                if abs(slope) > 0.5:
-                    continue
-
-                if dist == 0.0:
+                if dist >= 0.0:
                     # Probably an exact hit, likely from data imported
                     # into OSM from the same source.
                     maybe.append({"dist": dist, "slope": slope, "odk": entry, "osm": existing})
                     #geom = maybe[0]["odk"]["geometry"]
                     hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
-                    tags["slope"] = slope
-                    # tags = {**maybe[0]["odk"]["properties"], **maybe[0]["osm"]["properties"]}
-                    # log.debug(f"TAGS: {hits}: {tags}")
-
+                    tags["hits"] = hits
+                    tags["dist"] = str(dist)
+                    tags["slope"] = str(slope[0])
+                    tags["angle"] = str(slope[1])
                     data.append(Feature(geometry=geom, properties=tags))
                     # FIXME: don't process more existing features to
                     # improve performance.
@@ -197,9 +205,11 @@ def conflateThread(primary: list,
                 # cache all OSM features within our threshold distance
                 # These are needed by ODK, but duplicates of other fields,
                 # so they aren't needed and just add more clutter.
-                maybe.append({"dist": dist, "slope": slope, "odk": entry, "osm": existing})
-                # don't keep checking every highway
-                if len(maybe) >= 3:
+                log.debug(f"DIST: {dist / 1000}km. {dist}m")
+                maybe.append({"dist": dist, "slope": slope, "angle": angle, "hits": hits, "odk": entry, "osm": existing})
+                # don't keep checking every highway, although testing seems
+                # to show 99% only have one distance match within range.
+                if len(maybe) >= 5:
                     log.debug(f"Have enough  matches.")
                     break
 
@@ -234,7 +244,7 @@ def conflateThread(primary: list,
             else:
                 tags["version"] = 1
             tags["dist"] = maybe[0]["dist"]
-            tags["slope"] = maybe[0]["slope"]
+            #tags["slope"] = maybe[0]["slope"]
             data.append(Feature(geometry=geom, properties=tags))
             # If no hits, it's new data. ODK data is always just a POI for now
         else:
@@ -288,48 +298,57 @@ class Conflator(object):
         # timer.start()
         #old = numpy.array(olddata["geometry"]["coordinates"])
         oldline = shape(olddata["geometry"])
-
-        angle = False
+        angle = 0.0
         newline = LineString()
         if newdata["geometry"]["type"] == "MultiLineString":
             new = shape(newdata["geometry"])
-            # for segment in newdata["geometry"]["coordinates"]:
-            #     new = numpy.array(segment)
-            #     radians = arccos(old.dot(new)/(norm(old)*norm(new)))
-            #     angle = math.degrees(radians)
+
             line = shapely.line_merge(new)
 
         #new = numpy.array(newdata["geometry"]["coordinates"])
         newline = shape(newdata["geometry"])
-
+        points = shapely.get_num_points(newline)
+        offset = 2
         # Get slope of the new line
-        start = shapely.get_point(newline, 1)
+        start = shapely.get_point(newline, offset)
         if not start:
             return float()
         x1 = start.x
         y1 = start.y
-        end = shapely.get_point(newline, shapely.get_num_points(newline) - 1)
+        end = shapely.get_point(newline, points - offset)
         x2 = end.x
         y2 = end.y
         slope1 = (y2 - y1) / (x2 - x1)
 
         # Get slope of the old line
-        start = shapely.get_point(oldline, 1)
+        start = shapely.get_point(oldline, offset)
+
         if not start:
             return float()
         x1 = start.x
         y1 = start.y
-        end = shapely.get_point(oldline, shapely.get_num_points(oldline) - 1)
+        end = shapely.get_point(oldline, shapely.get_num_points(oldline) - offset)
         x2 = end.x
         y2 = end.y
         slope2 = (y2 - y1) / (x2 - x1)
-        # print(f"SLOPE: {slope1} : {slope2}")
         # timer.stop()
         slope = slope1 - slope2
+        angle = math.degrees(math.atan((slope2-slope1)/(1+(slope2*slope1))))
+        if math.isnan(angle):
+            angle = 0.0
+        name1 = "None"
+        name2 = "None"
+        if "name" in newdata["properties"]:
+            name1 = newdata["properties"]["name"]
+        if "name" in olddata["properties"]:
+            name2 = olddata["properties"]["name"]
+        print(f"SLOPE: {slope}: {angle} - {name1} == {name2}")
         if math.isnan(slope):
             slope = 0.0
-        return slope
-
+        if math.isnan(angle):
+            angle = 0.0
+        return slope, angle
+      
     def getDistance(self,
             newdata: Feature,
             olddata: Feature,
@@ -446,12 +465,13 @@ class Conflator(object):
                 props["highway"] = osm["properties"]["highway"]
             if key not in props:
                 continue
-                # Usually it's the name field that has the most variety in
-                # in trying to match strings. This often is differences in
-                # capitalization, singular vs plural, and typos from using
-                # your phone to enter the name. Course names also change
-                # too so if it isn't a match, use the new name from the
-                # external dataset.
+
+            # Usually it's the name field that has the most variety in
+            # in trying to match strings. This often is differences in
+            # capitalization, singular vs plural, and typos from using
+            # your phone to enter the name. Course names also change
+            # too so if it isn't a match, use the new name from the
+            # external dataset.
             if key in osm["properties"] and key in extfeat["properties"]:
                 ratio = fuzz.ratio(extfeat["properties"][key].lower(), osm["properties"][key].lower())
                 if ratio > match_threshold:
@@ -459,6 +479,16 @@ class Conflator(object):
                     props["ratio"] = ratio
                     props[key] = extfeat["properties"][key]
                     if ratio != 100:
+                        # if key[:3] == "ref":
+                            # Many minor changes of FS to FR don't require
+                            # caching the exising value as it's only the
+                            # prefix that changed.
+                            # try:
+                            #     if osm["properties"][ref][:3] == "FS " and ratio > 80 and ratio < 90 and len(osm["properties"][ref]) == len(extfeat["properties"][ref]):
+                            #         log.debug(f"Ignoring old ref {osm["properties"][ref]}")
+                            #         continue
+                            # except:
+                            #     breakpoint()
                         # For a fuzzy match, cache the value from the
                         # secondary dataset and use the value in the
                         # primary dataset.
@@ -643,7 +673,7 @@ class Conflator(object):
     async def conflateData(self,
                     odkspec: str,
                     osmspec: str,
-                    threshold: float = 10.0,
+                    threshold: float = 3.0,
                     ) -> list:
         """
         Open the two source files and contlate them.
@@ -680,8 +710,12 @@ class Conflator(object):
         alldata = list()
         tasks = list()
 
+        log.info(f"The primary dataset has {len(odkdata)} entries")
+        log.info(f"The secondary dataset has {len(osmdata)} entries")
+
         # Make threading optional for easier debugging
-        single = True
+        single = False
+
         if single:
             alldata = conflateThread(odkdata, osmdata)
         else:
@@ -872,8 +906,9 @@ class Conflator(object):
                         item["refs"] = tags["refs"]
                     del tags["refs"]
                     out = osm.createWay(item, True)
-            elif "geometry" in entry and entry["geometry"] is not None:
-                out = osm.createNode(item, True)
+
+#            elif "geometry" in entry and entry["geometry"] is not None:
+#                out = osm.createNode(item, True)
             if len(out) > 0:
                 osm.write(out)
 
@@ -956,7 +991,8 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
     parser.add_argument("-q", "--query", help="Custom SQL when using a database")
     parser.add_argument("-c", "--config", default="highway", help="The config file for the SQL query")
     parser.add_argument("-p", "--primary", required=True, help="The primary dataset")
-    parser.add_argument("-t", "--threshold", default=1, help="Threshold for distance calculations")
+    parser.add_argument("-t", "--threshold", default=2.0, help="Threshold for distance calculations")
+    # parser.add_argument("-s", "--slope", default=1, help="Threshold for distance calculations")
     parser.add_argument("-o", "--outfile", default="conflated.geojson", help="Output file from the conflation")
     parser.add_argument("-b", "--boundary", help="Optional boundary polygon to limit the data size")
 
