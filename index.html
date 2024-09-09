@@ -289,6 +289,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#conflatorpy" class="md-nav__link">
+    conflator.py
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#conflatebuildingspy" class="md-nav__link">
     conflateBuildings.py
   </a>
@@ -520,11 +527,11 @@
   
   
     <li class="md-nav__item">
-      <a href="odkconflation/" class="md-nav__link">
+      <a href="highways/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ODK
+    Highways
   </span>
   
 
@@ -540,11 +547,31 @@
   
   
     <li class="md-nav__item">
-      <a href="highways/" class="md-nav__link">
+      <a href="trails/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Highways
+    Trails
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="odkconflation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ODK
   </span>
   
 
@@ -726,6 +753,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#conflatorpy" class="md-nav__link">
+    conflator.py
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#conflatebuildingspy" class="md-nav__link">
     conflateBuildings.py
   </a>
@@ -764,9 +798,6 @@
 
 <h1 id="osm-merge">OSM Merge<a class="headerlink" href="#osm-merge" title="Permanent link">&para;</a></h1>
 <!-- markdownlint-disable -->
-<p align="center">
-  <img src="https://github.com/hotosm/fmtm/blob/main/images/hot_logo.png?raw=true" style="width: 200px;" alt="HOT"></a>
-</p>
 <p align="center">
   <em>Merge features and tags into existing OSM data.</em>
 </p>
@@ -808,7 +839,17 @@
 with the ultimate goal of importing it into
 <a href="https://www.openstreetmap.org">OpenStreetMap</a>. It
 is oriented towards processing non OSM external datasets.</p>
+<p>This project uses a huge amount of data (and disk space) if you start
+from the original nation wide datasets, which is too large to
+edit. There is a contrib script in the git sources I use to start
+breaking down the huge files into managable pieces.</p>
 <h2 id="programs">Programs<a class="headerlink" href="#programs" title="Permanent link">&para;</a></h2>
+<h3 id="conflatorpy">conflator.py<a class="headerlink" href="#conflatorpy" title="Permanent link">&para;</a></h3>
+<p>This program doesn't require a database, unlike the other conflation
+programs. It is focused on <a href="odkconflation">conflation OpenDataKit</a>
+with OpenStreetMap, as well as conflating <a href="highways">rural
+highways</a>. It'll conflate any two datasets in either GeoJson
+or OSM XML format.</p>
 <h3 id="conflatebuildingspy">conflateBuildings.py<a class="headerlink" href="#conflatebuildingspy" title="Permanent link">&para;</a></h3>
 <p>This looks for duplicate buildings both in the
 external dataset, and in OSM. This has been used with
