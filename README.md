@@ -76,7 +76,7 @@ communicate a location.
 ### conflator.py
 
 This program doesn't require a database, unlike the other conflation
-programs. It is focused on [conflation OpenDataKit](odkconflation.md)
+programs. It is focused on [conflating OpenDataKit](odkconflation.md)
 with OpenStreetMap, as well as conflating [rural
 highways](highways.md). It'll conflate any two datasets in either GeoJson
 or OSM XML format. While this is currently under heavy development and
