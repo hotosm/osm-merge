@@ -128,10 +128,13 @@ class MVUM(object):
                         name += f" {word} "
                 if len(name) == 0:
                     name = title
+                newname = str()
                 if name.find(" Road") <= 0:
-                    props["name"] = f"{name} Road".replace('  ', ' ').strip()
+                    newname f"{name} Road".replace('  ', ' ').strip()
                 else:
-                    props["name"] = name.replace('  ', ' ').strip()
+                    newname = name.replace('  ', ' ').strip()
+                # the < causes osmium to choke...
+                props["name"] = newname.replace("<50", "&lt;50")
                 # log.debug(f"NAME: {props["name"]}")
 
             # https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf
