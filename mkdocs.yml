@@ -74,8 +74,11 @@ nav:
       - General: conflation.md
       - ODK: odkconflation.md
       - Highways: highways.md
+      - Calculations: calculations.md
   - Utilities:
       - OSM Merge: osm-merge.md
       - Utilities: utilities.md
+  - Data Conversion:
+      - MVUM: mvum.md
+      - Trails: trails.md
   - API: api.md
-  - Class Hierarchy: apidocs/html/classes.html
