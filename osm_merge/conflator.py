@@ -169,9 +169,13 @@ def conflateThread(primary: list,
 
             if dist <= threshold:
                 # slope, angle = cutils.getSlope(entry, existing)
-                slope, angle = cutils.getSlope(entry, existing)
-                log.debug(f"PRIMARY: {entry["properties"]}")
-                log.debug(f"SECONDARY : {existing["properties"]}")
+                angle = 0.0
+                try:
+                    slope, angle = cutils.getSlope(entry, existing)
+                except:
+                    log.error(f"getSlope() just had a weird error")
+                # log.debug(f"PRIMARY: {entry["properties"]}")
+                # log.debug(f"SECONDARY : {existing["properties"]}")
                 #if  entry["properties"]["ref:usfs"] == "FR 550.1":
                 #    breakpoint()
                 # Probably an exact hit, likely from data imported
@@ -184,12 +188,11 @@ def conflateThread(primary: list,
 
                 # if hits == 0 and abs(angle) > 3.0 and abs(slope) > 3.0:
                 if hits == 0 and abs(angle) > 3.0 :
-                    log.debug(f"Too far away! {angle}")
-                    # newdata.append(entry)
+                    # log.debug(f"Too far away! {angle}")
                     # breakpoint()
                     continue
                 maybe.append({"dist": dist, "angle": angle, "slope": slope, "odk": entry, "osm": existing})
-                tags["hits"] = hits
+                tags["hits"] = str(hits)
                 tags["dist"] = str(dist)
                 tags["slope"] = str(slope)
                 tags["angle"] = str(angle)
@@ -207,7 +210,7 @@ def conflateThread(primary: list,
                 # cache all OSM features within our threshold distance
                 # These are needed by ODK, but duplicates of other fields,
                 # so they aren't needed and just add more clutter.
-                log.debug(f"DIST: {dist / 1000}km. {dist}m")
+                # log.debug(f"DIST: {dist / 1000}km. {dist}m")
                 maybe.append({"dist": dist, "slope": slope, "angle": angle, "hits": hits, "odk": entry, "osm": existing})
                 # don't keep checking every highway, although testing seems
                 # to show 99% only have one distance match within range.
@@ -246,9 +249,9 @@ def conflateThread(primary: list,
             else:
                 tags["version"] = 1
             tags["hits"] = hits
-            tags["dist"] = maybe[0]["dist"]
-            tags["slope"] = maybe[0]["slope"]
-            tags["angle"] = maybe[0]["angle"]
+            tags["dist"] = str(maybe[0]["dist"])
+            tags["slope"] = str(maybe[0]["slope"])
+            tags["angle"] = str(maybe[0]["angle"])
             data.append(Feature(geometry=geom, properties=tags))
             # If no hits, it's new data. ODK data is always just a POI for now
         else:
@@ -311,15 +314,15 @@ class Conflator(object):
         else:
             lines = MultiLineString([newline]).geoms
 
-        slopes = list()
-        angles = list()
+        bestslope = None
+        bestangle = None
         for segment in lines:
             #new = numpy.array(newdata["geometry"]["coordinates"])
             #newline = shape(newdata["geometry"])
             points = shapely.get_num_points(segment)
             if points == 0:
                 return -0.1, -0.1
-            log.debug(f"POINTS: {shapely.get_num_points(segment)} vs {shapely.get_num_points(oldline)}")
+            # log.debug(f"POINTS: {shapely.get_num_points(segment)} vs {shapely.get_num_points(oldline)}")
             offset = 2
             # Get slope of the new line
             start = shapely.get_point(segment, offset)
@@ -357,13 +360,18 @@ class Conflator(object):
             if "name" in olddata["properties"]:
                 name2 = olddata["properties"]["name"]
             print(f"SLOPE {len(slopes)}: {slope}: {angle} - {name1} == {name2}")
-            slopes.append(slope)
-            angles.append(angle)
             if math.isnan(slope):
                 slope = 0.0
             if math.isnan(angle):
                 angle = 0.0
-        return slope, angle
+            # Find the closest segment
+            if bestangle is None:
+                best = angle
+            elif angle < best:
+                # log.debug(f"BEST: {best} < {dist}")
+                best = angle
+
+        return slope, best # angle
       
     def getDistance(self,
             newdata: Feature,
@@ -400,7 +408,8 @@ class Conflator(object):
         else:
             lines = MultiLineString([newobj]).geoms
 
-        dists = list()
+        # dists = list()
+        best = None
         for segment in lines:
             if oldobj.geom_type == "LineString" and segment.geom_type == "LineString":
                 # Compare two highways
@@ -424,11 +433,16 @@ class Conflator(object):
                 dist = segment.distance(oldobj)
             elif oldobj.geom_type == "LineString" and segment.geom_type == "Point":
                 dist = segment.distance(oldobj)
-            dists.append(dist)
 
-        # log.debug(f"DISTS: {dists}")
+            # Find the closest segment
+            if best is None:
+                best = dist
+            elif dist < best:
+                # log.debug(f"BEST: {best} < {dist}")
+                best = dist
+
         # timer.stop()
-        return dist # * 111195
+        return best # dist # best
 
     def checkTags(self,
                   extfeat: Feature,
@@ -510,7 +524,7 @@ class Conflator(object):
                             extref = tmp[1].upper()
                             tmp = osm["properties"]["ref:usfs"].split(' ')
                             newref = tmp[1].upper()
-                            log.debug(f"REFS: {extref} vs {newref}: {extref == newref}")
+                            # log.debug(f"REFS: {extref} vs {newref}: {extref == newref}")
                             if extref == newref:
                                 hits += 1
                                 # Many minor changes of FS to FR don't require
@@ -745,7 +759,7 @@ class Conflator(object):
         log.info(f"The secondary dataset has {len(osmdata)} entries")
 
         # Make threading optional for easier debugging
-        single = True # False
+        single = False
 
         if single:
             alldata = conflateThread(odkdata, osmdata)
