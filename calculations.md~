@@ -1,0 +1,31 @@
+# Calculations
+
+Part of the fun of external datasets, especially some that have been
+around long time like the MVUM data is the the variety of
+inconsistencies in the data. While OpenStreetMap itself is a bit
+overly flexible at time, so is external data.
+
+## Geometries
+
+OpenStreetMap has relations, which are a collection of references to
+other features. External data may have LineStrings, MultiLineStrings
+or a GeometryCollection, all in the same file! For all calculations
+the MultiLineString and GeometryCollections are taken apart, so the
+calculations are between OSM data and that segment of the external
+data. Since this may product multiple values, those need to be
+evaluated and the most likely one returned.
+
+## Distance
+
+A simple distance calculation is performed after transforming the
+coordinate system from global degrees to meters. The result is
+compared to a threshold, and any feature within that threshold is
+added to a list of possible matches. After a few features are found in
+the required distance, matching stops and then the next feature to be
+conflated is started on the same process.
+
+## Slope and Angle
+
+Distance often will return features that are close to each other, but
+often they are spur roads off the more major one. So when two highway
+segments are found close to each other 

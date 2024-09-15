@@ -1,0 +1,20 @@
+# Validating The Conflation
+
+Every feature must be validated before it can be uploaded to
+OpenStreetMap. OSM discourages machine editing without human
+intervention. In this case there are no geometry changes, just
+tags. At it's core, conflation is just merging tags to avoid tedious
+cut & paste. 
+
+## Basemap Wrong
+
+![Blank
+Sign](https://github.com/hotosm/osm-merge/assets/badtopo.png){width=300
+height=200}
+
+## Refs Don't Match
+![Blank
+Sign](https://github.com/hotosm/osm-merge/assets/missedroad.png){width=300
+height=200}
+
+![Blank Sign](https://github.com/hotosm/osm-merge/assets/badref.png){width=300 height=200}
