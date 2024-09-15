@@ -294,18 +294,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#conflatebuildingspy" class="md-nav__link">
+  <a href="#conflatorpy" class="md-nav__link">
     <span class="md-ellipsis">
-      conflateBuildings.py
+      conflator.py
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#conflatepoipy" class="md-nav__link">
+  <a href="#the-data" class="md-nav__link">
     <span class="md-ellipsis">
-      conflatePOI.py
+      The Data
     </span>
   </a>
   
@@ -833,18 +833,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#conflatebuildingspy" class="md-nav__link">
+  <a href="#conflatorpy" class="md-nav__link">
     <span class="md-ellipsis">
-      conflateBuildings.py
+      conflator.py
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#conflatepoipy" class="md-nav__link">
+  <a href="#the-data" class="md-nav__link">
     <span class="md-ellipsis">
-      conflatePOI.py
+      The Data
     </span>
   </a>
   
@@ -875,9 +875,6 @@
 
 <h1 id="osm-merge">OSM Merge<a class="headerlink" href="#osm-merge" title="Permanent link">&para;</a></h1>
 <!-- markdownlint-disable -->
-<p align="center">
-  <img src="https://github.com/hotosm/fmtm/blob/main/images/hot_logo.png?raw=true" style="width: 200px;" alt="HOT"></a>
-</p>
 <p align="center">
   <em>Merge features and tags into existing OSM data.</em>
 </p>
@@ -919,19 +916,47 @@
 with the ultimate goal of importing it into
 <a href="https://www.openstreetmap.org">OpenStreetMap</a>. It
 is oriented towards processing non OSM external datasets.</p>
+<p>This project uses a huge amount of data (and disk space) if you start
+from the original nation wide datasets, which are too large to
+edit. There is a contrib script in the git sources I use to start
+breaking down the huge files into managable pieces.</p>
+<p>The goal of this project is two-fold. One is to support field data
+collection using OpenDataKit. The
+<a href="https://hotosm.github.io/osm-fieldwork/">osm-fieldwork</a> project can
+be used to convert the ODK data files into GeoJson and OSM XML. This
+project then supports conflating that field collected data with
+current OpenStreetMap. Otherwise this is a time-consuming process to
+do manually.</p>
+<p>The other goal is focused on emergency access in remote areas. This is
+improving the Motor Vehicle Use Map (MVUM) datasets of all highways
+(mostly jeep trails) in OpenStreetMap.  The current data in OSM was
+often imported complete with bugs in the original dataset, or the only
+details are <em>highway=track</em>. All of these have a US forest service
+reference number and name. Adding those makes it much easier to
+communicate a location.</p>
+<p><img alt="Blank Sign" height="200" src="assets/20210913_113539.jpg" width="300" /></p>
 <h2 id="programs">Programs<a class="headerlink" href="#programs" title="Permanent link">&para;</a></h2>
-<h3 id="conflatebuildingspy">conflateBuildings.py<a class="headerlink" href="#conflatebuildingspy" title="Permanent link">&para;</a></h3>
-<p>This looks for duplicate buildings both in the
-external dataset, and in OSM. This has been used with
-multiple datasets, namely the Microsoft ML Building
-footprints, Overture, and others.</p>
-<h3 id="conflatepoipy">conflatePOI.py<a class="headerlink" href="#conflatepoipy" title="Permanent link">&para;</a></h3>
-<p>This looks to find a building when the data is only a POI. Many
-external datasets are a list of buildings, like schools or
-hospitals. In OSM the only metadata for the feature may be
-<em>building=yes</em>. Also field collected data with ODK Collect is also a
-POI, and we want the data that was collected to be merged with any
-existing OSM features.</p>
+<h3 id="conflatorpy">conflator.py<a class="headerlink" href="#conflatorpy" title="Permanent link">&para;</a></h3>
+<p>This program doesn't require a database, unlike the other conflation
+programs. It is focused on <a href="odkconflation/">conflation OpenDataKit</a>
+with OpenStreetMap, as well as conflating <a href="highways/">rural
+highways</a>. It'll conflate any two datasets in either GeoJson
+or OSM XML format. While this is currently under heavy development and
+debugging by processing large amounts of data to track down all the
+obscure bugs in the original datasets, or the conflation process.</p>
+<h3 id="the-data">The Data<a class="headerlink" href="#the-data" title="Permanent link">&para;</a></h3>
+<p>Much of the process of conflation is splitting huge datasets into
+managable sized files. Since that process is <a href="https://github.com/hotosm/osm-merge/tree/main/contrib">mostly
+automated</a>, I
+have a collection of files where I have done that part. Since
+conflation also requires converting the original datasets, the
+original files are included, the converted files to OSM XML &amp; GeoJson,
+and the results of conflation. Not all the national forests and parks
+have been conflated yet, but the data is there for others that may
+wish to try. The <a href="https://www.senecass.com/projects/Mapping/SourceData/States/">Map
+Data</a> is
+on a slow server, sorry. Disk space is cheaper than network bandwidth.</p>
+<p><img alt="Blank Sign" height="200" src="assets/skippedsegments.png" width="300" /></p>
 
 
 
@@ -952,7 +977,7 @@ existing OSM features.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 6, 2024</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 15, 2024</span>
   </span>
 
     
