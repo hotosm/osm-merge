@@ -16,7 +16,7 @@ updating existing features with a focus on improved
 navigation. Importing new features from these datasets uses a
 different process, so it's better to not mix the two.
 
-![Blank Sign](https://github.com/hotosm/osm-merge/assets/video.png){width=300 height=200}
+![Blank Sign](assets/video.png){width=300 height=200}
 
 While there are details in the the datasets that would be useful, the
 initial set is the name, the reference number, and the vehicle class
@@ -107,12 +107,12 @@ Manager](https://tasks.openstreetmap.us/), The files are still too
 large, as TM has a 5000sq km limit.
 
 Next is generating the task boundaries for each national forest
-that'll be under the 5000km limit. I used the 
-[FMTM Splitter](https://hotosm.github.io/fmtm-splitter/) program to
-use the national forest boundary and break it into squares, and
-clipped properly at the boundary. These task boundary polygons can
-then be used to create the project in the Tasking Manager, which will
-further split that into the size you want for mapping.
+that'll be under the 5000km limit. I used the tm-splitter.py program
+in this project to use the national forest boundary and break it into
+squares, and clipped properly at the boundary. These task boundary
+polygons can then be used to create the project in the Tasking
+Manager, which will further split that into the size you want for
+mapping.
 
 Something to be conscious of is these external datasets are also full
 of obscure bugs. Some of the data I think hasn't been updated since
@@ -164,7 +164,7 @@ national forest.
 Then the real fun starts after the drudgery of getting ready to do
 conflation.
 
-![Blank Sign](https://github.com/hotosm/osm-merge/assets//20200726_103229.jpg){width=300 height=200}
+![Blank Sign](assets/20200726_103229.jpg){width=300 height=200}
 
 #### Forest Road Names
 
@@ -179,7 +179,7 @@ correct it to the OSM standard. Since the external datasets already
 follow the same guidelines, this increases the chance of a good match
 when conflating, since comparing names is part of the process.
 
-#### Forest Road Reference Nunmbers
+#### Forest Road Reference Numbers
 
 I'm a huge believer that the name and reference number in OSM should
 match the street sign, since that's often what is used for
@@ -224,7 +224,7 @@ subjective based on ones off-road driving experience. These are
 typically jeep trails of varying quality, but very useful for
 back-country rescues or wildland fires.
 
-### Mvum Trails
+### MVUM Trails
 
 These are Multi Vehicle Use Maps (MVUM), which define the class of
 vehicle appropriate to drive a road. The trails dataset contains
@@ -302,7 +302,7 @@ national forests. But this is the type of thing you'd really need to
 ground-truth, and luckily doesn't effect navigation when you are out
 in a network of unmaintained dirt roads.
 
-![Blank Sign](https://github.com/hotosm/osm-merge/assets/20210913_113539.jpg){width=300 height=200}
+![Blank Sign](assets/20210913_113539.jpg){width=300 height=200}
 
 The conflation algorithm is relatively simple at the high level, just
 find all other highways within a short distance, and then check the
@@ -337,7 +337,7 @@ which also get deleted. This is life as a data janitor...
 
 Once you've validated all the features in the task, it can be run
 through the JOSM validator, and if all is good, uploaded to OSM. Often
-the JOSM validators find many existing issues. I fix anything that is
+the JOSM validator finds many existing issues. I fix anything that is
 an error, and mostly ignore all the warning as that's a whole other
 project.
 
@@ -367,8 +367,8 @@ want to update a large area, like an entire national forest.
 
 Sometimes there are weird typos that have slipped through the
 process. This is where the time goes since you have to manually edit
-the falues. But many times for these remote highways you can just mark
-it as done, and go on to the next one. Many of these highways in OISM
+the values. But many times for these remote highways you can just mark
+it as done, and go on to the next one. Many of these highways in OSM
 have no tags beyond **highway=track**, so mo conflicts.This lets you
 validate a large number of features relatively quickly without
 sacrificing quality.
@@ -410,6 +410,8 @@ between the MVUM data, the topographical data, and OSM data.
 * ref:usfs=FR 503
 * smoothness=good
 * surface=gravel
+
+Note that the name is spelled wrong.
 
 #### Splitting Highways
 
