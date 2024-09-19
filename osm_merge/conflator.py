@@ -24,9 +24,9 @@ from sys import argv
 from osm_fieldwork.osmfile import OsmFile
 from geojson import Point, Feature, FeatureCollection, dump, Polygon, load
 import geojson
-from shapely.geometry import shape, LineString, Polygon, mapping
+from shapely.geometry import shape, LineString, MultiLineString, Polygon, mapping
 import shapely
-from shapely.ops import transform
+from shapely.ops import transform, nearest_points
 from shapely import wkt
 from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
@@ -170,31 +170,36 @@ def conflateThread(primary: list,
             if dist <= threshold:
                 # slope, angle = cutils.getSlope(entry, existing)
                 angle = 0.0
-                slope = cutils.getSlope(entry, existing)
-                # FIXME: this is a hack till we figure out why a single value
-                # is returned instead of an array.
-                if type(slope) == float:
-                    slope = slope
+                try:
+                    slope, angle = cutils.getSlope(entry, existing)
+                except:
+                    log.error(f"getSlope() just had a weird error")
+                # log.debug(f"PRIMARY: {entry["properties"]}")
+                # log.debug(f"SECONDARY : {existing["properties"]}")
+                #if  entry["properties"]["ref:usfs"] == "FR 550.1":
+                #    breakpoint()
+                # Probably an exact hit, likely from data imported
+                # into OSM from the same source.
+                #geom = maybe[0]["odk"]["geometry"]
+                hits, tags = cutils.checkTags(entry, existing)
+                if hits == 0 and abs(angle) == 0.0 and abs(slope) == 0.0:
+                    if len(existing["properties"]) == 1:
+                        log.debug(f"OSM lacks tags for {entry["properties"]["ref:usfs"]}")
+
+                # if hits == 0 and abs(angle) > 3.0 and abs(slope) > 3.0:
+                if hits == 0 and abs(angle) > 3.0 :
+                    # log.debug(f"Too far away! {angle}")
+                    # breakpoint()
                     continue
-                else:
-                    if abs(slope[0]) > 2.0 and abs(slope[1]) > 3.0:
-                        continue
-                # print(f"SLOPE: {abs(slope)}")
-                log.debug(f"PRIMARY: {entry["properties"]}")
-                log.debug(f"SECONDARY : {existing["properties"]}")
-                if dist >= 0.0:
-                    # Probably an exact hit, likely from data imported
-                    # into OSM from the same source.
-                    maybe.append({"dist": dist, "slope": slope, "odk": entry, "osm": existing})
-                    #geom = maybe[0]["odk"]["geometry"]
-                    hits, tags = cutils.checkTags(maybe[0]["odk"], maybe[0]["osm"])
-                    tags["hits"] = hits
-                    tags["dist"] = str(dist)
-                    tags["slope"] = str(slope[0])
-                    tags["angle"] = str(slope[1])
-                    data.append(Feature(geometry=geom, properties=tags))
-                    # FIXME: don't process more existing features to
-                    # improve performance.
+                maybe.append({"dist": dist, "angle": angle, "slope": slope, "odk": entry, "osm": existing})
+                tags["hits"] = str(hits)
+                tags["dist"] = str(dist)
+                tags["slope"] = str(slope)
+                tags["angle"] = str(angle)
+                data.append(Feature(geometry=geom, properties=tags))
+                # FIXME: don't process more existing features to
+                # improve performance.
+                if dist == 0.0:
                     break
                 # else:
                 #     entry["properties"]["version"] = 1
@@ -205,7 +210,7 @@ def conflateThread(primary: list,
                 # cache all OSM features within our threshold distance
                 # These are needed by ODK, but duplicates of other fields,
                 # so they aren't needed and just add more clutter.
-                log.debug(f"DIST: {dist / 1000}km. {dist}m")
+                # log.debug(f"DIST: {dist / 1000}km. {dist}m")
                 maybe.append({"dist": dist, "slope": slope, "angle": angle, "hits": hits, "odk": entry, "osm": existing})
                 # don't keep checking every highway, although testing seems
                 # to show 99% only have one distance match within range.
@@ -243,8 +248,10 @@ def conflateThread(primary: list,
                 tags["version"] = maybe[0]["osm"]["properties"]["version"]
             else:
                 tags["version"] = 1
-            tags["dist"] = maybe[0]["dist"]
-            #tags["slope"] = maybe[0]["slope"]
+            tags["hits"] = hits
+            tags["dist"] = str(maybe[0]["dist"])
+            tags["slope"] = str(maybe[0]["slope"])
+            tags["angle"] = str(maybe[0]["angle"])
             data.append(Feature(geometry=geom, properties=tags))
             # If no hits, it's new data. ODK data is always just a POI for now
         else:
@@ -299,55 +306,72 @@ class Conflator(object):
         #old = numpy.array(olddata["geometry"]["coordinates"])
         oldline = shape(olddata["geometry"])
         angle = 0.0
-        newline = LineString()
-        if newdata["geometry"]["type"] == "MultiLineString":
-            new = shape(newdata["geometry"])
-
-            line = shapely.line_merge(new)
-
-        #new = numpy.array(newdata["geometry"]["coordinates"])
         newline = shape(newdata["geometry"])
-        points = shapely.get_num_points(newline)
-        offset = 2
-        # Get slope of the new line
-        start = shapely.get_point(newline, offset)
-        if not start:
-            return float()
-        x1 = start.x
-        y1 = start.y
-        end = shapely.get_point(newline, points - offset)
-        x2 = end.x
-        y2 = end.y
-        slope1 = (y2 - y1) / (x2 - x1)
+        if newline.type == "MultiLineString":
+            lines = newline.geoms
+        elif newline.type == "GeometryCollection":
+            lines = newline.geoms
+        else:
+            lines = MultiLineString([newline]).geoms
 
-        # Get slope of the old line
-        start = shapely.get_point(oldline, offset)
+        bestslope = None
+        bestangle = None
+        for segment in lines:
+            #new = numpy.array(newdata["geometry"]["coordinates"])
+            #newline = shape(newdata["geometry"])
+            points = shapely.get_num_points(segment)
+            if points == 0:
+                return -0.1, -0.1
+            # log.debug(f"POINTS: {shapely.get_num_points(segment)} vs {shapely.get_num_points(oldline)}")
+            offset = 2
+            # Get slope of the new line
+            start = shapely.get_point(segment, offset)
+            if not start:
+                return float(), float()
+            x1 = start.x
+            y1 = start.y
+            end = shapely.get_point(segment, points - offset)
+            x2 = end.x
+            y2 = end.y
+            slope1 = (y2 - y1) / (x2 - x1)
 
-        if not start:
-            return float()
-        x1 = start.x
-        y1 = start.y
-        end = shapely.get_point(oldline, shapely.get_num_points(oldline) - offset)
-        x2 = end.x
-        y2 = end.y
-        slope2 = (y2 - y1) / (x2 - x1)
-        # timer.stop()
-        slope = slope1 - slope2
-        angle = math.degrees(math.atan((slope2-slope1)/(1+(slope2*slope1))))
-        if math.isnan(angle):
-            angle = 0.0
-        name1 = "None"
-        name2 = "None"
-        if "name" in newdata["properties"]:
-            name1 = newdata["properties"]["name"]
-        if "name" in olddata["properties"]:
-            name2 = olddata["properties"]["name"]
-        print(f"SLOPE: {slope}: {angle} - {name1} == {name2}")
-        if math.isnan(slope):
-            slope = 0.0
-        if math.isnan(angle):
-            angle = 0.0
-        return slope, angle
+            # Get slope of the old line
+            start = shapely.get_point(oldline, offset)
+
+            if not start:
+                return float()
+            x1 = start.x
+            y1 = start.y
+            end = shapely.get_point(oldline, shapely.get_num_points(oldline) - offset)
+            x2 = end.x
+            y2 = end.y
+            slope2 = (y2 - y1) / (x2 - x1)
+            # timer.stop()
+            slope = slope1 - slope2
+
+            # Calculate the angle between the linestrings
+            angle = math.degrees(math.atan((slope2-slope1)/(1+(slope2*slope1))))
+            name1 = "None"
+            name2 = "None"
+            if math.isnan(angle):
+                angle = 0.0
+            if "name" in newdata["properties"]:
+                name1 = newdata["properties"]["name"]
+            if "name" in olddata["properties"]:
+                name2 = olddata["properties"]["name"]
+            print(f"SLOPE {len(slopes)}: {slope}: {angle} - {name1} == {name2}")
+            if math.isnan(slope):
+                slope = 0.0
+            if math.isnan(angle):
+                angle = 0.0
+            # Find the closest segment
+            if bestangle is None:
+                best = angle
+            elif angle < best:
+                # log.debug(f"BEST: {best} < {dist}")
+                best = angle
+
+        return slope, best # angle
       
     def getDistance(self,
             newdata: Feature,
@@ -377,41 +401,48 @@ class Conflator(object):
         newobj = transform(project.transform, shape(newdata["geometry"]))
         oldobj = transform(project.transform, shape(olddata["geometry"]))
 
-        # l1 = newdata["geometry"]["coordinates"]
-        # l2 = olddata["geometry"]["coordinates"]
-        # m1 = (l1[1][1]-l1[0][1])/(l1[1][0]-l1[0][0])
-        # m2 = (l2[1][1]-l2[0][1])/(l2[1][0]-l2[0][0])
-        # angle_rad = abs(math.atan(m1) - math.atan(m2))
-        # angle_deg = angle_rad*180/PI
-        # log.debug(f"ANGLE: {angle_rad} : {angle_deg}")
-        # angle_deg = angle_rad*180/PI
+        if newobj.type == "MultiLineString":
+            lines = newobj.geoms
+        elif newobj.type == "GeometryCollection":
+            lines = newobj.geoms
+        else:
+            lines = MultiLineString([newobj]).geoms
 
-        # log.debug(f"{oldobj} : {newobj}")
-        # if oldobj.geom_type == "MultiLineString" and newobj.geom_type == "MultiLineString":
-        #     log.debug("MULTILINESTRING!!")
-        if oldobj.geom_type == "LineString" and newobj.geom_type == "LineString":
-            # Compare two highways
-            dist = newobj.distance(oldobj)
-        elif oldobj.geom_type == "Point" and newobj.geom_type == "LineString":
-            # We only want to compare LineStrings, so force the distance check
-            # to be False
-            dist = 12345678.9
-        elif oldobj.geom_type == "Point" and newobj.geom_type == "Point":
-            dist = newobj.distance(oldobj)
-        elif oldobj.geom_type == "Polygon" and newobj.geom_type == "Polygon":
-            # compare two buildings
-            pass
-        elif oldobj.geom_type == "Polygon" and newobj.geom_type == "Point":
-            # Compare a point with a building, used for ODK Collect data
-            center = shapely.centroid(oldobj)
-            dist = newobj.distance(center)
-        elif oldobj.geom_type == "Point" and newobj.geom_type == "LineString":
-            dist = newobj.distance(oldobj)
-        elif oldobj.geom_type == "LineString" and newobj.geom_type == "Point":
-            dist = newobj.distance(oldobj)
+        # dists = list()
+        best = None
+        for segment in lines:
+            if oldobj.geom_type == "LineString" and segment.geom_type == "LineString":
+                # Compare two highways
+                if oldobj.within(segment):
+                    log.debug(f"CONTAINS")
+                dist = segment.distance(oldobj)
+            elif oldobj.geom_type == "Point" and segment.geom_type == "LineString":
+                # We only want to compare LineStrings, so force the distance check
+                # to be False
+                dist = 12345678.9
+            elif oldobj.geom_type == "Point" and segment.geom_type == "Point":
+                dist = segment.distance(oldobj)
+            elif oldobj.geom_type == "Polygon" and segment.geom_type == "Polygon":
+                # compare two buildings
+                pass
+            elif oldobj.geom_type == "Polygon" and segment.geom_type == "Point":
+                # Compare a point with a building, used for ODK Collect data
+                center = shapely.centroid(oldobj)
+                dist = segment.distance(center)
+            elif oldobj.geom_type == "Point" and segment.geom_type == "LineString":
+                dist = segment.distance(oldobj)
+            elif oldobj.geom_type == "LineString" and segment.geom_type == "Point":
+                dist = segment.distance(oldobj)
+
+            # Find the closest segment
+            if best is None:
+                best = dist
+            elif dist < best:
+                # log.debug(f"BEST: {best} < {dist}")
+                best = dist
 
         # timer.stop()
-        return dist # * 111195
+        return best # dist # best
 
     def checkTags(self,
                   extfeat: Feature,
@@ -428,7 +459,7 @@ class Conflator(object):
             (int): The number of tag matches
             (dict): The updated tags
         """
-        match_threshold = 80
+        match_threshold = 85
         match = ["name", "ref", "ref:usfs"]
         hits = 0
         props = dict()
@@ -473,22 +504,36 @@ class Conflator(object):
             # too so if it isn't a match, use the new name from the
             # external dataset.
             if key in osm["properties"] and key in extfeat["properties"]:
+                # Sometimes there will be a word match, which returns a
+                # ratio in the low 80s. In that case they should be
+                # a similar length.
+                length = len(extfeat["properties"][key]) - len(osm["properties"][key])
                 ratio = fuzz.ratio(extfeat["properties"][key].lower(), osm["properties"][key].lower())
-                if ratio > match_threshold:
+                if ratio > match_threshold and length <= 3:
                     hits += 1
                     props["ratio"] = ratio
                     props[key] = extfeat["properties"][key]
                     if ratio != 100:
-                        # if key[:3] == "ref":
-                            # Many minor changes of FS to FR don't require
-                            # caching the exising value as it's only the
-                            # prefix that changed.
-                            # try:
-                            #     if osm["properties"][ref][:3] == "FS " and ratio > 80 and ratio < 90 and len(osm["properties"][ref]) == len(extfeat["properties"][ref]):
-                            #         log.debug(f"Ignoring old ref {osm["properties"][ref]}")
-                            #         continue
-                            # except:
-                            #     breakpoint()
+                        # Often the only difference is using FR or FS as the
+                        # prefix. In that case, see if the ref matches.
+                        if key[:3] == "ref":
+                            # This assume all the data has been converted
+                            # by one of the utility programs, which enfore
+                            # using the ref:usfs tag.
+                            tmp = extfeat["properties"]["ref:usfs"].split(' ')
+                            extref = tmp[1].upper()
+                            tmp = osm["properties"]["ref:usfs"].split(' ')
+                            newref = tmp[1].upper()
+                            # log.debug(f"REFS: {extref} vs {newref}: {extref == newref}")
+                            if extref == newref:
+                                hits += 1
+                                # Many minor changes of FS to FR don't require
+                                # caching the exising value as it's only the
+                                # prefix that changed. It always stayes in this
+                                # range.
+                                if osm["properties"]["ref:usfs"][:3] == "FS " and ratio > 80 and ratio < 90:
+                                    log.debug(f"Ignoring old ref {osm["properties"]["ref:usfs"]}")
+                                    continue
                         # For a fuzzy match, cache the value from the
                         # secondary dataset and use the value in the
                         # primary dataset.

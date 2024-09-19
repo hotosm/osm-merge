@@ -128,7 +128,7 @@ def ogrgrid(outputGridfn: str,
     if os.path.exists(outputGridfn):
         os.remove(outputGridfn)
     outDataSource = outDriver.CreateDataSource(outputGridfn)
-    outLayer = outDataSource.CreateLayer(outputGridfn,geom_type=ogr.wkbPolygon )
+    outLayer = outDataSource.CreateLayer(outputGridfn,geom_type=ogr.wkbMultiPolygon )
     featureDefn = outLayer.GetLayerDefn()
 
     # create grid cells
@@ -250,9 +250,11 @@ To split the file into tasks, split it:
                 index += 1
                 feature["properties"]["name"] = name
                 feature["boundary"] = "administrative"
-            file = open(f"{name}.geojson", 'w')
+            outfile = f"{path.parent}/{path.stem}/{path.stem}_{index}.geojson"
+            file = open(outfile, 'w')
             geojson.dump(FeatureCollection([feature]), file)
             file.close()
+            log.debug(f"Wrote {outfile} ...")
     elif args.grid:
         log.debug(f"Generating the grid may take a long time...")
         path = Path(args.outfile)
@@ -275,7 +277,7 @@ To split the file into tasks, split it:
         outdata = driver.CreateDataSource(outfile)
         if os.path.exists(outfile):
             os.remove(outfile)
-        outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbMultiPolygon)
+        outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
 
         boundary = inlayer.GetNextFeature()
         poly = boundary.GetGeometryRef()

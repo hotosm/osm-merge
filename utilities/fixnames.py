@@ -136,6 +136,13 @@ def main():
             tags["ref:usfs"] = f"FR {tmp[2].title()}"
             matched = True
 
+        pat = re.compile(f"usfsr ")
+        if pat.match(name.lower()) and not matched:
+            # log.debug(f"MATCHED: {pat.pattern}")
+            tmp = name.split(' ')
+            tags["ref:usfs"] = f"FR {tmp[1].title()}"
+            matched = True
+
         pat = re.compile(f"fs[hr] ")
         if pat.match(name.lower()) and not matched:
             # log.debug(f"MATCHED: {pat.pattern}")
