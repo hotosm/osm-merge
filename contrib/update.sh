@@ -25,7 +25,7 @@ states="Utah Colorado Wyoming"
 boundaries="/play/MapData/Boundaries/"
 
 # The git branch, usually main except when debugging
-branch="nomatch"
+branch="main"
 root="${HOME}/projects/HOT/osm-merge.git"
 
 # FIXME: script in the utilities directory don't get install by pip
