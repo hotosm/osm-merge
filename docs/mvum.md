@@ -32,6 +32,24 @@ dataset has the correct version without the .1 appended. Obviously
 this dataset is not used to produce the maps you can get from the
 Forest Service.
 
+#### Dixie National Forest
+
+In the current MVUM dataset for this national forest, for some reason
+a *30* has been prefixed to all the IDs, making the reference numbers
+wrong.
+
+#### Manti-LaSal National Forest
+
+In the current MVUM dataset for this national forest, for some reason
+a *5* or *7* has been prefixed to many of the IDs, making the reference
+numbers wrong.
+
+#### Fishlake National Forest
+
+In the current MVUM dataset for this national forest, for some reason
+a *40* has been prefixed to some of the IDs, making the reference
+numbers wrong.
+
 ### Doesn't Match The Sign
 
 There is an issue with the MVUM reference numbers not matching the
