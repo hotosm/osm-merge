@@ -32,6 +32,15 @@ dataset has the correct version without the .1 appended. Obviously
 this dataset is not used to produce the maps you can get from the
 Forest Service.
 
+I do notice that in the original MVUM datasets, whomever *emp=3.48*
+is, seems to be the main person with data entry issues. And this seems
+to apply across the entire western US. Not all highways mapped by
+*3.48* have this problem, but many do. Chances there other *emps* have
+similar issues. I'll keep track, and maybe add the employee ID as a
+temporary debugging tag in the conflation results. Cleaning up all the
+wrong reference numbers will make OSM the best map for road and trail
+navigation on public lands.
+
 #### Dixie National Forest
 
 In the current MVUM dataset for this national forest, for some reason
@@ -47,8 +56,14 @@ numbers wrong.
 #### Fishlake National Forest
 
 In the current MVUM dataset for this national forest, for some reason
-a *40* has been prefixed to some of the IDs, making the reference
-numbers wrong.
+a *4* or *40* has been prefixed to some of the IDs, making the
+reference numbers wrong.
+
+#### Mount Hood National Forest
+
+For some reason, some of the reference numbers have a *000* appended,
+making the reference numbers wrong. This applies to paved roads, not
+just remote jeep tracks.
 
 ### Doesn't Match The Sign
 
