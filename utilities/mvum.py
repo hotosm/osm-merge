@@ -111,7 +111,7 @@ class MVUM(object):
                     elif "Rd." == word:
                         name += "Road"
                     elif "Mt" == word:
-                        name += "Mountain"
+                        name += "Mountain "
                     elif "Lk" == word:
                         name += "Lake"
                     elif "N" == word:
