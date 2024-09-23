@@ -79,6 +79,7 @@ nav:
       - OSM Merge: osm-merge.md
       - Utilities: utilities.md
   - Data Conversion:
+      - Data Formats: formats.md
       - MVUM: mvum.md
       - Trails: trails.md
   - API: api.md
