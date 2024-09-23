@@ -46,7 +46,7 @@ closest one is what is returned.
 
 Once there is at least one candidate within the parameters of distance
 and angle, then the tags are checked for matches. The tags we are
-primarily intereted in are name(s) and reference number(s) of each
+primarily interested in are name(s) and reference number(s) of each
 MVUM road or trail. Some of the existing features in OpenStreetMap may
 be inaccurate as to the proper name and reference. And of course each
 feature may have an *alt_name* or both a *ref* and a *ref:usfs*. Due
@@ -101,3 +101,17 @@ after more validation. These are:
 * dist -  The distance between features
 * angle - The angle between two features
 * slope - The slope between two features
+
+## Issues
+
+Conflation is never 100% accurate due to the wonderful
+um... "flexibility" of the datasets. Minor tweaks to the steering
+parameters for the distance, angle, and fuzzy string matching can
+produce slightly different results. I often run the same datasets with
+different parameters looking for the best results.
+
+### Clipping
+
+Where a feature crosses the task boundary, the calculations have to
+deal with incomplete features, which is messy. This is particularly a
+problem when conflating small datasets.
