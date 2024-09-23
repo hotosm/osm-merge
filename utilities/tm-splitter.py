@@ -128,7 +128,9 @@ def ogrgrid(outputGridfn: str,
     if os.path.exists(outputGridfn):
         os.remove(outputGridfn)
     outDataSource = outDriver.CreateDataSource(outputGridfn)
-    outLayer = outDataSource.CreateLayer(outputGridfn,geom_type=ogr.wkbMultiPolygon )
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4326)
+    outLayer = outDataSource.CreateLayer(outputGridfn, srs, geom_type=ogr.wkbMultiPolygon )
     featureDefn = outLayer.GetLayerDefn()
 
     # create grid cells
@@ -156,7 +158,7 @@ def ogrgrid(outputGridfn: str,
             outFeature = ogr.Feature(featureDefn)
             outFeature.SetGeometry(poly)
             outLayer.CreateFeature(outFeature)
-            outFeature = None
+            # outFeature = None
 
             # new envelope for next poly
             ringYtop = ringYtop - gridHeight
@@ -250,7 +252,7 @@ To split the file into tasks, split it:
                 index += 1
                 feature["properties"]["name"] = name
                 feature["boundary"] = "administrative"
-            outfile = f"{path.parent}/{path.stem}/{path.stem}_{index}.geojson"
+            outfile = f"{os.path.dirname(args.infile)}/{path.stem}_{index}.geojson"
             file = open(outfile, 'w')
             geojson.dump(FeatureCollection([feature]), file)
             file.close()
@@ -262,22 +264,20 @@ To split the file into tasks, split it:
         driver = ogr.GetDriverByName("GeoJson")
         indata = driver.Open(args.infile, 0)
         inlayer = indata.GetLayer()
-        indefn = inlayer.GetLayerDefn()
+        crs = inlayer.GetSpatialRef()
         extent = inlayer.GetExtent()
 
         memdrv = ogr.GetDriverByName("Memory")
         memdata = memdrv.CreateDataSource(f"mem")
         # memlayer = memdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
-        ogrgrid(args.outfile, extent, args.threshold)
-
+        out = ogrgrid(args.outfile, extent, args.threshold)
         fodata = driver.Open("bar.geojson", 0)
         folayer = indata.GetLayer()
-
         outfile = f"{path.stem}_grid.geojson"
         outdata = driver.CreateDataSource(outfile)
         if os.path.exists(outfile):
             os.remove(outfile)
-        outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
+        outlayer = outdata.CreateLayer("tasks", crs, geom_type=ogr.wkbPolygon)
 
         boundary = inlayer.GetNextFeature()
         poly = boundary.GetGeometryRef()
@@ -285,25 +285,6 @@ To split the file into tasks, split it:
         index = 0
         # 1 meters is this factor in degrees
         meter = 0.0000114
-
-        # for poly in folayer:
-        #     geom = poly.GetGeometryRef()
-        #     for i in range(0, geom.GetGeometryCount()):
-        #         task = geom.GetGeometryRef(i)
-        #         # area = task.GetArea() * meter
-        #         # log.debug(f"Area is: {area/1000}")
-        #         memlayer = memdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
-        #         outfile = f"foobar_{index}.geojson"
-        #         if os.path.exists(outfile):
-        #             os.remove(outfile)
-        #         outdata = driver.CreateDataSource(outfile)
-        #         outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbPolygon)
-        #         outFeature = ogr.Feature(indefn)
-        #         outFeature.SetGeometry(task)
-        #         memlayer.CreateFeature(outFeature)
-        #         inlayer.Clip(memlayer, outlayer)
-        #         outdata.Destroy()
-        #         index += 1
 
         log.debug(f"Wrote {args.outfile}")
 
