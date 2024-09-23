@@ -139,17 +139,27 @@ make_sub_tasks() {
 		# fmtm-splitter -v -b ${task} -m ${tmmax}
 		echo "    Making sub task boundaries for ${task}"
 		${tmsplitter} --grid --infile ${task} --threshold 0.1
+
+		# Clip to the boundary
 		ogr2ogr -nlt MULTIPOLYGON -makevalid -clipsrc ${task} ${base}/${short}_Tasks.geojson output.geojson
 		${tmsplitter} -v --split --infile ${base}/${short}_Tasks.geojson
-		mv -f ${short}*.geojson ${base}
-		exit
+		for sub in ${base}/${short}*; do
+		    subnum=$(echo ${sub} | grep -o "Task_[0-9]*_Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		    echo "Making sub task OSM boundary for $(basename ${sub})"
+		    out=$(echo ${sub} | sed -e "s/_Task_/_OSM_Task_/" | cut -d '.' -f 1)
+		    # osmium doesn't like a Multipolygon with only one polygon
+		    # in it. So we convert it.
+		    mv -f ${sub} ${base}/tmp.geojson
+		    ogr2ogr -nlt POLYGON ${sub} ${base}/tmp.geojson
+		    # rm -f ${base}/${land}/tmp.geojson
+		done
 	    done
 	done
     done
 }
 
 make_tasks() {
-    # Split the multipolygon from fmtm-splitter into indivigual files
+    # Split the multipolygon from tm-splitter into indivigual files
     # for ogr2ogr and osmium.
     # $1 is an optional state to be the only one processed
     # $2 is an optional nartional forest or park to be the only one processed
@@ -167,25 +177,36 @@ make_tasks() {
 	    fi
 	    echo "    Making task boundaries for clipping to ${land}"
 	    ${tmsplitter} -v -s -i ${state}/${land}_Tasks.geojson 
-	    for task in ${state}/${land}_Tasks/${land}_Tasks_*.geojson; do
-		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
-		rm -f ${state}/${land}_Tasks/${num}.geojson
-		echo "Wrote ${state}/${land}_Tasks/${num}.geojson ..."
-	    done
+	    # for task in ${state}/${land}_Tasks/${land}_Tasks_*.geojson; do
+	    # 	num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+	    # 	short=$(basename ${task} | sed -e "s/National.*Tasks/Task/")
+	    # 	rm -f ${state}/${land}_Tasks/${num}.geojson
+	    # 	echo "Wrote ${state}/${land}_Tasks/${num}.geojson ..."
+	    # done
 	done
     done	
 }
 
 make_sub_mvum() {
-    for state in ${states}; do
+    # Make the data extract for the public land from OSM
+    # $1 is an optional state to be the only one processed
+    # $2 is an optional nartional forest or park to be the only one processed
+    # These are mostly useful for debugging, by default everything is processed
+    region="${1:-${states}}"
+    dataset="${2:-all}"    
+    for state in ${region}; do
 	echo "Processing public lands in ${state}..."
 	for land in ${datasets["${state}"]}; do
+	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
+	       continue
+	    fi
 	    echo "    Making task boundaries for clipping to ${land}"
 	    for task in ${state}/${land}_Tasks/${land}*_Tasks*.geojson; do
 		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
 		dir=$(echo ${task} | cut -d '.' -f 1)
 		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
-		for sub in ${dir}/*; do
+		short=$(basename ${task} | sed -e "s/National.*//")
+		for sub in ${dir}/${short}Task*; do
 		    subnum=$(echo ${sub} | grep -o "Task_[0-9]*_Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		    echo "Making sub task MVUM extract for $(basename ${sub})"
 		    out=$(echo ${sub} | sed -e "s/_Task_/_MVUM_Task_/")
@@ -198,9 +219,18 @@ make_sub_mvum() {
 
 make_sub_osm() {
     # Make the data extract for the public land from OSM
-    for state in ${states}; do
+    # $1 is an optional state to be the only one processed
+    # $2 is an optional nartional forest or park to be the only one processed
+    # These are mostly useful for debugging, by default everything is processed
+    region="${1:-${states}}"
+    dataset="${2:-all}"    
+    # Make the data extract for the public land from OSM
+    for state in ${region}; do
 	echo "Processing public lands in ${state}..."
 	for land in ${datasets["${state}"]}; do
+	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
+	       continue
+	    fi
 	    echo "    Making task boundaries for clipping to ${land}"
 	    for task in ${state}/${land}_Tasks/${land}*_Tasks*.geojson; do
 		${dryrun} osmium extract -s smart --overwrite --polygon ${task} -o ${state}/${land}_Tasks/${land}_OSM_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
@@ -319,12 +349,12 @@ make_mvum_extract() {
 		clip="NationalForests"
 	    fi
 	    if test x"${base}" == x"yes"; then
-		rm -f ${land}_Tasks/${land}_MVUM_Roads.geojson
+		rm -f ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson
 		echo "    Making ${land}_MVUM_Roads.geojson"
 		ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson ${mvumhighways}
 
 		echo "    Making ${land}_MVUM_Trails.geojson"
-		rm -f ${forest}_Tasks/${land}_MVUM_Trails.geojson
+		rm -f ${state}/${land}_Tasks/${land}_MVUM_Trails.geojson
 		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Trails.geojson ${mvumtrails}
 
 		# Merge the MVUM roads and trails together, since in OSM they
@@ -446,6 +476,8 @@ if test $# -eq 0; then
     exit
 fi
 
+# To speciofy a single state and/or forest or park, the -o and -d
+# options must be before the actions.
 while test $# -gt 0; do
     case "$1" in
 	-h|--help)
@@ -471,7 +503,7 @@ while test $# -gt 0; do
 	    ;;
 	-t|--tasks)
 	    make_tasks ${region} ${dataset}
-	    # make_sub_tasks ${region} ${dataset}
+	    make_sub_tasks ${region} ${dataset}
 	    break
 	    ;;
 	-f|--forests)
@@ -485,14 +517,14 @@ while test $# -gt 0; do
 	    ;;
 	-e|--extract)
 	    # This runs for a long time.
-	    make_osm_extract ${region} ${dataset} ${basedata}
-	    # make_sub_osm ${basesets} yes
-	    make_mvum_extract ${region} ${dataset} ${basedata}
-	    # make_sub_mvum
-	    # make_nps_extract
-	    # make_sub_nps
-	    # make_topo_extract
-	    # make_sub_topo
+	    # make_osm_extract ${region} ${dataset} ${basedata}
+	    # make_sub_osm ${basesets} ${region} ${dataset} ${basedata}
+	    # make_mvum_extract ${region} ${dataset} ${basedata}
+	    make_sub_mvum ${region} ${dataset} ${basedata}
+	    # make_nps_extract ${region} ${dataset} ${basedata}
+	    # make_sub_nps ${region} ${dataset} ${basedata}
+	    # make_topo_extract ${region} ${dataset} ${basedata}
+	    # make_sub_topo ${region} ${dataset} ${basedata}
 	    break
 	    ;;
 	-a|--all)
