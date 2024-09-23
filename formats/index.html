@@ -10,26 +10,28 @@
       
       
       
-        <link rel="canonical" href="https://www.hotosm.org/">
+        <link rel="canonical" href="https://www.hotosm.org/formats/">
       
       
+        <link rel="prev" href="../utilities/">
       
-        <link rel="next" href="about/">
+      
+        <link rel="next" href="../mvum/">
       
       
-      <link rel="icon" href="images/favicon.png">
+      <link rel="icon" href="../images/favicon.png">
       <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.8">
     
     
       
-        <title>osm-merge</title>
+        <title>Data Formats - osm-merge</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.4b4a2bd9.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.4b4a2bd9.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.356b1318.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.356b1318.min.css">
       
       
 
@@ -48,11 +50,11 @@
       
     
     
-      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="css/extra.css">
+      <link rel="stylesheet" href="../css/extra.css">
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -77,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#osm-merge" class="md-skip">
+        <a href="#file-formats" class="md-skip">
           Skip to content
         </a>
       
@@ -93,9 +95,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="osm-merge" class="md-header__button md-logo" aria-label="osm-merge" data-md-component="logo">
+    <a href=".." title="osm-merge" class="md-header__button md-logo" aria-label="osm-merge" data-md-component="logo">
       
-  <img src="images/hot_logo.png" alt="logo">
+  <img src="../images/hot_logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -112,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              Data Formats
             
           </span>
         </div>
@@ -198,9 +200,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="osm-merge" class="md-nav__button md-logo" aria-label="osm-merge" data-md-component="logo">
+    <a href=".." title="osm-merge" class="md-nav__button md-logo" aria-label="osm-merge" data-md-component="logo">
       
-  <img src="images/hot_logo.png" alt="logo">
+  <img src="../images/hot_logo.png" alt="logo">
 
     </a>
     osm-merge
@@ -224,29 +226,9 @@
       
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Home
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -255,62 +237,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#background" class="md-nav__link">
-    Background
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#programs" class="md-nav__link">
-    Programs
-  </a>
-  
-    <nav class="md-nav" aria-label="Programs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#conflatorpy" class="md-nav__link">
-    conflator.py
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-data" class="md-nav__link">
-    The Data
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -357,7 +283,7 @@
   
   
     <li class="md-nav__item">
-      <a href="about/" class="md-nav__link">
+      <a href="../about/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -377,7 +303,7 @@
   
   
     <li class="md-nav__item">
-      <a href="LICENSE/" class="md-nav__link">
+      <a href="../LICENSE/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -397,7 +323,7 @@
   
   
     <li class="md-nav__item">
-      <a href="CHANGELOG/" class="md-nav__link">
+      <a href="../CHANGELOG/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -500,7 +426,7 @@
   
   
     <li class="md-nav__item">
-      <a href="conflation/" class="md-nav__link">
+      <a href="../conflation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -520,7 +446,7 @@
   
   
     <li class="md-nav__item">
-      <a href="odkconflation/" class="md-nav__link">
+      <a href="../odkconflation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -540,7 +466,7 @@
   
   
     <li class="md-nav__item">
-      <a href="highways/" class="md-nav__link">
+      <a href="../highways/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -560,7 +486,7 @@
   
   
     <li class="md-nav__item">
-      <a href="calculations/" class="md-nav__link">
+      <a href="../calculations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -623,7 +549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="osm-merge/" class="md-nav__link">
+      <a href="../osm-merge/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -643,7 +569,7 @@
   
   
     <li class="md-nav__item">
-      <a href="utilities/" class="md-nav__link">
+      <a href="../utilities/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -668,18 +594,20 @@
       
   
   
+    
+  
   
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -693,7 +621,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Data Conversion
@@ -704,9 +632,29 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="formats/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Data Formats
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -715,6 +663,103 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#geojson" class="md-nav__link">
+    GeoJson
+  </a>
+  
+    <nav class="md-nav" aria-label="GeoJson">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#geometry" class="md-nav__link">
+    Geometry
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#osm-xml" class="md-nav__link">
+    OSM XML
+  </a>
+  
+    <nav class="md-nav" aria-label="OSM XML">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-types" class="md-nav__link">
+    Data Types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nodes" class="md-nav__link">
+    Nodes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ways" class="md-nav__link">
+    Ways
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#converting-between-formats" class="md-nav__link">
+    Converting Between Formats
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -726,7 +771,7 @@
   
   
     <li class="md-nav__item">
-      <a href="mvum/" class="md-nav__link">
+      <a href="../mvum/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -746,7 +791,7 @@
   
   
     <li class="md-nav__item">
-      <a href="trails/" class="md-nav__link">
+      <a href="../trails/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -773,7 +818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/" class="md-nav__link">
+      <a href="../api/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -815,36 +860,77 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#background" class="md-nav__link">
-    Background
+  <a href="#geojson" class="md-nav__link">
+    GeoJson
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#programs" class="md-nav__link">
-    Programs
-  </a>
-  
-    <nav class="md-nav" aria-label="Programs">
+    <nav class="md-nav" aria-label="GeoJson">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#conflatorpy" class="md-nav__link">
-    conflator.py
+  <a href="#geometry" class="md-nav__link">
+    Geometry
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#the-data" class="md-nav__link">
-    The Data
+  <a href="#properties" class="md-nav__link">
+    Properties
   </a>
   
 </li>
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#osm-xml" class="md-nav__link">
+    OSM XML
+  </a>
+  
+    <nav class="md-nav" aria-label="OSM XML">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-types" class="md-nav__link">
+    Data Types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nodes" class="md-nav__link">
+    Nodes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ways" class="md-nav__link">
+    Ways
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#converting-between-formats" class="md-nav__link">
+    Converting Between Formats
+  </a>
   
 </li>
       
@@ -866,97 +952,101 @@
   
 
 
-<h1 id="osm-merge">OSM Merge<a class="headerlink" href="#osm-merge" title="Permanent link">&para;</a></h1>
-<!-- markdownlint-disable -->
-<p align="center">
-  <em>Merge features and tags into existing OSM data.</em>
-</p>
-<p align="center">
-  <a href="https://github.com/hotosm/osm-merge/actions/workflows/build.yml" target="_blank">
-      <img src="https://github.com/hotosm/osm-merge/actions/workflows/build.yml/badge.svg" alt="Build">
-  </a>
-  <a href="https://github.com/hotosm/osm-merge/actions/workflows/build-ci.yml" target="_blank">
-      <img src="https://github.com/hotosm/osm-merge/actions/workflows/build-ci.yml/badge.svg" alt="CI Build">
-  </a>
-  <a href="https://github.com/hotosm/osm-merge/actions/workflows/docs.yml" target="_blank">
-      <img src="https://github.com/hotosm/osm-merge/actions/workflows/docs.yml/badge.svg" alt="Publish Docs">
-  </a>
-  <a href="https://github.com/hotosm/osm-merge/actions/workflows/publish.yml" target="_blank">
-      <img src="https://github.com/hotosm/osm-merge/actions/workflows/publish.yml/badge.svg" alt="Publish">
-  </a>
-  <a href="https://github.com/hotosm/osm-merge/actions/workflows/pytest.yml" target="_blank">
-      <img src="https://github.com/hotosm/osm-merge/actions/workflows/pytest.yml/badge.svg" alt="Test">
-  </a>
-  <a href="https://pypi.org/project/osm_merge" target="_blank">
-      <img src="https://img.shields.io/pypi/v/osm_merge?color=%2334D058&label=pypi%20package" alt="Package version">
-  </a>
-  <a href="https://pypistats.org/packages/osm_merge" target="_blank">
-      <img src="https://img.shields.io/pypi/dm/osm_merge.svg" alt="Downloads">
-  </a>
-  <a href="https://github.com/hotosm/osm-merge/blob/main/LICENSE.md" target="_blank">
-      <img src="https://img.shields.io/github/license/hotosm/osm-merge.svg" alt="License">
-  </a>
-</p>
-
-<hr />
-<p>📖 <strong>Documentation</strong>: <a href="https://hotosm.github.io/osm-merge/" target="_blank">https://hotosm.github.io/osm-merge/</a></p>
-<p>🖥️ <strong>Source Code</strong>: <a href="https://github.com/hotosm/osm-merge" target="_blank">https://github.com/hotosm/osm-merge</a></p>
-<hr />
-<!-- markdownlint-enable -->
-
-<h2 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h2>
-<p>This is a project for conflating map data,
-with the ultimate goal of importing it into
-<a href="https://www.openstreetmap.org">OpenStreetMap</a>. It
-is oriented towards processing non OSM external datasets.</p>
-<p>This project uses a huge amount of data (and disk space) if you start
-from the original nation wide datasets, which are too large to
-edit. There is a contrib script in the git sources I use to start
-breaking down the huge files into managable pieces.</p>
-<p>The goal of this project is two-fold. One is to support field data
-collection using OpenDataKit. The
-<a href="https://hotosm.github.io/osm-fieldwork/">osm-fieldwork</a> project can
-be used to convert the ODK data files into GeoJson and OSM XML. This
-project then supports conflating that field collected data with
-current OpenStreetMap. Otherwise this is a time-consuming process to
-do manually.</p>
-<p>The other goal is focused on emergency access in remote areas. This is
-improving the Motor Vehicle Use Map (MVUM) datasets of all highways
-(mostly jeep trails) in OpenStreetMap.  The current data in OSM was
-often imported complete with bugs in the original dataset, or the only
-details are <em>highway=track</em>. All of these have a US forest service
-reference number and name. Adding those makes it much easier to
-communicate a location.</p>
-<p><img alt="Blank Sign" height="200" src="assets/20210913_113539.jpg" width="300" /></p>
-<h2 id="programs">Programs<a class="headerlink" href="#programs" title="Permanent link">&para;</a></h2>
-<h3 id="conflatorpy">conflator.py<a class="headerlink" href="#conflatorpy" title="Permanent link">&para;</a></h3>
-<p>This program doesn't require a database, unlike the other conflation
-programs. It is focused on <a href="odkconflation/">conflation OpenDataKit</a>
-with OpenStreetMap, as well as conflating <a href="highways/">rural
-highways</a>. It'll conflate any two datasets in either GeoJson
-or OSM XML format. While this is currently under heavy development and
-debugging by processing large amounts of data to track down all the
-obscure bugs in the original datasets, or the conflation process.</p>
-<h3 id="the-data">The Data<a class="headerlink" href="#the-data" title="Permanent link">&para;</a></h3>
-<p>Much of the process of conflation is splitting huge datasets into
-managable sized files. Since that process is <a href="https://github.com/hotosm/osm-merge/tree/main/contrib">mostly
-automated</a>, I
-have a collection of files where I have done that part. Since
-conflation also requires converting the original datasets, the
-original files are included, the converted files to OSM XML &amp; GeoJson,
-and the results of conflation. Not all the national forests and parks
-have been conflated yet, but the data is there for others that may
-wish to try. The <a href="https://www.senecass.com/projects/Mapping/SourceData/States/">Map
-Data</a> is
-on a slow server, sorry. Disk space is cheaper than network bandwidth.</p>
-<p><img alt="Blank Sign" height="200" src="assets/skippedsegments.png" width="300" /></p>
+<h1 id="file-formats">File Formats<a class="headerlink" href="#file-formats" title="Permanent link">&para;</a></h1>
+<p>This project support two file formats, <a href="https://geojson.org/">GeoJson</a>
+and <a href="https://wiki.openstreetmap.org/wiki/OSM_XML">OSM XML</a>. </p>
+<h2 id="geojson">GeoJson<a class="headerlink" href="#geojson" title="Permanent link">&para;</a></h2>
+<p>GeoJson is widely supported by many tools, and this project uses it as
+the internal data structure for consistency. At the top level the file
+starts with a <em>GeometryCollection</em>, which is just a container for the
+list of features.</p>
+<h3 id="geometry">Geometry<a class="headerlink" href="#geometry" title="Permanent link">&para;</a></h3>
+<p>Each GeoJson feature contains a geometry object that has two fields,
+the <em>coordinates</em>, and the <em>type</em>. Shapely or GDAL can be used to
+convert between string representations and geometry objects.</p>
+<h3 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h3>
+<p>The properties is the array of <strong>keyword=value</strong> pairs, similar to the
+tags in OSM. There is no definition of a schema, and pair works. For
+conflation though, standardizing on the OSM schema for tagging pairs is
+critical to keep things simple.</p>
+<div class="highlight"><pre><span></span><code>&quot;properties&quot;: {
+    &quot;ref:usfs&quot;: &quot;FR 965.2&quot;,
+    &quot;name&quot;: &quot;  Road&quot;,
+    &quot;4wd_only&quot;: &quot;yes&quot;,
+    &quot;seasonal&quot;: &quot;yes&quot;
+},
+</code></pre></div>
+<h2 id="osm-xml">OSM XML<a class="headerlink" href="#osm-xml" title="Permanent link">&para;</a></h2>
+<p>An OSM XML file is read and converted to GeoJson, and then later it
+can get converted to OSM XML for the output file. In addition to the
+tags and geometry, each feature also has attributes.</p>
+<h3 id="attributes">Attributes<a class="headerlink" href="#attributes" title="Permanent link">&para;</a></h3>
+<p>The OSM XML format has attributes, which are used to control editing a
+feature. Since this project wants to generate an OSM XML file for
+JOSM that allows for tag merging, these attributes are important. In
+the post conflation data file, the version of the existing OSM feature
+has been incremented, and the <strong>action</strong> is set to <em>modify</em>. This enable
+JOSM to see this as an edited feature so it can be uploaded.</p>
+<ul>
+<li>id - the OSM ID of the feature</li>
+<li>version - the current version of the feature</li>
+<li>action - the action to apply when uploading to OSM<ul>
+<li>create</li>
+<li>modify</li>
+<li>delete</li>
+</ul>
+</li>
+<li>timestamp - the timestamp of the feature's last change</li>
+</ul>
+<p>With <strong>action=modify</strong> set, in JOSM you can <em>update modified</em> and sync
+with current OSM.</p>
+<h3 id="data-types">Data Types<a class="headerlink" href="#data-types" title="Permanent link">&para;</a></h3>
+<p>There are two data types in the OSM XML files used for
+conflation. These are nodes and ways.</p>
+<h3 id="nodes">Nodes<a class="headerlink" href="#nodes" title="Permanent link">&para;</a></h3>
+<p>A node is a single coordinate. This is often used as a POI, and will
+have tags. A node that is referenced in a way won't have any tags,
+just the coordinates. The version and timestamp get updated if there
+is a change to the node location.</p>
+<div class="highlight"><pre><span></span><code>&lt;node id=&quot;83276871&quot; version=&quot;3&quot;
+    timestamp=&quot;2021-06-12T16:25:43Z&quot; lat=&quot;37.6064731&quot; lon=&quot;-114.00674&quot;/&gt;
+</code></pre></div>
+<h3 id="ways">Ways<a class="headerlink" href="#ways" title="Permanent link">&para;</a></h3>
+<p>A way can be a linestring, polygon, any geometry that includes more
+than one node. This makes it difficult to do spatial comparisons, so
+when an OSM XML file is loaded, in addition to the refs, they are also
+converted to an actual geometry. All the calculations use the
+geometry, and the refs are used to construct the OSM XML output file
+for JOSM. OSM has no concept of a LineString or Polygon, the shape is
+determined by the tags, for example <strong>highway=track</strong>, or
+<strong>building=yes</strong>.</p>
+<div class="highlight"><pre><span></span><code>&lt;way id=&quot;10109556&quot; version=&quot;4&quot; timestamp=&quot;2021-06-12T15:42:25Z&quot;&gt;
+&lt;nd ref=&quot;83305252&quot;/&gt;
+&lt;nd ref=&quot;8118009676&quot;/&gt;
+&lt;nd ref=&quot;8118009677&quot;/&gt;
+&lt;nd ref=&quot;83277113&quot;/&gt;
+&lt;nd ref=&quot;83277114&quot;/&gt;
+&lt;nd ref=&quot;83277116&quot;/&gt;
+&lt;nd ref=&quot;83277117&quot;/&gt;
+&lt;tag k=&quot;highway&quot; v=&quot;unclassified&quot;/&gt;
+&lt;tag k=&quot;surface&quot; v=&quot;dirt&quot;/&gt;
+</code></pre></div>
+<p></way></p>
+<h2 id="converting-between-formats">Converting Between Formats<a class="headerlink" href="#converting-between-formats" title="Permanent link">&para;</a></h2>
+<p>To support reading and writing OSM XML files, this project has it's
+own code that builds on top of the <strong>OsmFile()</strong> class in the <a href="https://hotosm.github.io/osm-fieldwork/">OSM
+Fieldwork</a>. This parses the
+OSM XML file into GeoJson format for internal use. All of the
+attributes in the OSM XML file being read are convert to tags in the
+GeoJson properties section, and then later converted from the
+properties back to OSM XML attributes when writing the output file.</p>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 15, 2024</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 23, 2024</span>
       
     
   </small>
@@ -1031,10 +1121,10 @@ on a slow server, sorry. Disk space is cheaper than network bandwidth.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.81fa17fe.min.js"></script>
+      <script src="../assets/javascripts/bundle.81fa17fe.min.js"></script>
       
     
   </body>
