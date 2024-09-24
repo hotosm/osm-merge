@@ -132,6 +132,8 @@ def ogrgrid(outputGridfn: str,
     srs.ImportFromEPSG(4326)
     outLayer = outDataSource.CreateLayer(outputGridfn, srs, geom_type=ogr.wkbMultiPolygon )
     featureDefn = outLayer.GetLayerDefn()
+    name = ogr.FieldDefn("name", ogr.OFTString)
+    outLayer.CreateField(name)
 
     # create grid cells
     countcols = 0
@@ -157,8 +159,8 @@ def ogrgrid(outputGridfn: str,
             # add new geom to layer
             outFeature = ogr.Feature(featureDefn)
             outFeature.SetGeometry(poly)
+            outFeature.SetField("name", f"task_{countrows}")
             outLayer.CreateFeature(outFeature)
-            # outFeature = None
 
             # new envelope for next poly
             ringYtop = ringYtop - gridHeight
