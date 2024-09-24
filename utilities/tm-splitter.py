@@ -244,21 +244,33 @@ To split the file into tasks, split it:
     if args.split:
         index = 0
         name = str()
-        for feature in grid['features']:
-            if "FORESTNAME" in feature["properties"]:
-                name = feature["properties"]["FORESTNAME"].replace(' ', '_')
-            elif "UNIT_NAME" in feature["properties"]:
-                name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
-            else:
-                name = f"{path.stem}_{index}"
-                index += 1
-                feature["properties"]["name"] = name
-                feature["boundary"] = "administrative"
-            outfile = f"{os.path.dirname(args.infile)}/{path.stem}_{index}.geojson"
-            file = open(outfile, 'w')
-            geojson.dump(FeatureCollection([feature]), file)
-            file.close()
-            log.debug(f"Wrote {outfile} ...")
+        driver = ogr.GetDriverByName("GeoJson")
+        indata = driver.Open(args.infile, 0)
+        inlayer = indata.GetLayer()
+        for feature in inlayer:
+            # if "FORESTNAME" in feature["properties"]:
+            #     name = feature["properties"]["FORESTNAME"].replace(' ', '_')
+            # elif "UNIT_NAME" in feature["properties"]:
+            #     name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
+
+            # There's only one field in the grid multipolygon
+            task = feature.GetField(0)
+            poly = feature.GetGeometryRef()
+            outfile = f"{path.stem}_{task}.geojson"
+            if os.path.exists(outfile):
+                os.remove(outfile)
+            outdata = driver.CreateDataSource(outfile)
+            outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbPolygon)
+            featureDefn = outlayer.GetLayerDefn()
+            outFeature = ogr.Feature(featureDefn)
+            outFeature.SetGeometry(poly)
+            name = ogr.FieldDefn("name", ogr.OFTString)
+            # outlayer.CreateField(name)
+            # outFeature.SetField("name", task)
+            outlayer.CreateFeature(outFeature)
+            # feature["properties"]["name"] = name
+            # feature["boundary"] = "administrative"
+            log.debug(f"Wrote task {outfile} ...")
     elif args.grid:
         log.debug(f"Generating the grid may take a long time...")
         path = Path(args.outfile)
