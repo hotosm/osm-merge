@@ -159,7 +159,7 @@ def ogrgrid(outputGridfn: str,
             # add new geom to layer
             outFeature = ogr.Feature(featureDefn)
             outFeature.SetGeometry(poly)
-            outFeature.SetField("name", f"task_{countrows}")
+            outFeature.SetField("name", f"Task_{countrows}")
             outLayer.CreateFeature(outFeature)
 
             # new envelope for next poly
@@ -236,6 +236,10 @@ To split the file into tasks, split it:
 
 
     # The infile is either the the file to split, or the grid file.
+    if not os.path.exists(args.infile):
+        log.error(f"{args.infile} does not exist!")
+        quit()
+
     file = open(args.infile, "r")
     grid = geojson.load(file)
     
@@ -256,7 +260,8 @@ To split the file into tasks, split it:
             # There's only one field in the grid multipolygon
             task = feature.GetField(0)
             poly = feature.GetGeometryRef()
-            outfile = f"{path.stem}_{task}.geojson"
+            # outfile = f"{path.stem}_{task}.geojson"
+            outfile = args.infile.replace("_Tasks.", f"_{task}.")
             if os.path.exists(outfile):
                 os.remove(outfile)
             outdata = driver.CreateDataSource(outfile)
@@ -291,7 +296,7 @@ To split the file into tasks, split it:
         outdata = driver.CreateDataSource(outfile)
         if os.path.exists(outfile):
             os.remove(outfile)
-        outlayer = outdata.CreateLayer("tasks", crs, geom_type=ogr.wkbPolygon)
+        outlayer = outdata.CreateLayer("Tasks", crs, geom_type=ogr.wkbPolygon)
 
         boundary = inlayer.GetNextFeature()
         poly = boundary.GetGeometryRef()
@@ -322,7 +327,7 @@ To split the file into tasks, split it:
                 # logging.debug("Data is empty!!")
                 continue
             outdata = driver.CreateDataSource(f"{path.stem}_{index}.geojson")
-            outlayer = outdata.CreateLayer("tasks", geom_type=ogr.wkbMultiLineString)
+            outlayer = outdata.CreateLayer("Tasks", geom_type=ogr.wkbMultiLineString)
             for feature in extlayer:
                 outlayer.CreateFeature(feature)
             #outlayer.Destroy()
