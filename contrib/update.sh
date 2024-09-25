@@ -79,6 +79,7 @@ datasets["Wyoming"]="${wyoming}"
 # declare -p ${datasets}
 
 basesets="no"
+ogropts="-t_srs EPSG:4326 -makevalid -explodecollections"
 
 split_aoi() {
     # $1 is an optional state to be the only one processed
@@ -90,6 +91,8 @@ split_aoi() {
     for state in ${region}; do
 	echo "Splitting ${state} into squares with ${tmmax} per side"
 	for land in ${datasets["${state}"]}; do
+	    dir="${state}/${land}_Tasks"
+	    base="${dir}/${land}"
 	    if test x"${dataset}" != x -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
@@ -105,8 +108,40 @@ split_aoi() {
 	    # smaller than this, so only one polygon.
 	    ${tmsplitter} --grid --infile ${aoi} --threshold 0.7
 	    # Make a multipolygon even if just one task
-	    ogr2ogr -nlt MULTIPOLYGON -makevalid -clipsrc ${aoi} ${state}/${land}_Tasks.geojson output.geojson
-	    echo "Wrote ${state}/${land}_Tasks.geojson"
+	    ogr2ogr -nlt MULTIPOLYGON ${opgropts} -clipsrc ${aoi} ${base}_tasks.geojson output.geojson
+	    echo "Wrote ${base}_Tasks.geojson"
+	done
+    done
+}
+
+make_tasks() {
+    # Split the multipolygon from tm-splitter into indivigual files
+    # for ogr2ogr and osmium.
+    # $1 is an optional state to be the only one processed
+    # $2 is an optional national forest or park to be the only one processed
+    # These are mostly useful for debugging, by default everything is processed
+    region="${1:-${states}}"
+    dataset="${2:all}"
+    for state in ${region}; do
+	echo "Making task boundaries for for ${state}..."
+	for land in ${datasets["${state}"]}; do
+	    dir="${state}/${land}_Tasks"
+	    base="${dir}/${land}"
+	    if test x"${dataset}" != x -a x"${dataset}" != x"${land}"; then
+	       continue
+	    fi
+	    if test ! -e ${dir}; then
+		mkdir ${dir}
+	    fi
+	    echo "    Making task boundaries for clipping to ${land}"
+	    ${tmsplitter} -v -s -i ${base}_Tasks.geojson
+	    for task in ${base}_Tasks_*.geojson; do
+		echo $task
+		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+	     	short=$(basename ${task} | sed -e "s/National.*Tasks/Task/")
+		# 	rm -f ${state}/${land}_Tasks/${num}.geojson
+	     	echo "Wrote2 ${task} ..."
+	    done
 	done
     done
 }
@@ -128,8 +163,10 @@ make_sub_tasks() {
 	    if test x"${dataset}" != x -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
+	    dir="${state}/${land}_Tasks"
 	    echo "    Making task boundaries for clipping to ${land}"
-	    for task in ${state}/${land}_Tasks/${land}_Tasks*.geojson; do
+	    tasks=${dir}/${land}_Task*.geojson
+	    for task in ${tasks}; do
 		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		base=$(echo ${task} | cut -d '.' -f 1)
 		short=$(basename ${base} | sed -e "s/National.*Tasks/Task/")
@@ -141,16 +178,12 @@ make_sub_tasks() {
 		${tmsplitter} --grid --infile ${task} --threshold 0.1
 
 		# Clip to the boundary
-		ogr2ogr -nlt MULTIPOLYGON -makevalid -clipsrc ${task} ${base}/${short}_Tasks.geojson output.geojson
+		ogr2ogr -nlt MULTIPOLYGON  ${opgropts} -clipsrc ${task} ${base}/${short}_Tasks.geojson output.geojson
 		${tmsplitter} -v --split --infile ${base}/${short}_Tasks.geojson
 		for sub in ${base}/${short}*; do
 		    subnum=$(echo ${sub} | grep -o "Task_[0-9]*_Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		    echo "Making sub task OSM boundary for $(basename ${sub})"
 		    out=$(echo ${sub} | sed -e "s/_Task_/_OSM_Task_/" | cut -d '.' -f 1)
-		    # osmium doesn't like a Multipolygon with only one polygon
-		    # in it. So we convert it.
-		    mv -f ${sub} ${base}/tmp.geojson
-		    ogr2ogr -nlt POLYGON ${sub} ${base}/tmp.geojson
 		    # rm -f ${base}/${land}/tmp.geojson
 		done
 	    done
@@ -158,39 +191,10 @@ make_sub_tasks() {
     done
 }
 
-make_tasks() {
-    # Split the multipolygon from tm-splitter into indivigual files
-    # for ogr2ogr and osmium.
-    # $1 is an optional state to be the only one processed
-    # $2 is an optional nartional forest or park to be the only one processed
-    # These are mostly useful for debugging, by default everything is processed
-    region="${1:-${states}}"
-    dataset="${2:all}"
-    for state in ${region}; do
-	echo "Making task boundaries for for ${state}..."
-	for land in ${datasets["${state}"]}; do
-	    if test x"${dataset}" != x -a x"${dataset}" != x"${land}"; then
-	       continue
-	    fi
-	    if test ! -e ${state}/${land}_Tasks; then
-		mkdir ${state}/${land}_Tasks
-	    fi
-	    echo "    Making task boundaries for clipping to ${land}"
-	    ${tmsplitter} -v -s -i ${state}/${land}_Tasks.geojson 
-	    # for task in ${state}/${land}_Tasks/${land}_Tasks_*.geojson; do
-	    # 	num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
-	    # 	short=$(basename ${task} | sed -e "s/National.*Tasks/Task/")
-	    # 	rm -f ${state}/${land}_Tasks/${num}.geojson
-	    # 	echo "Wrote ${state}/${land}_Tasks/${num}.geojson ..."
-	    # done
-	done
-    done	
-}
-
 make_sub_mvum() {
     # Make the data extract for the public land from OSM
     # $1 is an optional state to be the only one processed
-    # $2 is an optional nartional forest or park to be the only one processed
+    # $2 is an optional national forest or park to be the only one processed
     # These are mostly useful for debugging, by default everything is processed
     region="${1:-${states}}"
     dataset="${2:-all}"    
@@ -202,7 +206,7 @@ make_sub_mvum() {
 	    fi
 	    echo "    Making task boundaries for clipping to ${land}"
 	    for task in ${state}/${land}_Tasks/${land}*_Tasks*.geojson; do
-		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
+		${dryrun} ogr2ogr ${ogropts} -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
 		dir=$(echo ${task} | cut -d '.' -f 1)
 		num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		short=$(basename ${task} | sed -e "s/National.*//")
@@ -210,7 +214,7 @@ make_sub_mvum() {
 		    subnum=$(echo ${sub} | grep -o "Task_[0-9]*_Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		    echo "Making sub task MVUM extract for $(basename ${sub})"
 		    out=$(echo ${sub} | sed -e "s/_Task_/_MVUM_Task_/")
-		    ${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${sub} ${out} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson
+		    ${dryrun} ogr2ogr ${ogropts} -clipsrc ${sub} ${out} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson
 		done
 	    done
 	done
@@ -264,7 +268,7 @@ make_nps_extract() {
 	    if test x"${base}" == x"yes"; then
 		echo "    Making ${land}_NPS_Trails.geojson"
 		rm -f ${state}/${land}_Tasks/${land}_NPS_Trails.geojson
-		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/NationalParks/${land}.geojson ${state}/${land}_Tasks/${land}_NPS_Trails.geojson ${npstrails}
+		${dryrun} ogr2ogr ${ogropts} -clipsrc ${boundaries}/NationalParks/${land}.geojson ${state}/${land}_Tasks/${land}_NPS_Trails.geojson ${npstrails}
 	    fi
 
 	    if test x"${tasks}" == x"yes"; then
@@ -272,7 +276,7 @@ make_nps_extract() {
 		    echo "    Processing NPS task ${task}..."
 		    num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		    rm -f ${state}/${land}_Tasks/${land}_NPS_${num}.geojson
-		    ${dryrun} ogr2ogr -explodecollections -makevalid \
+		    ${dryrun} ogr2ogr ${ogropts} \
 			      -clipsrc ${task} ${state}/${land}_Tasks/${land}_NPS_${num}.geojson \
 			      ${state}/${land}_Tasks/${land}_NPS_Trails.geojson
 		done
@@ -298,10 +302,10 @@ make_topo_extract() {
 	    if test x"${base}" == x"yes"; then
 		echo "    Making ${land}_NPS_Trails.geojson"
 		rm -f ${forest}_Tasks/${land}_Topo_Trails.geojson
-		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_USGS_Topo_Roads.geojson ${topotrails}
+		${dryrun} ogr2ogr ${ogropts} -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_USGS_Topo_Roads.geojson ${topotrails}
 
 		rm -f ${forest}_Tasks/${land}_Topo_Trails.geojson
-		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_USGS_Topo_Trails.geojson ${topohighways}
+		${dryrun} ogr2ogr ${ogropts} -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_USGS_Topo_Trails.geojson ${topohighways}
 	    fi
 
 	    if test x"${tasks}" == x"yes"; then
@@ -309,7 +313,7 @@ make_topo_extract() {
 		    echo "    Processing Topo task ${task}..."
 		    num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
 		    rm -f ${state}/${land}_Tasks/${land}_USGS_Topo_${num}.geojson
-		    ${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_USGS_Topo_${num}.geojson ${state}/${land}_Tasks/${land}_USGS_Topo_Roads.geojson
+		    ${dryrun} ogr2ogr ${ogropts} -clipsrc ${task} ${state}/${land}_Tasks/${land}_USGS_Topo_${num}.geojson ${state}/${land}_Tasks/${land}_USGS_Topo_Roads.geojson
 		done
 	    fi
     	done
@@ -351,11 +355,11 @@ make_mvum_extract() {
 	    if test x"${base}" == x"yes"; then
 		rm -f ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson
 		echo "    Making ${land}_MVUM_Roads.geojson"
-		ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson ${mvumhighways}
+		ogr2ogr ${ogropts} -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Roads.geojson ${mvumhighways}
 
 		echo "    Making ${land}_MVUM_Trails.geojson"
 		rm -f ${state}/${land}_Tasks/${land}_MVUM_Trails.geojson
-		${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Trails.geojson ${mvumtrails}
+		${dryrun} ogr2ogr ${ogropts} -clipsrc ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Trails.geojson ${mvumtrails}
 
 		# Merge the MVUM roads and trails together, since in OSM they
 		# are both in the data extract used for vconflation.
@@ -369,7 +373,7 @@ make_mvum_extract() {
 		for task in ${state}/${land}_Tasks/*_Tasks*.geojson; do
 		    echo "    Processing MVUM task ${task}..."
 		    num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
-		    ${dryrun} ogr2ogr -explodecollections -makevalid -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
+		    ${dryrun} ogr2ogr ${ogropts} -clipsrc ${task} ${state}/${land}_Tasks/${land}_MVUM_${num}.geojson ${state}/${land}_Tasks/mvum.geojson
 		done
 	    fi
     	done
@@ -404,19 +408,23 @@ make_osm_extract() {
 		else
 		    ${dryrun} osmium ${defaults} --polygon ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways.osm ${osmdata}
 		fi
-		# # Fix the names & refs in the OSM data
-		${fixnames} -v -i ${state}/${land}_Tasks/${land}_OSM_Highways.osm
-		mv out-out.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
+		# Fix the names & refs in the OSM data
+		${dryrun} ${fixnames} -v -i ${state}/${land}_Tasks/${land}_OSM_Highways.osm
+		${dryrun} mv out-out.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
 	    fi
 
 	    if test x"${tasks}" == x"yes"; then
-		for task in ${state}/${land}_Tasks/*_Tasks*.geojson; do
+		dir="${state}/${land}_Tasks"
+		base="${dir}/${land}"
+		tasks=${base}/*_Task*.geojson
+		for task in ${tasks}; do
 		    echo "    Processing OSM task ${task}..."
-		    num=$(echo ${task} | grep -o "Tasks_[0-9]*" | sed -e "s/Tasks/Task/")
+		    num=$(echo ${task} | grep -o "Task_[0-9]*")
+		    poly="${dir}/${land}_${num}.geojson"
 		    if test $(echo ${land} | grep -c "_Park" ) -gt 0; then
-		       ${dryrun} osmium ${defaults} --polygon ${boundaries}/NationalParks/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
+		       ${dryrun} osmium ${defaults} --polygon ${poly} -o ${base}_OSM_Highways_${num}.osm ${base}_OSM_Highways.osm
 		    else
-			${dryrun} osmium ${defaults} --polygon ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${land}_OSM_Highways_${num}.osm ${state}/${land}_Tasks/${land}_OSM_Highways.osm
+			${dryrun} osmium ${defaults} --polygon ${poly} -o ${base}_OSM_Highways_${num}.osm ${base}_OSM_Highways.osm
 		    fi
 		done
 	    fi
@@ -437,7 +445,7 @@ make_baseset() {
 	    echo "    Making baseset for ${land}"
 	    for file in ${source}; do
 		rm -f ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson
-		echo ogr2ogr -explodecollections -makevalid -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson /play/MapData/SourceData/Road_MVUM-out.geojson
+		echo ogr2ogr ${ogropts} -clipsrc ${forest}.geojson ${forest}_Tasks/${forest}_USFS_MVUM_Roads.geojson /play/MapData/SourceData/Road_MVUM-out.geojson
 		echo $file
 	    done
 	done
@@ -502,7 +510,7 @@ while test $# -gt 0; do
 	    dataset=$1
 	    ;;
 	-t|--tasks)
-	    make_tasks ${region} ${dataset}
+	    # make_tasks ${region} ${dataset}
 	    make_sub_tasks ${region} ${dataset}
 	    break
 	    ;;
@@ -516,11 +524,11 @@ while test $# -gt 0; do
 	    break
 	    ;;
 	-e|--extract)
-	    # This runs for a long time.
-	    # make_osm_extract ${region} ${dataset} ${basedata}
-	    # make_sub_osm ${basesets} ${region} ${dataset} ${basedata}
+	    # This may run for a long time.
+	    make_osm_extract ${region} ${dataset} ${basedata}
+	    make_sub_osm ${basesets} ${region} ${dataset} ${basedata}
 	    # make_mvum_extract ${region} ${dataset} ${basedata}
-	    make_sub_mvum ${region} ${dataset} ${basedata}
+	    # make_sub_mvum ${region} ${dataset} ${basedata}
 	    # make_nps_extract ${region} ${dataset} ${basedata}
 	    # make_sub_nps ${region} ${dataset} ${basedata}
 	    # make_topo_extract ${region} ${dataset} ${basedata}
