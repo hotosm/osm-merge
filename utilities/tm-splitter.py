@@ -166,13 +166,11 @@ def make_tasks(infile: str,
     # The file always has a single entry, a GeometryCollection or MultiPolygon
     feature = inlayer.GetNextFeature()
     poly = feature.GetGeometryRef()
-    log.debug(f"NAME: {poly.GetGeometryName()}")
-    log.debug(f"AREA: {poly.Area()}")
-    log.debug(f"COUNT {inlayer.GetFeatureCount()} features in input layer")
+    # log.debug(f"NAME: {poly.GetGeometryName()}")
+    # log.debug(f"AREA: {poly.Area()}")
+    # log.debug(f"COUNT {inlayer.GetFeatureCount()} features in input layer")
     for feature in inlayer:
         poly = feature.GetGeometryRef()
-        log.debug(f"COUNT2: {poly.GetGeometryCount()} features in input layer")
-        log.debug(f"NAME2: {poly.GetGeometryName()}")
         # for feature in inlayer:
         # if "FORESTNAME" in feature["properties"]:
         #     name = feature["properties"]["FORESTNAME"].replace(' ', '_')
@@ -181,7 +179,6 @@ def make_tasks(infile: str,
 
         # There's only one field in the grid multipolygon
         task = feature.GetField(0)
-        # outfile = f"{path.stem}_{task}.geojson"
         outfile = infile.replace(".geojson", f"_{index}.geojson")
         index += 1
         task = Path(outfile).stem.replace("Tasks", "Task")
@@ -192,6 +189,18 @@ def make_tasks(infile: str,
         outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbPolygon)
         featureDefn = outlayer.GetLayerDefn()
         outFeature = ogr.Feature(featureDefn)
+        # Make a polygon if it's closed, which it should be. Using ogr2ogr to
+        # clip the grid to the boundary, it sets some task as a LineString
+        # instead of a polygon. Since the first and last points are the same,
+        # it's actuall a polygon, so convert it to a Polygon.
+        if poly.GetGeometryName() == "LINESTRING":
+            ring = ogr.Geometry(ogr.wkbLinearRing)
+            for i in range(0, poly.GetPointCount()):
+                # GetPoint returns a tuple not a Geometry
+                pt = poly.GetPoint(i)
+                ring.AddPoint(pt[0], pt[1])
+            poly = ogr.Geometry(ogr.wkbPolygon)
+            poly.AddGeometry(ring)
         outFeature.SetGeometry(poly)
         name = ogr.FieldDefn("name", ogr.OFTString)
         # outlayer.CreateField(name)
