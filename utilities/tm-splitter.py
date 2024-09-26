@@ -67,31 +67,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 # Shapely.distance doesn't like duplicate points
 warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
-# def grid_bounds(geom,
-#                 delta: float,
-#                 ):
-    
-#     minx, miny, maxx, maxy = geom.bounds
-#     nx = int((maxx - minx)/delta)
-#     ny = int((maxy - miny)/delta)
-#     gx, gy = np.linspace(minx,maxx,nx), np.linspace(miny,maxy,ny)
-#     grid = []
-#     for i in range(len(gx)-1):
-#         for j in range(len(gy)-1):
-#             poly_ij = Polygon([[gx[i],gy[j]],[gx[i],gy[j+1]],[gx[i+1],gy[j+1]],[gx[i+1],gy[j]]])
-#             grid.append( poly_ij )
-#     return grid
-
-# def partition(geom, delta):
-#     timer = Timer(text="partition() took {seconds:.0f}s")
-#     timer.start()
-
-#     prepared_geom = prep(geom)
-#     grid = list(filter(prepared_geom.intersects, grid_bounds(geom, delta)))
-
-#     timer.stop()
-#     return grid
-
 def ogrgrid(outputGridfn: str,
             extent: tuple,
             threshold: float,
@@ -137,6 +112,7 @@ def ogrgrid(outputGridfn: str,
 
     # create grid cells
     countcols = 0
+    index = 0
     while countcols < cols:
         countcols += 1
 
@@ -159,12 +135,14 @@ def ogrgrid(outputGridfn: str,
             # add new geom to layer
             outFeature = ogr.Feature(featureDefn)
             outFeature.SetGeometry(poly)
-            outFeature.SetField("name", f"Task_{countrows}")
+            outFeature.SetField("name", f"Task_{countrows}_{countcols}")
             outLayer.CreateFeature(outFeature)
 
             # new envelope for next poly
             ringYtop = ringYtop - gridHeight
             ringYbottom = ringYbottom - gridHeight
+
+            index += 1
 
         # new envelope for next poly
         ringXleftOrigin = ringXleftOrigin + gridWidth
@@ -175,6 +153,53 @@ def ogrgrid(outputGridfn: str,
 
     # timer.stop()
     return outLayer
+
+def make_tasks(infile: str,
+               ):
+    """
+    """
+    index = 0
+    name = str()
+    driver = ogr.GetDriverByName("GeoJson")
+    indata = driver.Open(infile, 0)
+    inlayer = indata.GetLayer()
+    # The file always has a single entry, a GeometryCollection or MultiPolygon
+    feature = inlayer.GetNextFeature()
+    poly = feature.GetGeometryRef()
+    log.debug(f"NAME: {poly.GetGeometryName()}")
+    log.debug(f"AREA: {poly.Area()}")
+    log.debug(f"COUNT {inlayer.GetFeatureCount()} features in input layer")
+    for feature in inlayer:
+        poly = feature.GetGeometryRef()
+        log.debug(f"COUNT2: {poly.GetGeometryCount()} features in input layer")
+        log.debug(f"NAME2: {poly.GetGeometryName()}")
+        # for feature in inlayer:
+        # if "FORESTNAME" in feature["properties"]:
+        #     name = feature["properties"]["FORESTNAME"].replace(' ', '_')
+        # elif "UNIT_NAME" in feature["properties"]:
+        #     name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
+
+        # There's only one field in the grid multipolygon
+        task = feature.GetField(0)
+        # outfile = f"{path.stem}_{task}.geojson"
+        outfile = infile.replace(".geojson", f"_{index}.geojson")
+        index += 1
+        task = Path(outfile).stem.replace("Tasks", "Task")
+
+        if os.path.exists(outfile):
+            os.remove(outfile)
+        outdata = driver.CreateDataSource(outfile)
+        outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbPolygon)
+        featureDefn = outlayer.GetLayerDefn()
+        outFeature = ogr.Feature(featureDefn)
+        outFeature.SetGeometry(poly)
+        name = ogr.FieldDefn("name", ogr.OFTString)
+        # outlayer.CreateField(name)
+        # outFeature.SetField("name", outfile)
+        outlayer.CreateFeature(outFeature)
+        # feature["properties"]["name"] = name
+        # feature["boundary"] = "administrative"
+        log.debug(f"Wrote task {outfile} ...")
 
 async def main():
     """This main function lets this class be run standalone by a bash script"""
@@ -246,36 +271,7 @@ To split the file into tasks, split it:
     # Split the large file of administrative boundaries into each
     # area so they can be used for clipping.
     if args.split:
-        index = 0
-        name = str()
-        driver = ogr.GetDriverByName("GeoJson")
-        indata = driver.Open(args.infile, 0)
-        inlayer = indata.GetLayer()
-        for feature in inlayer:
-            # if "FORESTNAME" in feature["properties"]:
-            #     name = feature["properties"]["FORESTNAME"].replace(' ', '_')
-            # elif "UNIT_NAME" in feature["properties"]:
-            #     name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
-
-            # There's only one field in the grid multipolygon
-            task = feature.GetField(0)
-            poly = feature.GetGeometryRef()
-            # outfile = f"{path.stem}_{task}.geojson"
-            outfile = args.infile.replace("_Tasks.", f"_{task}.")
-            if os.path.exists(outfile):
-                os.remove(outfile)
-            outdata = driver.CreateDataSource(outfile)
-            outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbPolygon)
-            featureDefn = outlayer.GetLayerDefn()
-            outFeature = ogr.Feature(featureDefn)
-            outFeature.SetGeometry(poly)
-            name = ogr.FieldDefn("name", ogr.OFTString)
-            # outlayer.CreateField(name)
-            # outFeature.SetField("name", task)
-            outlayer.CreateFeature(outFeature)
-            # feature["properties"]["name"] = name
-            # feature["boundary"] = "administrative"
-            log.debug(f"Wrote task {outfile} ...")
+        make_tasks(args.infile)
     elif args.grid:
         log.debug(f"Generating the grid may take a long time...")
         path = Path(args.outfile)
