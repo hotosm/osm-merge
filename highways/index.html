@@ -879,8 +879,8 @@ merge</a> to
 turn it into one big file. I have to do this because most of the
 national forest cross state lines. You'll get duplicate ID errors if
 you download these files on different days, so grab all the ones you
-plan to merge at the same time. Geofabrik updates every 24 hours. When
-dealing with files too large for JOSM or QGIS,
+plan to merge at the same time. Geofabrik updates every 24 hours.</p>
+<p>When dealing with files too large for JOSM or QGIS,
 <a href="https://osmcode.org/osmium-tool/">osmium</a> is the tool to use. There
 is also <a href="https://wiki.openstreetmap.org/wiki/Osmfilter">osmfilter</a> and
 <a href="https://wiki.openstreetmap.org/wiki/Osmconvert">osmconvert</a> which can
@@ -892,6 +892,13 @@ files with osmium, do this:</p>
 <p>The next step is to delete everything but highways from the OSM XML
 file. When conflating highways, we don't care about amenities or
 waterways.</p>
+<p>The prefered data extraction program for conflation is the
+<a href="https://github.com/hotosm/osm-merge/blob/main/utilities/osmhighways.py">osmhighways.py</a> program, which has much more fine-grained control,
+and also replaces the older fixname.py program and fixes the issues
+when the <em>name</em> field is actually a reference. It also deletes the
+extraneous <strong>tiger:*</strong> tags to reduce bloat.</p>
+<p>You can do something similar with osmium tool, but you wind up with
+extra features and tags which impacts conflation performance.</p>
 <div class="highlight"><pre><span></span><code>osmium tags-filter --overwrite --remove-tags -o outdata.osm indata.osm w/highway=track,service,unclassified,primary,tertiary,secondary,path,residential,abandoned,footway,motorway,trunk
 </code></pre></div>
 <p>Finally I clip this large file into separate datasets, one for each
@@ -1148,7 +1155,7 @@ blog post about a field mapping trip.</p>
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 19, 2024</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 28, 2024</span>
       
     
   </small>
