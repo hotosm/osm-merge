@@ -139,8 +139,9 @@ merge](https://docs.osmcode.org/osmium/latest/osmium-merge.html) to
 turn it into one big file. I have to do this because most of the
 national forest cross state lines. You'll get duplicate ID errors if
 you download these files on different days, so grab all the ones you
-plan to merge at the same time. Geofabrik updates every 24 hours. When
-dealing with files too large for JOSM or QGIS,
+plan to merge at the same time. Geofabrik updates every 24 hours.
+
+When dealing with files too large for JOSM or QGIS,
 [osmium](https://osmcode.org/osmium-tool/) is the tool to use. There
 is also [osmfilter](https://wiki.openstreetmap.org/wiki/Osmfilter) and
 [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert) which can
@@ -153,6 +154,15 @@ files with osmium, do this:
 The next step is to delete everything but highways from the OSM XML
 file. When conflating highways, we don't care about amenities or
 waterways.
+
+The prefered data extraction program for conflation is the
+[osmhighways.py]() program, which has much more fine-grained control,
+and also replaces the older fixname.py program and fixes the issues
+when the *name* field is actually a reference. It also deletes the
+extraneous __tiger:*__ tags to reduce bloat.
+
+You can do something similar with osmium tool, but you wind up with
+extra features and tags which impacts conflation performance.
 
 	osmium tags-filter --overwrite --remove-tags -o outdata.osm indata.osm w/highway=track,service,unclassified,primary,tertiary,secondary,path,residential,abandoned,footway,motorway,trunk
 
