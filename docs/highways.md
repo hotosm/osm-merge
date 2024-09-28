@@ -156,7 +156,7 @@ file. When conflating highways, we don't care about amenities or
 waterways.
 
 The prefered data extraction program for conflation is the
-[osmhighways.py]() program, which has much more fine-grained control,
+[osmhighways.py](https://github.com/hotosm/osm-merge/blob/main/utilities/osmhighways.py) program, which has much more fine-grained control,
 and also replaces the older fixname.py program and fixes the issues
 when the *name* field is actually a reference. It also deletes the
 extraneous __tiger:*__ tags to reduce bloat.
