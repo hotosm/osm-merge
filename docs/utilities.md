@@ -13,7 +13,7 @@ imported. The files are available from the
 Most of the fields in the dataset aren't needed for OSM, only the
 reference number if it has one, and the name. Most of these highways
 are already in OSM, but it's a bit of a mess, and mostly
-unvalidated. Most of the problems are related to the TIGER import
+invalidated. Most of the problems are related to the TIGER import
 in 2007. So the goal of these utilities is to add in the [TIGER
 fixup](https://wiki.openstreetmap.org/wiki/TIGER_fixup) work by
 updating or adding the name and a reference number. These utilities
@@ -57,7 +57,7 @@ use the Shapefiles, as the different categories are in separate files
 inside the zip. Each one covers a 7.5 quad square on a topo map. These
 have to be merged together into a single file to be practical.
 
-## fixnames.py
+## osmhighways.py
 
 On the OSM wiki, there is a list of [incorrect
 tagging](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#National_Forest_Road_System)
@@ -66,6 +66,9 @@ like *"Forest Service Road 123.4A"*. That's actually a reference
 number, not a name. This is primarily a problem with existing OSM
 data. These would all have to get manually fixed when validating in
 JOSM, so this program automates the process so you only have to
-validate, and not edit the feature. After conflation, process the
-output file with this utility to produce an improved version.
+validate, and not edit the feature. This also extracts only highway
+linestrings, so is used to create the OSM dataset for
+conflation. Since the other external datasets also correctly use
+name, ref, and ref:usfs, this simplifys conflation. Otherwise the
+algorithm would get very complicated and hard to maintain.
 
