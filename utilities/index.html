@@ -647,8 +647,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fixnamespy" class="md-nav__link">
-    fixnames.py
+  <a href="#osmhighwayspy" class="md-nav__link">
+    osmhighways.py
   </a>
   
 </li>
@@ -848,8 +848,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fixnamespy" class="md-nav__link">
-    fixnames.py
+  <a href="#osmhighwayspy" class="md-nav__link">
+    osmhighways.py
   </a>
   
 </li>
@@ -885,7 +885,7 @@ imported. The files are available from the
 <p>Most of the fields in the dataset aren't needed for OSM, only the
 reference number if it has one, and the name. Most of these highways
 are already in OSM, but it's a bit of a mess, and mostly
-unvalidated. Most of the problems are related to the TIGER import
+invalidated. Most of the problems are related to the TIGER import
 in 2007. So the goal of these utilities is to add in the <a href="https://wiki.openstreetmap.org/wiki/TIGER_fixup">TIGER
 fixup</a> work by
 updating or adding the name and a reference number. These utilities
@@ -919,7 +919,7 @@ Map</a>. I
 use the Shapefiles, as the different categories are in separate files
 inside the zip. Each one covers a 7.5 quad square on a topo map. These
 have to be merged together into a single file to be practical.</p>
-<h2 id="fixnamespy">fixnames.py<a class="headerlink" href="#fixnamespy" title="Permanent link">&para;</a></h2>
+<h2 id="osmhighwayspy">osmhighways.py<a class="headerlink" href="#osmhighwayspy" title="Permanent link">&para;</a></h2>
 <p>On the OSM wiki, there is a list of <a href="https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#National_Forest_Road_System">incorrect
 tagging</a>
 for forest highway names. Basically the name shouldn't be something
@@ -927,15 +927,18 @@ like <em>"Forest Service Road 123.4A"</em>. That's actually a reference
 number, not a name. This is primarily a problem with existing OSM
 data. These would all have to get manually fixed when validating in
 JOSM, so this program automates the process so you only have to
-validate, and not edit the feature. After conflation, process the
-output file with this utility to produce an improved version.</p>
+validate, and not edit the feature. This also extracts only highway
+linestrings, so is used to create the OSM dataset for
+conflation. Since the other external datasets also correctly use
+name, ref, and ref:usfs, this simplifys conflation. Otherwise the
+algorithm would get very complicated and hard to maintain.</p>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 19, 2024</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 28, 2024</span>
       
     
   </small>
