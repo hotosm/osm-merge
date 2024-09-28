@@ -24,7 +24,7 @@ from codetiming import Timer
 from pathlib import Path
 import osmium
 import re
-from progress.bar import Counter, Spinner
+from progress.spinner import Spinner
 
 # https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/TopoMapVector/
 
@@ -41,10 +41,13 @@ def getRef(name) -> str:
     Returns:
         (str): The reference number, which is an alphanumeric
     """
-    ref = "[0-9]+[.a-z]"
     if not name:
+        # log.error(f"Nothing done, empty string")
         return name
 
+    # The number is always (supposedly) last, so this gets all the
+    # weird contortions without getting complicated.
+    ref = "[0-9].*+"
     pat = re.compile(ref)
     result = pat.findall(name.lower())
     if len(result) == 0:
@@ -56,9 +59,12 @@ def getRef(name) -> str:
         if len(result) == 0:
             return name
         else:
-            return result[0].strip()
+            return result[0].strip().replace(' ', '.')
     else:
-        return result[0]
+        if '/' in result[0]:
+            return result[0]
+        else:
+            return result[0].replace(' ', '.')
     
 def filterTags(obj):
     """
@@ -81,13 +87,14 @@ def filterTags(obj):
         matched = False
         key = tag[0]
         val = tag[1]
-        ref = "[0-9]+[.a-z]"
-        if key not in fix:
-            # The OSM community has long ago decided these tags from the TIGER
-            # import are useless, and should be deleted.
-            if tag[0][:7] != "tiger:":
-                newtags[key] = val
+        # The OSM community has long ago decided these tags from the
+        # TIGER import are useless, and should be deleted.
+        if key[:6] == "tiger:":
             continue
+        if key not in fix:
+            newtags[key] = val
+            continue
+
         # It's the name tag that has the most problems.
         if key == "ref" or key == "ref:usfs":
             # A good ref has an FR or FS prefixed, so just use it, but move it
@@ -99,6 +106,10 @@ def filterTags(obj):
                 ref = getRef(val)
                 newtags["ref:usfs"] = f"FR {ref}"
                 continue
+            elif key == "ref" and val[:3] == "CR ":
+                # It's a well mapped county road, do nothing
+                newtags[key] = val
+                continue
             ref = getRef(name)
             if ref and len(ref) > 0:
                 # log.debug(f"MATCHED: {pat.pattern}")
@@ -106,120 +117,54 @@ def filterTags(obj):
             matched = True
             continue
 
+        usfspats = ["fire road",
+                    "fs.* road",
+                    "f[sd]r ",
+                    "usfsr ",
+                    "fs[hr] ",
+                    "usf.* road",
+                    "national forest road",
+                    "forest service road",
+                    "fr ",
+                    "fs ",
+                    "forest road",
+                    "usfs trail ",
+                    ]
         if key == "name" and name is not None:
-            pat = re.compile(f"fire road")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
+            pat = re.compile("county road")
+            if pat.match(name.lower()):
+                for entry in name.split(';'):
+                    ref = getRef(entry)
+                    # log.debug(f"COUNTY: {pat.pattern} REF={ref.title()} NAME={name}")
+                    if ref and len(ref) > 0:
+                        newtags["ref"] = f"CR {ref.title()}"
+                    matched = True
+                continue
 
-            pat = re.compile(f"county road")
-            if pat.match(name.lower()) and not matched:
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    # log.debug(f"MATCHED: {pat.pattern}")
-                    newtags["ref"] = f"CR {ref.title()}"
-                matched = True
+            # FIXME: Since we're focused on roads in national forests or
+            # parks, there shouldn't be any state or federal highways,
+            # but you never know, this should be confirmed.
+            # pat = re.compile("state highway")
+            # pat = re.compile("united states highway")
 
-            pat = re.compile(f"fs.* road")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
-
-            pat = re.compile(f"usfsr ")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
-
-            pat = re.compile(f"fs[hr] ")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                tmp = name.split(' ')
-                newtags["ref:usfs"] = f"FR {tmp[1].title()}"
-                matched = True
-
-            # pat = re.compile(f"fsr road")
-            # if pat.match(name.lower()) and not matched:
-            #     # # log.debug(f"MATCHED: {pat.pattern}")
-            #     tmp = name.split(' ')
-            #     newtags["ref:usfs"] = f"FR {tmp[2].title()}"
-            #     matched = True
-
-            pat = re.compile(f"usf.* road")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
-
-            pat = re.compile(f"national forest road")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
-
-            pat = re.compile(f".*forest service road")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                pat = re.compile(ref)
+            for regex in usfspats:
+                pat = re.compile(regex)
                 if pat.match(name.lower()):
-                    pass
-                #     space  = name.rfind(' ')
-                # sub  = name.rfind(' ', 0, space)
-                # if len(name) - space <= 3:
-                #     ref = name[sub:].replace(' ', '')
-                tmp = ref.split(' ')
-                newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
+                    for entry in name.split(';'):
+                        ref = getRef(entry)
+                        # log.debug(f"MATCHED: {pat.pattern} REF={ref.title()} NAME={name}")
+                        if ref and len(ref) > 0:
+                            newtags["ref:usfs"] = f"FR {ref.title()}"
+                    matched = True
+                    break
+            if not matched:
+                newtags[key] = val
+        else:
+            newtags[key] = val
 
-            pat = re.compile(f"fr ")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
-
-            pat = re.compile(f"fs ")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] =  f"FR {ref.title()}"
-                matched = True
-
-            pat = re.compile(f"forest road ")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] =  f"FR {ref.title()}"
-                matched = True
-
-            pat = re.compile(f"usfs trail ")
-            if pat.match(name.lower()) and not matched:
-                # log.debug(f"MATCHED: {pat.pattern}")
-                ref = getRef(name)
-                if ref and len(ref) > 0:
-                    newtags["ref:usfs"] = f"FR {ref.title()}"
-                matched = True
-
-            if matched:
-                newtags["matched"] = name
-        # log.debug(f"OLDTAGS: {obj.tags}")
-        # log.debug(f"NEWTAGS: {newtags}")
-        return newtags
+    # print(f"OLDTAGS: {len(obj.tags)}: {obj.tags}")
+    # print(f"NEWTAGS: {len(newtags)} {newtags}")
+    return newtags
     
 def main():
     """This main function lets this class be run standalone by a bash script"""
