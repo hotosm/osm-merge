@@ -189,7 +189,9 @@ def clip(boundary: str,
     Clip the data in a file by a multipolygon instead of using
     the command line program. The output file will only contain
     ways, in JOSM doing "File->update data' will load all the
-    nodes so the highways are visible.
+    nodes so the highways are visible. It's slower of course
+    than the C++ version, but this gives us better fine-grained
+    control.
 
     Args:
         infile (str): The input data
@@ -199,37 +201,47 @@ def clip(boundary: str,
     Returns:
         (bool): Whether it worked or not
     """
+    timer = Timer(text="clip() took {seconds:.0f}s")
+    timer.start()
+
+    keep = ["track",
+            "unclassified",
+            "residential",
+            "path",
+            "footway",
+            "pedestrian"
+            "primary",
+            "secondary",
+            "tertiary",
+            "trunk",
+            "motorway",
+            ]
 
     # Load the boundary
     file = open(boundary, 'r')
     data = geojson.load(file)
     boundary = data["features"]
     task = shape(boundary[0]["geometry"])
-    
+
     if os.path.exists(outfile):
         os.remove(outfile)
     writer = osmium.SimpleWriter(outfile)
 
-    spin = Spinner('Processing...')
-    for obj in osmium.FileProcessor(infile).with_locations():
-        spin.next()
-        if obj.is_way() and 'highway' in obj.tags:
-            # log.debug(f"Got highway: {obj.tags}")
-            fab = WKTFactory()
-            if obj.is_node():
-                wkt = fab.create_point(obj.location)
-            elif obj.is_way() and not obj.is_closed():
+    spin = Spinner('Processing ways...')
+
+    way_filter = osmium.filter.KeyFilter('highway')
+    fp = osmium.FileProcessor(infile).with_locations().with_filter(osmium.filter.KeyFilter('highway'))
+    with osmium.BackReferenceWriter(outfile, ref_src=infile, overwrite=True) as writer:
+        for obj in fp:
+            spin.next()
+            if obj.tags['highway'] in keep and obj.is_way():
+                fab = WKTFactory()
                 wkt = fab.create_linestring(obj.nodes)
-            elif obj.is_area():
-                wkt = fab.create_multipolygon(obj)
-            else:
-                wkt = None # ignore relations
-            geom = from_wkt(wkt)
-            if contains(task, geom) or intersects(task, geom):
-                # log.debug(f"in the boundary {obj.tags}")
-                writer.add(obj)
-            # else:
-            #     log.debug("not in the boundary")
+                geom = from_wkt(wkt)
+                if contains(task, geom) or intersects(task, geom):
+                    writer.add(obj)
+    timer.stop()
+    return True
 
 def main():
     """This main function lets this class be run standalone by a bash script"""
@@ -264,6 +276,8 @@ many of the bugs with names that are actually a reference number.
         log.addHandler(ch)
 
     if args.clip:
+        # cachefile = os.path.basename(args.infile.replace(".pbf", ".cache"))
+        # create_nodecache(args.infile, cachefile)
         if not clip:
             log.error(f"You must specify a boundary!")
             parser.print_help()
@@ -298,9 +312,6 @@ many of the bugs with names that are actually a reference number.
             spin.next()
             if obj.tags['highway'] in keep and obj.is_way():
                 tags = filterTags(obj)
-                # obj.tags = new
-                # if new != obj.tags:
-                #     log.debug(f"Tags changed! {new}")
                 writer.add(obj.replace(tags=tags))
     log.info(f"Wrote {outfile}")
 
