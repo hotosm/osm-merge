@@ -23,8 +23,14 @@ from sys import argv
 from codetiming import Timer
 from pathlib import Path
 import osmium
+from osmium.geom import WKBFactory, WKTFactory
+
 import re
+from shapely.geometry import shape
+from shapely import prepare, from_geojson, from_wkt, contains, intersects
 from progress.spinner import Spinner
+import geojson
+
 
 # https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/TopoMapVector/
 
@@ -90,6 +96,15 @@ def filterTags(obj):
         # The OSM community has long ago decided these tags from the
         # TIGER import are useless, and should be deleted.
         if key[:6] == "tiger:":
+            continue
+        # Here's another import mess. The original MVUM data got imported
+        # but all the original fields got add, often over a dozen. They
+        # luckily all start with a _ character followed by an upper case
+        # field name. OSM tags are always lower case. Delete all these tags.
+        # Anything interesting like HIGH_CLEARANCE_VEHICLE=YES will
+        # get added during conflation, so these fields aren't needed.
+        pat = re.compile("^_[A-Z]+")
+        if pat.match(key):
             continue
         if key not in fix:
             newtags[key] = val
@@ -165,7 +180,57 @@ def filterTags(obj):
     # print(f"OLDTAGS: {len(obj.tags)}: {obj.tags}")
     # print(f"NEWTAGS: {len(newtags)} {newtags}")
     return newtags
+
+def clip(boundary: str,
+         infile: str,
+         outfile: str,
+         ):
+    """
+    Clip the data in a file by a multipolygon instead of using
+    the command line program. The output file will only contain
+    ways, in JOSM doing "File->update data' will load all the
+    nodes so the highways are visible.
+
+    Args:
+        infile (str): The input data
+        outfile (str): The output file
+        boundary (str): The boundary
+
+    Returns:
+        (bool): Whether it worked or not
+    """
+
+    # Load the boundary
+    file = open(boundary, 'r')
+    data = geojson.load(file)
+    boundary = data["features"]
+    task = shape(boundary[0]["geometry"])
     
+    if os.path.exists(outfile):
+        os.remove(outfile)
+    writer = osmium.SimpleWriter(outfile)
+
+    spin = Spinner('Processing...')
+    for obj in osmium.FileProcessor(infile).with_locations():
+        spin.next()
+        if obj.is_way() and 'highway' in obj.tags:
+            # log.debug(f"Got highway: {obj.tags}")
+            fab = WKTFactory()
+            if obj.is_node():
+                wkt = fab.create_point(obj.location)
+            elif obj.is_way() and not obj.is_closed():
+                wkt = fab.create_linestring(obj.nodes)
+            elif obj.is_area():
+                wkt = fab.create_multipolygon(obj)
+            else:
+                wkt = None # ignore relations
+            geom = from_wkt(wkt)
+            if contains(task, geom) or intersects(task, geom):
+                # log.debug(f"in the boundary {obj.tags}")
+                writer.add(obj)
+            # else:
+            #     log.debug("not in the boundary")
+
 def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
@@ -173,14 +238,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="This program extracts highways from OSM",
         epilog="""
+This program extracts all the highways from an OSM file, and correct as
+many of the bugs with names that are actually a reference number. 
 
     For Example: 
-        osm.py -v -i WY_Roads.osm
+        osmhighways.py -v -i colorado-latest.osm.pbf -o co-highways.osm
         """,
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("-i", "--infile", required=True, help="Top-level input directory")
     parser.add_argument("-o", "--outfile", default="out.osm", help="Output file")
+    parser.add_argument("-c", "--clip", help="Clip file by polygon")
 
     args = parser.parse_args()
 
@@ -194,6 +262,20 @@ def main():
         )
         ch.setFormatter(formatter)
         log.addHandler(ch)
+
+    if args.clip:
+        if not clip:
+            log.error(f"You must specify a boundary!")
+            parser.print_help()
+            quit()
+        if not args.infile:
+            log.error(f"You must specify the input file!")
+            parser.print_help()
+            quit()
+
+        clip(args.clip, args.infile, args.outfile)
+        log.info(f"Wrote clipped file {args.outfile}")
+        quit()
 
     # FIXME: this should change
     outfile = args.outfile
@@ -220,7 +302,6 @@ def main():
                 # if new != obj.tags:
                 #     log.debug(f"Tags changed! {new}")
                 writer.add(obj.replace(tags=tags))
-                # writer.add(obj)
     log.info(f"Wrote {outfile}")
 
 if __name__ == "__main__":
