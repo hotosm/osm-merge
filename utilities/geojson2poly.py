@@ -76,16 +76,34 @@ many of the bugs with names that are actually a reference number.
     outfs = open(outfile, 'w')
 
     # First line is the file name
-    index = 0
+    index = 1
     outfs.write(f"{args.infile}\n")
+    log.debug(f"There are {len(data["features"])} features")
     for poly in data["features"]:
-        # The next line is the polygon header
-        outfs.write(f"Task_{index}\n")
-        for subpoly in poly["geometry"]["coordinates"]:
-            for coords in subpoly:
-                outfs.write(f"    {coords[0]} {coords[1]}\n")
-        # print(poly)
-        outfs.write("END\n")
+        outfs.write(f"{index}\n")
+        regions = poly["geometry"]["coordinates"]
+        log.debug(f"There is {len(regions)} coordinates {poly["geometry"]["type"]}")
+        counter = 0
+        if poly["geometry"]["type"] == "MultiPolygon":
+            # It's a MultiPolygon if it has inners. The first
+            # entry is the outer polygon, the rest are all inners.
+            # We don't need the inners, just the other.
+            for coords in (poly["geometry"]["coordinates"][0][0]):
+                # coords = poly["geometry"]["coordinates"][0][0][counter]
+                outfs.write(f"    {coords[0]}   {coords[1]}\n")
+                counter += 1
+            outfs.write("END\n")
+            index += 1
+            continue
+        else:
+            # It's a LineString
+            for coords in regions:
+                if type(coords) == list:
+                    outfs.write(f"    {coords[0]}   {coords[1]}\n")
+                    continue
+            # print(poly)
+            outfs.write("END\n")
+            index += 1
 
     outfs.write("END\n")
     outfs.close()
