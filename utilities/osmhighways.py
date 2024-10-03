@@ -238,7 +238,6 @@ def clip(boundary: str,
 
     writer = osmium.SimpleWriter(outfile)
 
-    # writer = osmium.BackReferenceWriter(outfile, ref_src=infile, overwrite=True)
     # We need nodes and ways in the second pass.
     fab = GeoJSONFactory()
     spin = Spinner('Processing ways...')
@@ -260,112 +259,6 @@ def clip(boundary: str,
             geom = shape(geojson.loads(wkt))
             if contains(task, geom) or intersection(task, geom):
                 writer.add_way(obj)
-
-    # quit()
-
-    quit()
-    fp = osmium.FileProcessor(infile).with_locations()
-      # .with_filter(osmium.filter.GeoInterfaceFilter())
-      # .with_filter(osmium.filter.KeyFilter('highway'))\
-      # .with_filter(osmium.filter.EntityFilter(osmium.osm.WAY))
-
-    # writer = osmium.BackReferenceWriter(outfile, ref_src=infile, overwrite=True)
-    # The command line program has been core dumping, so do it the slow
-    # and manual way. I can always recode it in C++ if it's a problem.
-    nodes = list()
-
-    # for obj in fp:
-    #     # print(obj)
-    #     spin.next()
-    #     fab = GeoJSONFactory()
-    #     if obj.is_node():
-    #         wkt = fab.create_point(obj)
-    #         geom = shape(geojson.loads(wkt))
-    #         # Add a node if it exists within the boundary
-    #         if contains(task, geom) or intersects(task, geom):
-    #             writer.add(obj)
-    #             nodes.append(obj.id)
-    #             # log.debug(f"Adding {obj.id}")
-    #             continue
-    #     if obj.is_way():
-    #         hits = 0
-    #         for node in obj.nodes:
-    #             if node.ref in nodes:
-    #                 hits += 1
-    #                 # log.debug(f"Got way node: {node}")
-    #         if hits:
-    #             # If any of the node in the way are also in the boundary,
-    #             # add the node.
-    #             writer.add(obj)
-
-    #                 #wkt = fab.create_linestring(obj.nodes)
-    #         # geom = from_wkt(wkt)
-    #         # if contains(task, geom) or intersects(task, geom):
-    #         #     log.debug(f"in the boundary {obj.tags}")
-    #         #     writer.add(obj)
-    #         # else:
-    #         #     log.debug("not in the boundary")
-
-    fp = osmium.FileProcessor(infile).with_locations().with_filter(osmium.filter.KeyFilter('highway').enable_for(osmium.osm.WAY))
-    # fp = osmium.FileProcessor(infile).with_filter(osmium.filter.GeoInterfaceFilter())
-         # .with_locations()
-         # .with_filter(osmium.filter.KeyFilter('highway'))\
-         # .with_filter(osmium.filter.EntityFilter(osmium.osm.WAY))\
-         #
-    refs = list()
-    ways = list()
-    with osmium.BackReferenceWriter("foobar.osm", ref_src=infile, overwrite=True) as writer:
-    # if True:
-        fab = GeoJSONFactory()
-        for obj in fp:
-            # print(obj)
-            spin.next()
-            if obj.is_node():
-                # print(obj)
-                wkt = fab.create_point(obj)
-                geom = shape(geojson.loads(wkt))
-                # Add a node if it exists within the boundary
-                if contains(task, geom) or intersects(task, geom):
-                    writer.add(obj)
-                    nodes.append(obj.id)
-                    # log.debug(f"Adding {obj.id}")
-                continue
-
-            if "highway" in obj.tags and obj.tags["highway"] in keep and obj.is_way():
-                if obj.tags['highway']:
-                    try:
-                        wkt = fab.create_linestring(obj.nodes)
-                        for node in obj.nodes:
-                            refs.append(node.ref)
-                    except:
-                        for node in obj.nodes:
-                            if not node.location.valid():
-                                log.error(f"Bad location for {node.ref}!")
-                            else:
-                                # newnode = osmium.osm.NodeRef(ref=node.ref, location=node.location)
-                                log.debug(f"Added node {node}")
-                                refs.append(node.ref)
-
-                    geom = shape(geojson.loads(wkt))
-                    #except:
-                    #  log.error(f"OBJ: {obj}")
-                    #    breakpoint()
-                    # geom = from_wkt(wkt)
-                    if contains(task, geom) or intersection(task, geom):
-                        # log.debug(f"Wrote {obj.tags}")
-                        for node in obj.nodes:
-                            refs.append(node)
-                        # writer.add(obj)
-                        ways.append(obj)
-
-        if len(refs) > 0:
-            fp = osmium.FileProcessor(infile).with_locations()
-            for obj in fp:
-                print(obj)
-                # for ref in refs:
-
-        #     writer.add(ref)
-
     timer.stop()
     return True
 
