@@ -157,28 +157,28 @@ def ogrgrid(outputGridfn: str,
 def make_tasks(infile: str,
                ):
     """
+    Make the task files, one for each polygon in the input file.
+
+    Args:
+        infile (str): The filespec of the input file.
     """
     index = 0
     name = str()
     driver = ogr.GetDriverByName("GeoJson")
     indata = driver.Open(infile, 0)
     inlayer = indata.GetLayer()
-    # The file always has a single entry, a GeometryCollection or MultiPolygon
-    feature = inlayer.GetNextFeature()
-    poly = feature.GetGeometryRef()
-    # log.debug(f"NAME: {poly.GetGeometryName()}")
-    # log.debug(f"AREA: {poly.Area()}")
-    # log.debug(f"COUNT {inlayer.GetFeatureCount()} features in input layer")
     for feature in inlayer:
-        poly = feature.GetGeometryRef()
+        # This is only in the USDA administrative boundaries file.
         # for feature in inlayer:
         # if "FORESTNAME" in feature["properties"]:
         #     name = feature["properties"]["FORESTNAME"].replace(' ', '_')
         # elif "UNIT_NAME" in feature["properties"]:
         #     name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
 
-        # There's only one field in the grid multipolygon
-        task = feature.GetField(0)
+        # There's only one field in the grid multipolygon, the task number.
+        # FIXME: it turns out there may be multipolygons, so they all wind
+        # up with the same task name, so use an index here instead.
+        # task = feature.GetField(0)
         outfile = infile.replace(".geojson", f"_{index}.geojson")
         index += 1
         task = Path(outfile).stem.replace("Tasks", "Task")
@@ -189,6 +189,7 @@ def make_tasks(infile: str,
         outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbPolygon)
         featureDefn = outlayer.GetLayerDefn()
         outFeature = ogr.Feature(featureDefn)
+        poly = feature.GetGeometryRef()
         # Make a polygon if it's closed, which it should be. Using ogr2ogr to
         # clip the grid to the boundary, it sets some task as a LineString
         # instead of a polygon. Since the first and last points are the same,
@@ -196,7 +197,6 @@ def make_tasks(infile: str,
         if poly.GetGeometryName() == "LINESTRING":
             ring = ogr.Geometry(ogr.wkbLinearRing)
             for i in range(0, poly.GetPointCount()):
-                # GetPoint returns a tuple not a Geometry
                 pt = poly.GetPoint(i)
                 ring.AddPoint(pt[0], pt[1])
             poly = ogr.Geometry(ogr.wkbPolygon)
