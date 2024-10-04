@@ -106,3 +106,12 @@ convention = "google"
 
 [project.scripts]
 osm-merge = "osm_merge.conflator:main"
+mvum = "osm_merge.utilities.mvum:main"
+trails = "osm_merge.utilities.trails:main"
+usgs = "osm_merge.utilities.usgs:main"
+nps = "osm_merge.utilities.nps:main"
+# FIXME: these still have bugs
+# geojson2poly = "osm_merge.utilities.geojson2poly"
+# osmhighways = "osm_merge.utilities.osmhighways:main"
+# This use asyncio, and doesn't seem possible to run via pyproject
+# tm-splitter = "osm_merge.utilities.tm_splitter:main"
