@@ -87,9 +87,8 @@ many of the bugs with names that are actually a reference number.
         if poly["geometry"]["type"] == "MultiPolygon":
             # It's a MultiPolygon if it has inners. The first
             # entry is the outer polygon, the rest are all inners.
-            # We don't need the inners, just the other.
+            # We don't need the inners, just the outer.
             for coords in (poly["geometry"]["coordinates"][0][0]):
-                # coords = poly["geometry"]["coordinates"][0][0][counter]
                 outfs.write(f"    {coords[0]}   {coords[1]}\n")
                 counter += 1
             outfs.write("END\n")

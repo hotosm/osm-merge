@@ -23,13 +23,13 @@ from sys import argv
 from codetiming import Timer
 from pathlib import Path
 import osmium
-from osmium.geom import WKBFactory, WKTFactory, GeoJSONFactory
+from osmium.geom import GeoJSONFactory
 import re
 from shapely.geometry import shape
 from shapely import prepare, from_geojson, from_wkt, contains, intersects, intersection, difference
 from progress.spinner import Spinner
 import geojson
-from osmium.filter import GeoInterfaceFilter
+# from osmium.filter import GeoInterfaceFilter
 
 # https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/TopoMapVector/
 

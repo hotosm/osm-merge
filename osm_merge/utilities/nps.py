@@ -104,7 +104,7 @@ class NPS(object):
 
         return FeatureCollection(highways)
 
-async def main():
+def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
         prog="usgs",
@@ -145,6 +145,7 @@ async def main():
         
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    # loop.run_until_complete(main())
+    main()
