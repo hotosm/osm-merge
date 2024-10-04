@@ -203,19 +203,6 @@ def clip(boundary: str,
     timer = Timer(text="clip() took {seconds:.0f}s")
     timer.start()
 
-    keep = ["track",
-            "unclassified",
-            "residential",
-            "path",
-            "footway",
-            "pedestrian"
-            "primary",
-            "secondary",
-            "tertiary",
-            "trunk",
-            "motorway",
-            ]
-
     # Load the boundary
     file = open(boundary, 'r')
     data = geojson.load(file)
@@ -228,7 +215,6 @@ def clip(boundary: str,
     # Pre-filter the ways by tags. The less object we need to look at, the better.
     way_filter = osmium.filter.KeyFilter('highway')
     # only scan the ways of the file
-    # fp = osmium.FileProcessor(infile, osmium.osm.WAY).with_filter(way_filter).with_filter(osmium.filter.GeoInterfaceFilter())
     spin = Spinner('Processing nodes...')
     fp = osmium.FileProcessor(infile, osmium.osm.WAY).with_filter(osmium.filter.KeyFilter('highway'))
     for obj in fp:
