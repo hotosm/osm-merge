@@ -72,3 +72,9 @@ conflation. Since the other external datasets also correctly use
 name, ref, and ref:usfs, this simplifys conflation. Otherwise the
 algorithm would get very complicated and hard to maintain.
 
+## geojson2poly.py
+
+This is a very simple utility to convert a GeoJson boundary
+Multipolygon into an Osmosis *poly* file. This can be used with
+osmium, or osmconvert to make data extracts.
+
