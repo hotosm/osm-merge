@@ -154,6 +154,70 @@ def ogrgrid(outputGridfn: str,
     # timer.stop()
     return outLayer
 
+def make_extract(infile: str,
+                 boundary: str,
+                 complete: bool,
+               ):
+    """
+    Make the data extracts, one for each polygon in the input file. This
+    assumes the data has already been tag filtered, and just needs to
+    be split into task sized chunks.
+
+    By default, all linestrings are clipped to the boundary. The complete
+    option is slower, but linestrings that cross the boundary are completed
+    to the extent they are in the input file. This mimics the behaviour of
+    both osmium and osmconvert.
+
+    Args:
+        infile (str): The filespec of the input file.
+        boundary (str): The filespec of the boundary mutlipolygon file.
+        complete (bool): Whether to complete linestrings outside the boundary.
+    """
+    index = 0
+    name = str()
+    driver = ogr.GetDriverByName("GeoJson")
+    indata = driver.Open(infile, 0)
+    inlayer = indata.GetLayer()
+    logging.debug(f"There are {inlayer.GetFeatureCount()} in the boundary dataset")
+
+    # The task boundaries
+    bounddata = driver.Open(boundary, 0)
+    boundlayer = bounddata.GetLayer()
+    bounddefn = boundlayer.GetLayerDefn()
+    logging.debug(f"There are {boundlayer.GetFeatureCount()} in the boundary dataset")
+
+    for feature in boundlayer:
+        name = "foo" # feature.GetField(0)
+        # There's only one field in the grid multipolygon, the name,
+        # which includes the task number.
+        outfile = f"{name}-tmp.geojson"
+        if os.path.exists(outfile):
+            os.remove(outfile)
+        outdata = driver.CreateDataSource(outfile)
+        outlayer = outdata.CreateLayer("highways", geom_type=ogr.wkbLineString)
+        defn = outlayer.GetLayerDefn()
+        outfeat = ogr.Feature(defn)
+        poly = feature.GetGeometryRef()
+        if not complete:
+            inlayer.SetSpatialFilter(poly)
+        else:
+            for infeat in inlayer:
+                test = infeat.GetGeometryRef()
+                if poly.Intersects(test) or poly.Contains(test):
+                    # log.debug(f"In boundary for {infeat}")
+                    simple = test.Simplify(2.0)
+                    outlayer.CreateFeature(infeat)
+            # continue
+        # outFeature.SetGeometry(poly)
+        # name = ogr.FieldDefn("name", ogr.OFTString)
+        # # outlayer.CreateField(name)
+        # # outFeature.SetField("name", outfile)
+        # # feature["properties"]["name"] = name
+        # # feature["boundary"] = "administrative"
+        logging.debug(f"There are {outlayer.GetFeatureCount()} in the output dataset")
+        outdata.Destroy()
+        log.debug(f"Wrote task {outfile} ...")
+
 def make_tasks(infile: str,
                ):
     """
@@ -248,6 +312,7 @@ To split the file into tasks, split it:
     parser.add_argument("-o", "--outfile", default="output.geojson",
                         help="Output filename")
     parser.add_argument("-e", "--extract", default=False, help="Split Dataset with Multipolygon")
+    parser.add_argument("-c", "--complete",  action="store_true", help="Complete all LineStrings")
     parser.add_argument("-t", "--threshold", default=0.1,
                         help="Threshold")
     # parser.add_argument("-s", "--size", help="Grid size in kilometers")
@@ -258,16 +323,16 @@ To split the file into tasks, split it:
     path = Path(args.infile)
 
     # if verbose, dump to the terminal.
-    if args.verbose:
-        log.setLevel(logging.DEBUG)
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(threadName)10s - %(name)s - %(levelname)s - %(message)s"
-        )
-        ch.setFormatter(formatter)
-        log.addHandler(ch)
+    log_level = os.getenv("LOG_LEVEL", default="INFO")
+    if args.verbose is not None:
+        log_level = logging.DEBUG
 
+    logging.basicConfig(
+        level=log_level,
+        format=("%(asctime)s.%(msecs)03d [%(levelname)s] " "%(name)s | %(funcName)s:%(lineno)d | %(message)s"),
+        datefmt="%y-%m-%d %H:%M:%S",
+        stream=sys.stdout,
+    )
 
     # The infile is either the the file to split, or the grid file.
     if not os.path.exists(args.infile):
@@ -314,32 +379,7 @@ To split the file into tasks, split it:
 
     if args.extract:
         # Use gdal, as it was actually easier than geopandas or pyclir
-        driver = ogr.GetDriverByName("GeoJson")
-        indata = driver.Open(args.infile, 0)
-        inlayer = indata.GetLayer()
-        indefn = inlayer.GetLayerDefn()
-        logging.debug(f"Input File{inlayer.GetFeatureCount()} features before filtering")
-
-        extdata = driver.Open(args.extract, 0)
-        extlayer = extdata.GetLayer()
-        extdefn = extlayer.GetLayerDefn()
-        logging.debug(f"External dataset {extlayer.GetFeatureCount()} features before filtering")
-
-        index = 0
-        for task in inlayer:
-            extlayer.SetSpatialFilter(task.GetGeometryRef())
-            if extlayer.GetFeatureCount() == 0:
-                # logging.debug("Data is empty!!")
-                continue
-            outdata = driver.CreateDataSource(f"{path.stem}_{index}.geojson")
-            outlayer = outdata.CreateLayer("Tasks", geom_type=ogr.wkbMultiLineString)
-            for feature in extlayer:
-                outlayer.CreateFeature(feature)
-            #outlayer.Destroy()
-            
-            index += 1
-
-        log.info(f"Wrote {args.outfile}")
+        make_extract(args.infile, args.extract, args.complete)
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
