@@ -1,0 +1,37 @@
+# OpenStreetMap Data
+
+## Old Imports
+
+OpenStreetMap (OSM) has a past history of imports, often done way back
+when OSM had little highway data. This was a way to bootstrap
+navigation, and it mostly worked.
+
+### TIGER
+
+Since it was publically available, the data [used by the US Census
+Department](https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-geodatabase-file.html)
+was imported around 2007. The data is of varying quality, but was
+better than nothing. The OSM community has been cleaning up the mess
+ever since. More information on the TIGER fixup can be [found 
+here](https://wiki.openstreetmap.org/wiki/TIGER_fixup).
+
+An example of the tags added from TIGER:
+
+		<tag k="tiger:name_base" v="75th"/>
+		<tag k="tiger:name_base_1" v="75th"/>
+		<tag k="tiger:name_direction_prefix" v="N"/>
+		<tag k="tiger:name_type" v="St"/>
+		<tag k="tiger:name_type_1" v="St"/>
+		<tag k="tiger:cfcc" v="A41"/>
+		<tag k="tiger:reviewed" v="no"/>
+
+### Motor Vehivle Use Map (MVUM)
+
+The MVUM data is highways in national forests, so useful in remote
+area not always in TIGER. Or in TIGER but completely wrong. I've seen
+roads in TIGER that don't actually exist. All the MVUM data is better
+quality as much of the data was mapped by ground-truthing. It has
+useful data fields, like is a high clearance vehicle needed, what is
+the surface, and other access data like are ATVs allowed ?
+
+[MVUM)](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.Road_MVUM.zip

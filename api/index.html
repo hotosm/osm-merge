@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://www.hotosm.org/api/">
       
       
-        <link rel="prev" href="../trails/">
+        <link rel="prev" href="../osmhighways/">
       
       
       
@@ -675,6 +675,26 @@
   
   <span class="md-ellipsis">
     Trails
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../osmhighways/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OSM Highways
   </span>
   
 
@@ -1429,7 +1449,8 @@
 
                 <details class="quote">
                   <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">285</span>
+<span class="normal">286</span>
 <span class="normal">287</span>
 <span class="normal">288</span>
 <span class="normal">289</span>
@@ -1454,8 +1475,7 @@
 <span class="normal">308</span>
 <span class="normal">309</span>
 <span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">311</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
              <span class="n">uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
              <span class="n">boundary</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
              <span class="p">):</span>
@@ -1585,7 +1605,8 @@
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">391</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">390</span>
+<span class="normal">391</span>
 <span class="normal">392</span>
 <span class="normal">393</span>
 <span class="normal">394</span>
@@ -1657,8 +1678,7 @@
 <span class="normal">460</span>
 <span class="normal">461</span>
 <span class="normal">462</span>
-<span class="normal">463</span>
-<span class="normal">464</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">getDistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">463</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">getDistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
         <span class="n">newdata</span><span class="p">:</span> <span class="n">Feature</span><span class="p">,</span>
         <span class="n">olddata</span><span class="p">:</span> <span class="n">Feature</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -1836,7 +1856,8 @@
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">466</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">465</span>
+<span class="normal">466</span>
 <span class="normal">467</span>
 <span class="normal">468</span>
 <span class="normal">469</span>
@@ -1931,8 +1952,7 @@
 <span class="normal">558</span>
 <span class="normal">559</span>
 <span class="normal">560</span>
-<span class="normal">561</span>
-<span class="normal">562</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">checkTags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">561</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">checkTags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">extfeat</span><span class="p">:</span> <span class="n">Feature</span><span class="p">,</span>
               <span class="n">osm</span><span class="p">:</span> <span class="n">Feature</span><span class="p">,</span>
                <span class="p">):</span>
@@ -2109,7 +2129,8 @@
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">564</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">563</span>
+<span class="normal">564</span>
 <span class="normal">565</span>
 <span class="normal">566</span>
 <span class="normal">567</span>
@@ -2205,8 +2226,7 @@
 <span class="normal">657</span>
 <span class="normal">658</span>
 <span class="normal">659</span>
-<span class="normal">660</span>
-<span class="normal">661</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">loadFile</span><span class="p">(</span>
+<span class="normal">660</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">loadFile</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">osmfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
@@ -2381,7 +2401,8 @@ so it has to be done as an extrat step.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">663</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">662</span>
+<span class="normal">663</span>
 <span class="normal">664</span>
 <span class="normal">665</span>
 <span class="normal">666</span>
@@ -2398,8 +2419,7 @@ so it has to be done as an extrat step.</p>
 <span class="normal">677</span>
 <span class="normal">678</span>
 <span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">initInputDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">680</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">initInputDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                     <span class="n">config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="n">dburi</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -2493,7 +2513,8 @@ so it has to be done as an extrat step.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">683</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">682</span>
+<span class="normal">683</span>
 <span class="normal">684</span>
 <span class="normal">685</span>
 <span class="normal">686</span>
@@ -2507,8 +2528,7 @@ so it has to be done as an extrat step.</p>
 <span class="normal">694</span>
 <span class="normal">695</span>
 <span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">initOutputDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">697</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">initOutputDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                     <span class="n">dburi</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -2637,7 +2657,8 @@ problems with corrupting data.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">700</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">699</span>
+<span class="normal">700</span>
 <span class="normal">701</span>
 <span class="normal">702</span>
 <span class="normal">703</span>
@@ -2672,8 +2693,7 @@ problems with corrupting data.</p>
 <span class="normal">732</span>
 <span class="normal">733</span>
 <span class="normal">734</span>
-<span class="normal">735</span>
-<span class="normal">736</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">createDBThreads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">735</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">createDBThreads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                     <span class="n">uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="n">config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                     <span class="n">execs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">cores</span><span class="p">,</span>
@@ -2822,7 +2842,8 @@ problems with corrupting data.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">738</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">737</span>
+<span class="normal">738</span>
 <span class="normal">739</span>
 <span class="normal">740</span>
 <span class="normal">741</span>
@@ -2887,8 +2908,7 @@ problems with corrupting data.</p>
 <span class="normal">800</span>
 <span class="normal">801</span>
 <span class="normal">802</span>
-<span class="normal">803</span>
-<span class="normal">804</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">conflateData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">803</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span> <span class="nf">conflateData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                 <span class="n">odkspec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                 <span class="n">osmspec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                 <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
@@ -2932,7 +2952,7 @@ problems with corrupting data.</p>
     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The secondary dataset has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">osmdata</span><span class="p">)</span><span class="si">}</span><span class="s2"> entries&quot;</span><span class="p">)</span>
 
     <span class="c1"># Make threading optional for easier debugging</span>
-    <span class="n">single</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># False</span>
+    <span class="n">single</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">if</span> <span class="n">single</span><span class="p">:</span>
         <span class="n">alldata</span> <span class="o">=</span> <span class="n">conflateThread</span><span class="p">(</span><span class="n">odkdata</span><span class="p">,</span> <span class="n">osmdata</span><span class="p">)</span>
@@ -2981,12 +3001,12 @@ problems with corrupting data.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">806</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">805</span>
+<span class="normal">806</span>
 <span class="normal">807</span>
 <span class="normal">808</span>
 <span class="normal">809</span>
-<span class="normal">810</span>
-<span class="normal">811</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">810</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Dump internal data for debugging.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3072,7 +3092,8 @@ problems with corrupting data.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">816</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">815</span>
+<span class="normal">816</span>
 <span class="normal">817</span>
 <span class="normal">818</span>
 <span class="normal">819</span>
@@ -3106,8 +3127,7 @@ problems with corrupting data.</p>
 <span class="normal">847</span>
 <span class="normal">848</span>
 <span class="normal">849</span>
-<span class="normal">850</span>
-<span class="normal">851</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parseFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">850</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parseFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">filespec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="p">)</span> <span class="o">-&gt;</span><span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3223,7 +3243,8 @@ problems with corrupting data.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">853</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">852</span>
+<span class="normal">853</span>
 <span class="normal">854</span>
 <span class="normal">855</span>
 <span class="normal">856</span>
@@ -3290,8 +3311,7 @@ problems with corrupting data.</p>
 <span class="normal">917</span>
 <span class="normal">918</span>
 <span class="normal">919</span>
-<span class="normal">920</span>
-<span class="normal">921</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conflateDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">920</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conflateDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                  <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3430,7 +3450,8 @@ problems with corrupting data.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">924</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">923</span>
+<span class="normal">924</span>
 <span class="normal">925</span>
 <span class="normal">926</span>
 <span class="normal">927</span>
@@ -3497,8 +3518,7 @@ problems with corrupting data.</p>
 <span class="normal">988</span>
 <span class="normal">989</span>
 <span class="normal">990</span>
-<span class="normal">991</span>
-<span class="normal">992</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">writeOSM</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">991</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">writeOSM</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
              <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
              <span class="n">filespec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
              <span class="p">):</span>
@@ -3637,7 +3657,8 @@ problems with corrupting data.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 994</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 993</span>
+<span class="normal"> 994</span>
 <span class="normal"> 995</span>
 <span class="normal"> 996</span>
 <span class="normal"> 997</span>
@@ -3649,8 +3670,7 @@ problems with corrupting data.</p>
 <span class="normal">1003</span>
 <span class="normal">1004</span>
 <span class="normal">1005</span>
-<span class="normal">1006</span>
-<span class="normal">1007</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">writeGeoJson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">1006</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">writeGeoJson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
              <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
              <span class="n">filespec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
              <span class="p">):</span>
@@ -3745,7 +3765,8 @@ a GeoJson Feature.</p>
 
           <details class="quote">
             <summary>Source code in <code>osm_merge/conflator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1009</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1008</span>
+<span class="normal">1009</span>
 <span class="normal">1010</span>
 <span class="normal">1011</span>
 <span class="normal">1012</span>
@@ -3775,8 +3796,7 @@ a GeoJson Feature.</p>
 <span class="normal">1036</span>
 <span class="normal">1037</span>
 <span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">osmToFeature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<span class="normal">1039</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">osmToFeature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">osm</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(),</span>
                  <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Feature</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>

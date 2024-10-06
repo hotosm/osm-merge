@@ -10,9 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://www.hotosm.org/wiki_redirect/">
+        <link rel="canonical" href="https://www.hotosm.org/osmhighways/">
       
       
+        <link rel="prev" href="../trails/">
+      
+      
+        <link rel="next" href="../api/">
       
       
       <link rel="icon" href="../images/favicon.png">
@@ -20,7 +24,7 @@
     
     
       
-        <title>OSM RawData - osm-merge</title>
+        <title>OSM Highways - osm-merge</title>
       
     
     
@@ -75,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#osm-rawdata" class="md-skip">
+        <a href="#openstreetmap-data" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              OSM RawData
+              OSM Highways
             
           </span>
         </div>
@@ -590,18 +594,20 @@
       
   
   
+    
+  
   
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -615,7 +621,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Data Conversion
@@ -686,9 +692,29 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../osmhighways/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    OSM Highways
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -697,6 +723,69 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data-janitor" class="md-nav__link">
+    Data Janitor
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#old-imports" class="md-nav__link">
+    Old Imports
+  </a>
+  
+    <nav class="md-nav" aria-label="Old Imports">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tiger" class="md-nav__link">
+    TIGER
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#motor-vehicle-use-map-mvum" class="md-nav__link">
+    Motor Vehicle Use Map (MVUM)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clipping" class="md-nav__link">
+    Clipping
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -750,6 +839,55 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data-janitor" class="md-nav__link">
+    Data Janitor
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#old-imports" class="md-nav__link">
+    Old Imports
+  </a>
+  
+    <nav class="md-nav" aria-label="Old Imports">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tiger" class="md-nav__link">
+    TIGER
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#motor-vehicle-use-map-mvum" class="md-nav__link">
+    Motor Vehicle Use Map (MVUM)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clipping" class="md-nav__link">
+    Clipping
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -766,16 +904,78 @@
   
 
 
-<h1 id="osm-rawdata">OSM RawData<a class="headerlink" href="#osm-rawdata" title="Permanent link">&para;</a></h1>
-<p>Please see the docs page at:
-<a href="https://hotosm.github.io/conflator/">https://hotosm.github.io/conflator/</a></p>
+<h1 id="openstreetmap-data">OpenStreetMap Data<a class="headerlink" href="#openstreetmap-data" title="Permanent link">&para;</a></h1>
+<p>Being crowd sourced and open to all who want to contribute,
+OpenStreetMap (OSM) has infinite flexibility in the various tag/values
+used for metadata. Many of the tags not in common use are ignored by
+the renderers and routing engines, but still live in the database and
+data files. You'd really only notice if you're deep in the data, which
+is the key to good conflation.</p>
+<p>The features in OSM come from a wide variety of sources. Mobile apps,
+imports, satellite imagery. Often features traced from imagery are
+lacking any tags beyond <strong>building=yes</strong> or <strong>highway=track</strong>, which
+we hope to improve on by conflating with other datasets.</p>
+<h2 id="data-janitor">Data Janitor<a class="headerlink" href="#data-janitor" title="Permanent link">&para;</a></h2>
+<p>Being a data janitor is important, if rather boring and tedious
+task. Bugs in the data can lead to navigation problems at the very
+least. An accurate and detailed map is a thing of beauty, and often
+OSM gets really close.</p>
+<p>Unfortunately to conflate OSM data with external data sources, it
+needs to be cleaned up. Normally it gets cleaned up by the mapper, who
+has to manually review and edit the tags. Since the highway name is an
+important item used to confirm a near match in geometry, too much
+variety can make this a slow process.</p>
+<p>This project has an
+<a href="https://github.com/hotosm/osm-merge/blob/main/utilities/osmhighways.py">osmhighways.py</a>
+program that is used to cleanup some of the problems, like deleting
+unnecessary tags, and fixing the name vs reference number
+problem. Deleting all bogus tags reduces the data size, which is a
+benefit. This project also extracts only highway linestrings, so a
+clean dataset for conflating geometries.</p>
+<h2 id="old-imports">Old Imports<a class="headerlink" href="#old-imports" title="Permanent link">&para;</a></h2>
+<p>OpenStreetMap (OSM) has a past history of imports, often done way back
+when OSM had little highway data. This was a way to bootstrap
+navigation, and it mostly worked. </p>
+<h3 id="tiger">TIGER<a class="headerlink" href="#tiger" title="Permanent link">&para;</a></h3>
+<p>Since it was publically available, the data <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-geodatabase-file.html">used by the US Census
+Department</a>
+was imported around 2007. The data is of varying quality, but was
+better than nothing. The OSM community has been cleaning up the mess
+ever since. More information on the TIGER fixup can be <a href="https://wiki.openstreetmap.org/wiki/TIGER_fixup">found 
+here</a>.</p>
+<p>An small example of the tags added from TIGER, all of which can be
+deleted.</p>
+<div class="highlight"><pre><span></span><code>    &lt;tag k=&quot;tiger:name_base&quot; v=&quot;75th&quot;/&gt;
+    &lt;tag k=&quot;tiger:name_base_1&quot; v=&quot;75th&quot;/&gt;
+    &lt;tag k=&quot;tiger:name_direction_prefix&quot; v=&quot;N&quot;/&gt;
+    &lt;tag k=&quot;tiger:name_type&quot; v=&quot;St&quot;/&gt;
+    &lt;tag k=&quot;tiger:name_type_1&quot; v=&quot;St&quot;/&gt;
+    &lt;tag k=&quot;tiger:cfcc&quot; v=&quot;A41&quot;/&gt;
+    &lt;tag k=&quot;tiger:reviewed&quot; v=&quot;no&quot;/&gt;
+</code></pre></div>
+<p>I don't think I've ever seen a <strong>tiger:reviewed=yes</strong> tag.</p>
+<h3 id="motor-vehicle-use-map-mvum">Motor Vehicle Use Map (MVUM)<a class="headerlink" href="#motor-vehicle-use-map-mvum" title="Permanent link">&para;</a></h3>
+<p>The MVUM data is highways in national forests, so useful in remote
+area not always in TIGER. Or in TIGER but completely wrong. I've seen
+roads in TIGER that don't actually exist. All the MVUM data is better
+quality as much of the data was mapped by ground-truthing. It has
+useful data fields, like is a high clearance vehicle needed, what is
+the surface, and other access data like are ATVs allowed ?</p>
+<p>[MVUM)](https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.Road_MVUM.zip</p>
+<h3 id="clipping">Clipping<a class="headerlink" href="#clipping" title="Permanent link">&para;</a></h3>
+<p>To support conflation, even OSM data needs to be chopped into smaller
+pieces. While osmium and osmfilter could so this, I've had problmes
+with the other tools when the task polygon is small. The
+osmhighways.py program also clips files. Since it's OSM data, we can't
+really use shapely, or geopandas, just osmium. It's a bit slow, being
+pure python.</p>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">November 18, 2023</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">October 4, 2024</span>
       
     
   </small>

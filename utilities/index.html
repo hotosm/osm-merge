@@ -653,6 +653,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#geojson2polypy" class="md-nav__link">
+    geojson2poly.py
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -765,6 +772,26 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../osmhighways/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OSM Highways
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -854,6 +881,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#geojson2polypy" class="md-nav__link">
+    geojson2poly.py
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -932,13 +966,19 @@ linestrings, so is used to create the OSM dataset for
 conflation. Since the other external datasets also correctly use
 name, ref, and ref:usfs, this simplifys conflation. Otherwise the
 algorithm would get very complicated and hard to maintain.</p>
+<h2 id="geojson2polypy">geojson2poly.py<a class="headerlink" href="#geojson2polypy" title="Permanent link">&para;</a></h2>
+<p>This is a very simple utility to convert a GeoJson boundary
+Multipolygon into an <a href="https://wiki.openstreetmap.org/wiki/Osmosis/Polygon_Filter_File_Format">Osmosis <em>poly</em> file</a>. This can be used with
+<a href="https://wiki.openstreetmap.org/wiki/Osmium">osmium</a>, or
+<a href="https://wiki.openstreetmap.org/wiki/Osmconvert">osmconvert</a> to make
+data extracts.</p>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">September 28, 2024</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">October 4, 2024</span>
       
     
   </small>
