@@ -78,8 +78,10 @@ nav:
   - Utilities:
       - OSM Merge: osm-merge.md
       - Utilities: utilities.md
+      - TM Splitter: tm-splitter.md
   - Data Conversion:
       - Data Formats: formats.md
       - MVUM: mvum.md
       - Trails: trails.md
+      - OSM Highways: osmhighways.md
   - API: api.md
