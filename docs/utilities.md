@@ -75,6 +75,8 @@ algorithm would get very complicated and hard to maintain.
 ## geojson2poly.py
 
 This is a very simple utility to convert a GeoJson boundary
-Multipolygon into an Osmosis *poly* file. This can be used with
-osmium, or osmconvert to make data extracts.
+Multipolygon into an [Osmosis *poly* file](https://wiki.openstreetmap.org/wiki/Osmosis/Polygon_Filter_File_Format). This can be used with
+[osmium](https://wiki.openstreetmap.org/wiki/Osmium), or
+[osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert) to make
+data extracts.
 
