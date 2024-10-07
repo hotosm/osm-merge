@@ -50,6 +50,7 @@ from shapely.ops import transform
 from osgeo import ogr
 from codetiming import Timer
 from osgeo import osr
+from progress.spinner import Spinner
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -185,6 +186,7 @@ def make_extract(infile: str,
     boundlayer = bounddata.GetLayer()
     bounddefn = boundlayer.GetLayerDefn()
     logging.debug(f"There are {boundlayer.GetFeatureCount()} in the boundary dataset")
+    spin = Spinner('Processing features ...')
 
     for feature in boundlayer:
         name = "foo" # feature.GetField(0)
@@ -202,10 +204,11 @@ def make_extract(infile: str,
             inlayer.SetSpatialFilter(poly)
         else:
             for infeat in inlayer:
+                spin.next()
                 test = infeat.GetGeometryRef()
                 if poly.Intersects(test) or poly.Contains(test):
                     # log.debug(f"In boundary for {infeat}")
-                    simple = test.Simplify(2.0)
+                    # simple = test.Simplify(2.0)
                     outlayer.CreateFeature(infeat)
             # continue
         # outFeature.SetGeometry(poly)
@@ -286,19 +289,25 @@ for use in other programs. This can generate a grid of tasks from an
 AOI, and it can also split the multipolygon of that grid into seperate
 files to use for clipping with ogr2ogr.
 
-For Example, this will create a multipolygon file of the grid. ).1 is
-about the right size for TM task within the project.
-
-	tm-splitter.py --grid --infile aoi.geojson --threshold 0.1
-
 To break up a large public land boundary, a threshold of 0.7 gives
 us a grid of just under 5000 sq km, which is the TM limit.
 
 	tm-splitter.py --grid --infile boundary.geojson --threshold 0.7
 
-To split the file into tasks, split it:
+To split the grid file file into tasks, this will generate a separate
+file for each polygon within the grid. This file can then also be used
+for clipping with other tools like ogr2ogr, osmium, or osmconvert.
 
 	tm-splitter.py --split --infile tasks.geojson
+
+
+	tm-splitter.py --split --infile tasks.geojson
+
+This will split the data extract into a task sized chunk, one for each
+polygon in the boundary file. All linestrings are completed to avoid
+problems with conflation.
+
+        /tm-splitter.py -v --complete -i infile.geojson -e boundary.geojson
 """
     )
     parser.add_argument("-v", "--verbose", action="store_true",

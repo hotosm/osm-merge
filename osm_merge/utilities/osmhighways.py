@@ -269,17 +269,17 @@ many of the bugs with names that are actually a reference number.
     parser.add_argument("-s", "--small", help="Small dataset")
 
     args = parser.parse_args()
-
     # if verbose, dump to the terminal.
-    if args.verbose:
-        log.setLevel(logging.DEBUG)
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(threadName)10s - %(name)s - %(levelname)s - %(message)s"
-        )
-        ch.setFormatter(formatter)
-        log.addHandler(ch)
+    log_level = os.getenv("LOG_LEVEL", default="INFO")
+    if args.verbose is not None:
+        log_level = logging.DEBUG
+
+    logging.basicConfig(
+        level=log_level,
+        format=("%(asctime)s.%(msecs)03d [%(levelname)s] " "%(name)s | %(funcName)s:%(lineno)d | %(message)s"),
+        datefmt="%y-%m-%d %H:%M:%S",
+        stream=sys.stdout,
+    )
 
     if args.clip:
         # cachefile = os.path.basename(args.infile.replace(".pbf", ".cache"))
