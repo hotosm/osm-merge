@@ -10,9 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://www.hotosm.org/zion/">
+        <link rel="canonical" href="https://www.hotosm.org/tm-splitter/">
       
       
+        <link rel="prev" href="../utilities/">
+      
+      
+        <link rel="next" href="../formats/">
       
       
       <link rel="icon" href="../images/favicon.png">
@@ -20,7 +24,7 @@
     
     
       
-        <title>Analyzing Zion National Park Trails - osm-merge</title>
+        <title>TM Splitter - osm-merge</title>
       
     
     
@@ -75,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#analyzing-zion-national-park-trails" class="md-skip">
+        <a href="#tm-splitter-utility" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Analyzing Zion National Park Trails
+              TM Splitter
             
           </span>
         </div>
@@ -507,18 +511,20 @@
       
   
   
+    
+  
   
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -532,7 +538,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Utilities
@@ -583,9 +589,18 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../tm-splitter/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -594,6 +609,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -770,21 +786,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#conflating-with-openstreetmap" class="md-nav__link">
-    Conflating with OpenStreetMap
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -801,53 +802,112 @@
   
 
 
-<h1 id="analyzing-zion-national-park-trails">Analyzing Zion National Park Trails<a class="headerlink" href="#analyzing-zion-national-park-trails" title="Permanent link">&para;</a></h1>
-<p>As an aid to debugging my conflation software, I decided to use Zion
-National Park trail data. This involved two external datasets, USGS
-vector topographical maps and the National Park Service trails
-dataset.The Topographical maps are in ShapeFile format, the NPS trails
-is in GeoJson.</p>
-<p>The topographical dataset has many more attributes than the NPS
-dataset. For example, the topo dataset contains access information,
-which is one of the goals of the <a href="https://wiki.openstreetmap.org/wiki/United_States/Trail_Access_Project">Trail Access
-Project</a>. One
-of the details I noticed was having a value of <em>designated</em> instead of
-<em>yes</em> if the trail is in an official source. There are multiple access
-types, horse, bicycles, etc... having them be <em>no</em> might be useless
-data as it could be assumed if the access is allowed.</p>
-<div class="highlight"><pre><span></span><code>&quot;properties&quot;: {
-    &quot;highway&quot;: &quot;path&quot;,
-    &quot;source&quot;: &quot;National Park Service&quot;,
-    &quot;bicycle&quot;: &quot;no&quot;,
-    &quot;atv&quot;: &quot;no&quot;,
-    &quot;horse&quot;: &quot;designated&quot;,
-    &quot;motorcycle&quot;: &quot;no&quot;,
-    &quot;snowmobile&quot;: &quot;no&quot;
-    },
+<h1 id="tm-splitter-utility">TM Splitter Utility<a class="headerlink" href="#tm-splitter-utility" title="Permanent link">&para;</a></h1>
+<p>This program manages tasks splitting and data extraction. Since we're
+dealing with very large files, being able to chop them into manageable
+pieces is critical. For remote mapping using satellite or drone
+imagery, many use the <a href="https://tasks.hotosm.org">HOT Tasking
+Manager</a> (TM). This will let you create a
+project which the TM will then split into tasks for the mappers.</p>
+<p>The tm-splitter program is a command line utility to do the same
+thing, but is focused on processing large files for imports or
+conflation. This is also designed to work with the TM, pre-processing
+data for a TM project so the mapper can focus on validation.</p>
+<p>If could also be used in the backed for other Tasking Manager style
+projects as it uses an object oriented approach. The command line
+version is just more useful for development.</p>
+<h1 id="task-splitting">Task Splitting<a class="headerlink" href="#task-splitting" title="Permanent link">&para;</a></h1>
+<p>This will split a large Area Of Interest (AOI) into a grid of
+tasks. The TM has a 5000km sq limit, and all of our data files are
+much larger. Initially this can be used to chop the large area into
+4999km sq tasks. The best threshold option for this size task is
+<em>0.7</em>. That's what is used to create the project AOI for the TM
+project. </p>
+<p>While it's entirely possible to let TM split the tasks for the
+project, I've found when dealing with data extracts it's better to
+generate our small tasks outside of TM. TM will let us upload a custom
+task grid. Since this project is focused on trails and MVUM
+linestrings in remote areas, larger tasks work better than small ones
+as the density of features in each task square is low. I've been using
+<em>0.1</em> as the threshold value for that size, although slightly larger
+might be better.</p>
+<h1 id="data-extraction">Data Extraction<a class="headerlink" href="#data-extraction" title="Permanent link">&para;</a></h1>
+<p>While there are a multitude of options for extracting data from
+OpenStreetMap (OSM), this is more focused on chopping up the initial
+data extract into the smaller task sized pieces. It turns out there
+are issues when making data extracts of highways that you want to
+conflate. In the OSM world, <a href="https://osmcode.org/osmium-tool/">osmium</a>
+and <a href="https://osmcode.org/osmium-tool/">osmconvert</a> when clipping data,
+highways that cross the boundary and extend outside are completed,
+instead of being clipped at the boundary. This avoids all sorts of
+problems with bad references, missing nodes, etc...</p>
+<p>The problem though was with external datasets. Using
+<a href="https://gdal.org/programs/ogr2ogr.html">ogr2ogr</a> for clipping the NPS
+trail data, or the USDA MVUM datasets clips everything at the
+boundary, and of course other OSM tools can't be used with GeoJson
+files. TM Splitter has support to clip the data extract at the
+boundary, but to also extend all linestrings that cross the boundary
+to be complete. This way the geometrys are more likely to be similar
+between OSM and the external datasets, which helps with conflation.</p>
+<p>When conflating, there are issues when you get near the boundary. With
+large datasets, you won't see any problems except at those
+intersections. But as you reduce the size of your tasks towards a
+<em>0.1</em> threshold, there starts to be issues with incomplete features
+which is why extending the linestrings helps.</p>
+<p>It's also possible to conflate the larger datasets and then generate
+the smaller task sized data extracts by splitting the post-conflated
+data. That's probably more of a normal mode of mapper data flow. But
+the smallest tasks are very useful for debugging and fine tuning the
+conflation algorithm.</p>
+<h1 id="tasking-manager-integration">Tasking Manager Integration<a class="headerlink" href="#tasking-manager-integration" title="Permanent link">&para;</a></h1>
+<p>The HOT Tasking Manager is focused on remote mapping using imagery, so
+has a few additional functions we don't really need. For one thing, a
+TM project assumes you are using imagery, it's part of the project
+profile. So when you select a task to map, it'll load the imagery into
+the <a href="https://josm.openstreetmap.de/">JOSM</a> or
+<a href="https://www.openstreetmap.org/edit?editor=id">iD</a> editors. We don't
+really need the imagery as we're not modifying the geometry, just the
+metadata of each feature. For the OSM Merge project, we use
+topographical map as a basemap, not satellite imagery.</p>
+<h1 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h1>
+<p>Usage: tm-splitter [-h][-v] -i INFILE [-g][-s] [-o OUTFILE] [-e EXTRACT] [-c] [-t THRESHOLD]</p>
+<p>options:
+  -h, --help                             show this help message and exit
+  -v, --verbose                          verbose output
+  -c, --complete                         Complete all LineStrings
+  -g, --grid                             Generate the task grid
+  -s, --split                            Split Multipolygon
+  -i INFILE, --infile INFILE             The input dataset
+  -o OUTFILE, --outfile OUTFILE          Output filename
+  -e EXTRACT, --extract EXTRACT          Split Dataset with Multipolygon
+  -t THRESHOLD, --threshold THRESHOLD    Threshold</p>
+<p>This program implements some HOT Tasking Manager style functions
+for use in other programs. This can generate a grid of tasks from an
+AOI, and it can also split the Multipolygon of that grid into separate
+files to use for clipping with ogr2ogr.</p>
+<p>To break up a large public land boundary, a threshold of 0.7 gives
+us a grid of just under 5000 sq km, which is the TM limit.</p>
+<div class="highlight"><pre><span></span><code>tm-splitter.py -v --grid --infile boundary.geojson --threshold 0.7
 </code></pre></div>
-<h2 id="conflating-with-openstreetmap">Conflating with OpenStreetMap<a class="headerlink" href="#conflating-with-openstreetmap" title="Permanent link">&para;</a></h2>
-<p>One big difference is that the OpenStreetMap dataset has many more
-features tagged with <em>highway</em> than the other datasets. OSM has mucn
-more detail, campground loop roads, service roads, </p>
-<p>Topo Trails 
-Coalpits Wash Trail (official)
-Dalton Wash Trail (BLM ?)
-Huber Wash Trail (not sure)
-Left Fork North Creek Trail aka Subway (official)</p>
-<p>The Subway (Bottom) in Topo and Left Fork North Creek Trail in OSM</p>
-<p>Pa'rus Trail is same in topo and nps, not in OSM.</p>
-<p>Deertrap Mountain Trail, or Cable Mountain.</p>
-<p>nps:COMMENT=062904-GPSed for cultural projects coverage
-nps:EDIT_DATE=082004
-nps:ED_COMMENT=063004-removed spikes from arc
-nps:MILES=0.182262</p>
+<p>To split the grid file file into tasks, this will generate a separate
+file for each polygon within the grid. This file can then also be used
+for clipping with other tools like ogr2ogr, osmium, or osmconvert.</p>
+<div class="highlight"><pre><span></span><code>tm-splitter.py -v --split --infile tasks.geojson
+
+tm-splitter.py -v --split --infile tasks.geojson
+</code></pre></div>
+<p>This will split the data extract into a task sized chunk, one for each
+polygon in the boundary file. All linestrings are completed to avoid
+problems with conflation.</p>
+<div class="highlight"><pre><span></span><code>tm-splitter.py -v --complete -i infile.geojson -e boundary.geojson
+</code></pre></div>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 30, 2024</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">October 7, 2024</span>
       
     
   </small>
