@@ -94,7 +94,12 @@ many of the bugs with names that are actually a reference number.
             outfs.write("END\n")
             index += 1
             continue
-        else:
+        elif poly["geometry"]["type"] == "Polygon":
+            for coords in (poly["geometry"]["coordinates"][0]):
+                outfs.write(f"    {str(coords[0])}   {str(coords[1])}\n")
+                counter += 1
+            outfs.write("END\n")
+        elif poly["geometry"]["type"] == "LineString":
             # It's a LineString
             for coords in regions:
                 if type(coords) == list:
