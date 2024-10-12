@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://www.hotosm.org/trails/">
+        <link rel="canonical" href="https://www.hotosm.org/dataflow/">
       
       
-        <link rel="prev" href="../mvum/">
+        <link rel="prev" href="../CHANGELOG/">
       
       
-        <link rel="next" href="../osmhighways/">
+        <link rel="next" href="../conflation/">
       
       
       <link rel="icon" href="../images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Trails - osm-merge</title>
+        <title>Data Flow - osm-merge</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#national-park-service-trails" class="md-skip">
+        <a href="#mapper-data-flow" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Trails
+              Data Flow
             
           </span>
         </div>
@@ -393,10 +393,19 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../dataflow/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -405,6 +414,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -644,19 +654,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
@@ -670,7 +678,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             Data Conversion
@@ -723,30 +731,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Trails
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../trails/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -755,55 +743,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#processed-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      Processed Fields
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dropped-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dropped Fields
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#national-forest-service-trails" class="md-nav__link">
-    <span class="md-ellipsis">
-      National Forest Service Trails
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -879,41 +818,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#processed-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      Processed Fields
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dropped-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dropped Fields
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#national-forest-service-trails" class="md-nav__link">
-    <span class="md-ellipsis">
-      National Forest Service Trails
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -930,160 +834,159 @@
   
 
 
-<h1 id="national-park-service-trails">National Park Service Trails<a class="headerlink" href="#national-park-service-trails" title="Permanent link">&para;</a></h1>
-<p>This processes both the National Park Service trails dataset, and the
-National Forest Service trail datasets. The schema of the two datasets
-is very similar. One of the differences is for Park Service Trails has
-two default tags in the output file which are <em>bicycle=no</em> and
-<em>motor_vehicle=no</em>. These default tags are <a href="https://wiki.openstreetmap.org/wiki/US_National_Park_Service_Tagging:_Trails">documented
-here</a>.</p>
-<p>This dataset is available in a variety of formats from the <a href="https://hub.arcgis.com/datasets/fedmaps::national-park-service-trails/about">ArcGIS Hub</a>.</p>
-<h2 id="processed-fields">Processed Fields<a class="headerlink" href="#processed-fields" title="Permanent link">&para;</a></h2>
-<p>These are the fields extracted from the data that are converted to
-OpenStreetMap syntax so they can be conflated.</p>
-<ul>
-<li>OBJECTID becomes <strong>id</strong></li>
-<li>TRLNAME becomes <strong>name</strong></li>
-<li>TRLCLASS becomes <strong>sac_scale</strong></li>
-<li>TRLUSE becomes <em>yes</em> for <strong>horse</strong>, <strong>bicycle</strong>, <strong>atv</strong>, etc...</li>
-<li>TRLALTNAME becomes <strong>alt_name</strong></li>
-<li>SEASONAL becomes <strong>seasonal</strong></li>
-<li>MAINTAINER becomas <strong>operator</strong></li>
-<li>TRLSURFACE becomes <strong>surface</strong></li>
-</ul>
-<h2 id="dropped-fields">Dropped Fields<a class="headerlink" href="#dropped-fields" title="Permanent link">&para;</a></h2>
-<p>These fields are all ignored, and are dropped from the output file.</p>
-<ul>
-<li>MAPLABEL</li>
-<li>TRLSTATUS</li>
-<li>TRLTYPE</li>
-<li>PUBLICDISP</li>
-<li>DATAACCESS</li>
-<li>ACCESSNOTE</li>
-<li>ORIGINATOR</li>
-<li>UNITCODE</li>
-<li>UNITNAME</li>
-<li>UNITTYPE</li>
-<li>GROUPCODE</li>
-<li>GROUPNAME</li>
-<li>REGIONCODE</li>
-<li>CREATEDATE</li>
-<li>EDITDATE</li>
-<li>LINETYPE</li>
-<li>MAPMETHOD</li>
-<li>MAPSOURCE</li>
-<li>SOURCEDATE</li>
-<li>XYACCURACY</li>
-<li>GEOMETRYID</li>
-<li>FEATUREID</li>
-<li>FACLOCID</li>
-<li>FACASSETID</li>
-<li>IMLOCID</li>
-<li>OBSERVABLE</li>
-<li>ISEXTANT</li>
-<li>OPENTOPUBL</li>
-<li>ALTLANGNAM</li>
-<li>ALTLANG</li>
-<li>NOTES</li>
-</ul>
-<h2 id="national-forest-service-trails">National Forest Service Trails<a class="headerlink" href="#national-forest-service-trails" title="Permanent link">&para;</a></h2>
-<p>The US Forest Service makes much of their data publically accessible,
-so it's been a source for imports for a long time. There is a nice
-detailed wiki page on the <a href="https://wiki.openstreetmap.org/wiki/US_Forest_Service_Data">Forest Service
-Data</a>. The
-conversion process handles most of the implementation details.</p>
-<h1 id="keep-fields">Keep Fields<a class="headerlink" href="#keep-fields" title="Permanent link">&para;</a></h1>
-<p>The two primary fields are <em>TRAIL_NO</em>, which is used for the
-<em>ref:usfs</em> tags, and <em>TRAIL_NAME</em>, which is the name of the trail. In
-addition to these</p>
-<h2 id="the-5-variations">The 5 Variations<a class="headerlink" href="#the-5-variations" title="Permanent link">&para;</a></h2>
-<p>For many of the features classes, there are 5 variations on each one
-which is used for access.</p>
-<ul>
-<li>Managed: Usage allowed and managed by the forest service</li>
-<li>Accepted: Usage is accepted year round</li>
-<li>Accepted/Discouraged: Usage is accepted, but discouraged</li>
-<li>Restricted: Usage is restricted</li>
-<li>Discouraged: Usage is discouraged</li>
-</ul>
-<p>These are converted to the apppropriate value.</p>
-<ul>
-<li>Managed* sets the keyword to <strong>designated</strong></li>
-<li>Accepted* sets the keyword to <strong>yes</strong></li>
-<li>Restricted* sets the keyword to <strong>no</strong></li>
-<li>Discouraged* sets the keyword to <strong>discouraged</strong></li>
-<li>Accepted/Discouraged* sets the keyword to <strong>permissive</strong></li>
-</ul>
-<p>Many of the values for these are NULL, so ignored when generating the
-output file. If the value exists, it's either a <strong>Y</strong> or a <strong>N</strong>, which
-is used to set the values. For example: "SNOWMOBILE": "Y" becomes
-<strong>snowmobile=yes</strong> in the output file.</p>
-<ul>
-<li>PACK_SADDLE_ becomes <strong>horse=</strong></li>
-<li>BICYCLE_ becomes <strong>bicycle=</strong></li>
-<li>MOTORCYCLE_ becomes <strong>motorcycle=</strong></li>
-<li>ATV_ becoms <strong>atv=</strong></li>
-<li>FOURWD_ becomes <strong>4wd_only</strong></li>
-<li>SNOWMOBILE_ becomes <strong>snowmobile=</strong></li>
-<li>SNOWSHOE_ becomes <strong>snowwhoe=</strong></li>
-<li>XCOUNTRY_SKI_ becomes <strong>ski</strong></li>
-</ul>
-<p>Currently these fields appear to be empty, but that may change in the
-future.</p>
-<ul>
-<li>SNOWCOACH_SNOWCAT_</li>
-<li>SNOWCOACH_SNOWCAT_</li>
-<li>E_BIKE_CLASS1_</li>
-<li>E_BIKE_CLASS2_</li>
-<li>E_BIKE_CLASS3_</li>
-</ul>
-<p>This field is ignored as it's assumed the trail is accessible by
-hikers.</p>
-<ul>
-<li>HIKER_PEDESTRIAN_</li>
-</ul>
-<h2 id="dropped-fields_1">Dropped Fields<a class="headerlink" href="#dropped-fields_1" title="Permanent link">&para;</a></h2>
-<p>These fields are dropped as unnecessary for OSM. Manye only have a
-NULL value anyway, so useless.</p>
-<ul>
-<li>MOTOR_WATERCRAFT_</li>
-<li>NONMOTOR_WATERCRAFT_</li>
-<li>GIS_MILES</li>
-<li>Geometry Column</li>
-<li>TRAIL_TYPE</li>
-<li>TRAIL_CN</li>
-<li>BMP</li>
-<li>EMP</li>
-<li>SEGMENT_LENGTH</li>
-<li>ADMIN_ORG</li>
-<li>MANAGING_ORG</li>
-<li>SECURITY_ID</li>
-<li>ATTRIBUTESUBSET</li>
-<li>NATIONAL_TRAIL_DESIGNATION</li>
-<li>TRAIL_CLASS</li>
-<li>ACCESSIBILITY_STATUS</li>
-<li>TRAIL_SURFACE</li>
-<li>SURFACE_FIRMNESS</li>
-<li>TYPICAL_TRAIL_GRADE</li>
-<li>TYPICAL_TREAD_WIDTH</li>
-<li>MINIMUM_TRAIL_WIDTH</li>
-<li>TYPICAL_TREAD_CROSS_SLOPE</li>
-<li>SPECIAL_MGMT_AREA</li>
-<li>TERRA_BASE_SYMBOLOGY</li>
-<li>MVUM_SYMBOL</li>
-<li>TERRA_MOTORIZED</li>
-<li>SNOW_MOTORIZED</li>
-<li>WATER_MOTORIZED</li>
-<li>ALLOWED_TERRA_USE</li>
-<li>ALLOWED_SNOW_USE</li>
-</ul>
-<h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>-h, --help            show this help message and exit
--v, --verbose         verbose output
--i INFILE, --infile INFILE input data file
--c, --convert         Convert feature to OSM feature
--o OUTFILE, --outfile OUTFILE Output GeoJson file
+<h1 id="mapper-data-flow">Mapper Data flow<a class="headerlink" href="#mapper-data-flow" title="Permanent link">&para;</a></h1>
+<p>Much of the process of conflation is preparing the datasets since
+we're dealing with huge files with inconsistent metadata. The primary
+goal is to process the data so validating the post conflation is as
+efficient as possible. Conflating large datasets can be very time
+consuming, so working with smaller files generates results quicker for
+the area you are focused on mapping.</p>
+<p>The other goal is to prepare the data for <a href="https://wiki.openstreetmap.org/wiki/Tasking_Manager">Tasking
+Manager (TM)</a>. TM
+has a project size limit of 5000km sq, and since we'll be using the
+Tasking Manager, each national forest or park needs to be split into
+project sized areas of interest. Each of these is used when creating
+the TM project.</p>
+<p>When you select a task in the TM project, it'll download an OSM
+extract and satellite imagery for that task. We don't really need
+those, as we're dealing with disk files, not remote mapping. While
+it's entirely possible to use the project sized data extracts, I also
+create a custom task boundaries files for TM, and make small task
+sized extracts that are relatively quick to conflate and validate.</p>
+<h1 id="download-the-datasets">Download the Datasets<a class="headerlink" href="#download-the-datasets" title="Permanent link">&para;</a></h1>
+<p>All the datasets are of course publicly available. The primary
+source of the Motor Vehicle Use Map (MVUM) is available from the 
+<a href="https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=transportation">FSGeodata
+Clearinghouse</a>,
+which is maintained by the <a href="https://www.usda.gov/">USDA</a>. The
+Topographical map vector tiles are <a href="https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/TopoMapVector/">available from
+here.</a>,
+which is maintained by the National Forest Service. OpenStreetMap data
+for a country can be downloaded from
+<a href="http://download.geofabrik.de/north-america.html">Geofabrik</a>. National
+Park trail data is available from the
+<a href="https://data.fs.usda.gov/geodata/edw/edw_resources/shp/S_USA.TrailNFS_Publish.zip">NPS Publish</a>
+site.</p>
+<h1 id="initial-setup">Initial Setup<a class="headerlink" href="#initial-setup" title="Permanent link">&para;</a></h1>
+<p>As we split up the initial datasets this will generate a lot of files
+if you plan to work with multiple national forests or parks. I use a
+tree structure. At the top is the directory with all the source
+files. You also need a directory with the national forest or park
+boundaries which get used for data clipping.</p>
+<p>Once I have the source files ready, I start the splitting up process
+to make data extracts for each forest or park. If you are only working
+on one forest or park, you can do this manually. Since I'm working
+with data for multiple states, I wrote a shell script to automate the
+process.</p>
+<h2 id="updatesh">update.sh<a class="headerlink" href="#updatesh" title="Permanent link">&para;</a></h2>
+<p>Most of the process is executing other external programs like
+<a href="https://osmcode.org/osmium-tool/">osmium</a> or
+<a href="https://gdal.org/programs/ogr2ogr.html">ogr2ogr</a>, so I wrote a bourne
+shell script to handle all the repetitious tasks. This also lets me
+easily regenerate all the files if I make a change to any of the
+utilities or the process. This uses a modern shell syntax with
+functions and data structures to reduce cut &amp; paste.</p>
+<p>The command line options this program supports are:</p>
+<div class="highlight"><pre><span></span><code>--tasks (-t): Split tasks boundaries into files for ogr2ogr
+--forests (-f): Build only the National Forests
+--datasets (-d): Build only this dataset for all boundaries
+--split (-s): Split the AOI into tasks, also very slow
+--extract (-e): Make a data extract from OSM
+--only (-o): Only process one state
+--dryrun (-n): Don&#39;t actually write any datafiles
+--clean (-c): Remove generated task files
+--base (-b): build all base datasets, which is slow
 </code></pre></div>
+<p>The locations of the files is configurable, so it can easily be
+extended for other forests or parks. This script is in the utilities
+directory of this project.</p>
+<p>This also assumes you want to build a tree of output directories.</p>
+<p>For example I use this layout:</p>
+<div class="highlight"><pre><span></span><code>SourceData
+    -&gt; Tasks
+        -&gt; Colorado
+            -&gt; Medicine_Bow_Routt_National_Forest_Tasks
+                -&gt; Medicine_Bow_Routt_Task_[task number]
+            -&gt; Rocky_Mountain_National_Park_Task
+                -&gt; Rocky_Mountain_National_Park_Task_[task number]
+        -&gt; Utah
+            -&gt; Bryce_Canyon_National_Park_Tasks
+        etc...
+</code></pre></div>
+<p>All my source datasets are in <strong>SourceData</strong>.   In the <strong>Tasks</strong>
+directory I have all the Multi Polygon files for each forest or park. I
+create these files by running <em>update.sh --split</em>. These are the large
+files that have the AOI split into 5000-km sq polygons.</p>
+<p>Since I'm working with multiple states, that's the next level, and
+only contains the sub directories for all the forests or parks in that
+state. Currently I have all the data for all the public lands in
+Colorado, Utah, and Wyoming. Under each sub directory are the
+individual task polygons for that area. If small TM task sized data
+extracts are desired, all of the small tasks is under the last
+directory. Those task files are roughly 10km sq.</p>
+<h2 id="boundaries">Boundaries<a class="headerlink" href="#boundaries" title="Permanent link">&para;</a></h2>
+<p>You need boundaries with a good geometry. These can be extracted from
+OpenStreetMap, they're usually relations. The official boundaries are
+also available from the same site as the datasets as a Multi Polygon.</p>
+<p>I use the <a href="splitter.md">TM Splitter</a> utility included in this project
+to split the Multi Polygon into separate files, one for each forest or
+park. Each of these files are also a Multi Polygon, often a national
+forest has several areas that aren't connected.</p>
+<h2 id="processing-the-data">Processing The Data<a class="headerlink" href="#processing-the-data" title="Permanent link">&para;</a></h2>
+<p>To support conflation, all the datasets need to be filtered to fix
+known issues, and to standardize the data. The OpenStreetMap tagging
+schema is used for all data.</p>
+<p>Each of the external datasets has it's own conversion process, which
+is documented in detail here:</p>
+<ul>
+<li><a href="../mvum/">MVUM</a></li>
+<li><a href="../trails/">Trails</a></li>
+<li><a href="../osmhighways/">OSM</a></li>
+</ul>
+<p>While it's possible to manually convert the tags using an editor, it
+can be time consuming. There are also many, many weird and
+inconsistent abbreviations in all the datasets. I extracted all the
+weird abbreviations by scanning the data for the western United
+States, and embedding them in the conversion utilities. There are also
+many fields in the external datasets that aren't for OSM, so they get
+dropped. The result are files with only the tags and features we want
+to conflate. These are the files I put in my top level <strong>SourceData</strong>
+directory.</p>
+<h1 id="conflation">Conflation<a class="headerlink" href="#conflation" title="Permanent link">&para;</a></h1>
+<p>Once all the files and infrastructure is ready, then I can conflate
+the external datasets with OpenStreetMap. Here is a detailed
+description of <a href="../highways/">conflating highways</a>. Conflating with 
+<a href="../odkconflation/">OpenDataKit</a> is also documented. The final result
+of conflation is an OSM XML file for JOSM. The size of this file is
+determined by task boundaries you've created.</p>
+<p>If you want to use TM, then create the project with the 5000km sq task
+boundary, and fill in all the information required. Then select your
+task from the TM project and get started with validation.</p>
+<h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h2>
+<p>Now the real fun starts after all this prep work. The goal is to make
+this part of the process, validating the data and improving OSM as
+efficient as possible. If it's not efficient, manual conflation is
+incredibly time-consuming, tedious, and boring. Which is probably why
+nobody has managed to fix more than a small area.</p>
+<p>The conflation results have all the tags from the external datasets
+that aren't in the OSM feature or have different values. Any existing
+junk tags have already been deleted. The existing OSM tags are renamed
+where they don't match the external dataset, so part of validation is
+choosing the existing value or the external one, and delete the one
+you don't want. Often this is a minor difference in spelling.</p>
+<p>If the conflation has been good, you don't have to edit any features,
+only delete the tags you don't want. This makes validating a feature
+quick, often in under a minute per feature. Since many remote MVUM
+roads are only tagged in OSM with <strong>highway=track</strong>, validating those
+is very easy as it's just additional tags for <em>surface</em>, <em>smoothness</em>,
+and various access tags.</p>
+<p>In the layer in JOSM with the conflated data, I can select all the
+modified features, and load them into the
+TODO](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/TODO_list). Then
+I just go through them all one at a time to validate the conflation. I
+also have the original datasets loaded as layers, and also use the
+USGS Topographical basemaps in JOSM for those features I do need to
+manually edit. Even good conflation is not 100%.</p>
 
 
 
@@ -1104,7 +1007,7 @@ NULL value anyway, so useless.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">August 26, 2024</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">October 12, 2024</span>
   </span>
 
     
