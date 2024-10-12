@@ -21,7 +21,6 @@
 Class and helper methods for task splitting when working with the HOT
 Tasking Manager since our projects are larger than 5000km area it
 supports.
-
 """
 
 import argparse
@@ -36,7 +35,6 @@ from pathlib import Path
 # import tqdm.asyncio
 import asyncio
 from cpuinfo import get_cpu_info
-from fmtm_splitter.splitter import split_by_square, FMTMSplitter
 import geojson
 import numpy as np
 from geojson import Feature, FeatureCollection, GeoJSON
@@ -222,12 +220,14 @@ def make_extract(infile: str,
         log.debug(f"Wrote task {outfile} ...")
 
 def make_tasks(infile: str,
+               outfile: str,
                ):
     """
     Make the task files, one for each polygon in the input file.
 
     Args:
         infile (str): The filespec of the input file.
+        outfile (str): Template for the output files
     """
     index = 0
     name = str()
@@ -246,21 +246,20 @@ def make_tasks(infile: str,
         # FIXME: it turns out there may be multipolygons, so they all wind
         # up with the same task name, so use an index here instead.
         # task = feature.GetField(0)
-        outfile = infile.replace(".geojson", f"_{index}.geojson")
+        taskfile = f"{outfile}_Task_{index}.geojson"
         index += 1
-        task = Path(outfile).stem.replace("Tasks", "Task")
-
-        if os.path.exists(outfile):
-            os.remove(outfile)
-        outdata = driver.CreateDataSource(outfile)
-        outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbPolygon)
+        task = Path(taskfile).stem.replace("Tasks", "Task")
+        if os.path.exists(taskfile):
+            os.remove(taskfile)
+        outdata = driver.CreateDataSource(taskfile)
+        outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbMultiPolygon)
         featureDefn = outlayer.GetLayerDefn()
         outFeature = ogr.Feature(featureDefn)
         poly = feature.GetGeometryRef()
         # Make a polygon if it's closed, which it should be. Using ogr2ogr to
         # clip the grid to the boundary, it sets some task as a LineString
         # instead of a polygon. Since the first and last points are the same,
-        # it's actuall a polygon, so convert it to a Polygon.
+        # it's actually a polygon, so convert it to a Polygon.
         if poly.GetGeometryName() == "LINESTRING":
             ring = ogr.Geometry(ogr.wkbLinearRing)
             for i in range(0, poly.GetPointCount()):
@@ -275,7 +274,7 @@ def make_tasks(infile: str,
         outlayer.CreateFeature(outFeature)
         # feature["properties"]["name"] = name
         # feature["boundary"] = "administrative"
-        log.debug(f"Wrote task {outfile} ...")
+        log.debug(f"Wrote task {taskfile} ...")
 
 async def main():
     """This main function lets this class be run standalone by a bash script"""
@@ -354,7 +353,7 @@ problems with conflation.
     # Split the large file of administrative boundaries into each
     # area so they can be used for clipping.
     if args.split:
-        make_tasks(args.infile)
+        make_tasks(args.infile, args.outfile)
     elif args.grid:
         log.debug(f"Generating the grid may take a long time...")
         path = Path(args.outfile)
@@ -378,11 +377,15 @@ problems with conflation.
         outlayer = outdata.CreateLayer("Tasks", crs, geom_type=ogr.wkbPolygon)
 
         boundary = inlayer.GetNextFeature()
+        if not boundary:
+            log.error(f"The boundary file {args.infile} is empty")
+            quit()
+
         poly = boundary.GetGeometryRef()
 
         index = 0
         # 1 meters is this factor in degrees
-        meter = 0.0000114
+        # meter = 0.0000114
 
         log.debug(f"Wrote {args.outfile}")
 
