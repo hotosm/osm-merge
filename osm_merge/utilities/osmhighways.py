@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#
 # This program is not fast, being 100% python, but it can handles very large
 # files. I may convert it to C++ at some point if it becomes a problem. But
 # it does produce an good file for conflation, which is the primary goal.
-    
+#
+
 import argparse
 import logging
 import sys

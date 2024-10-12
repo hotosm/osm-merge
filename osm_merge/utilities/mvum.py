@@ -14,7 +14,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-    
+
+#
+# This program proccesses the National Forest Service MVUM dataset. That
+# processing includes deleting unnecessary tags, and converting the
+# tags to an OSM standard for conflation.
+#
+
 import argparse
 import logging
 import sys
@@ -266,7 +272,4 @@ good to avoid any highway with a smoothness of "very bad" or worse.
         
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-    # loop.run_until_complete(main())
     main()

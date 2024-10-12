@@ -14,7 +14,13 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-    
+
+#
+# This program proccesses the National Park service trails dataset. That
+# processing includes deleting unnecessary tags, and converting the
+# tags to an OSM standard for conflation.
+#
+
 import argparse
 import logging
 import sys
@@ -233,19 +239,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="This program converts MVUM highway data into OSM tagging",
         epilog="""
-This program processes the MVUM data. It will convert the MVUM dataset
+This program processes the NPS trails dataset. It will convert the data
 to using OSM tagging schema so it can be conflated. Abbreviations are
-discouraged in OSM, so they are expanded. Most entries in the MVUM
-dataset are ignored. For fixing the TIGER mess, all that is relevant
-are the name and the USFS reference number. The surface and smoothness
-tags are also converted, but should never overide what is in OSM, as the
-OSM values for these may be more recent. And the values change over time,
-so what is in the MVUM dataset may not be accurate. These tags are converted
-primarily as an aid to navigation when ground-truthing, since it's usually
-good to avoid any highway with a smoothness of "very bad" or worse.
+discouraged in OSM, so they are expanded. Most entries in the NPS
+dataset are ignored. The schema is similar to the MVUM schema, but not
+exactly.
 
     For Example: 
-        mvum.py -v -c -i WY_RoadsMVUM.geojson
+        trails.py -v -c -i /National_Park_Service_Trails.geojson
         """,
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
@@ -276,7 +277,4 @@ good to avoid any highway with a smoothness of "very bad" or worse.
         
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-    # loop.run_until_complete(main())
     main()
