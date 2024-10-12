@@ -176,7 +176,7 @@ and various access tags.
 
 In the layer in JOSM with the conflated data, I can select all the
 modified features, and load them into the
-[TODO](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/TODO_list). Then
+[TODO plugin](https://wiki.openstreetmap.org/wiki/JOSM/Plugins/TODO_list). Then
 I just go through them all one at a time to validate the conflation. I
 also have the original datasets loaded as layers, and also use the
 USGS Topographical basemaps in JOSM for those features I do need to
