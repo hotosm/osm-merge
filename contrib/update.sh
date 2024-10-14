@@ -23,17 +23,12 @@
 
 states="Utah Colorado Wyoming"
 
-# Top level for boundaries, obviously system specific
-boundaries="/play/MapData/Boundaries/"
-
-# # The base datasets
-# osmhighways="../wy-co-ut.osm.pbf"
-# mvumhighways="../Road_MVUM-out.geojson"
-# mvumtrails="../Trail_MVUM-out.geojson"
-# topohighways="../USGS_Topo_Roads-out.geojson"
-# topotrails="../USGS_Topo_Trails-out.geojson"
-# npstrails="../National_Park_Service_Trails-out.geojson"
-# usgstrails="../USFS_Trails-out.geojson"
+# Top level for boundaries, allow to set via env variable
+if test x"${BOUNDARIES}" = x; then
+    boundaries="/play/MapData/Boundaries/"
+else
+    boundaries="${BOUNDARIES}"
+fi
 
 utah="Dixie_National_Forest \
       Bryce_Canyon_National_Park \
@@ -62,6 +57,20 @@ wyoming="Bighorn_National_Forest \
          Yellowstone_National_Park \
          Grand_Teton_National_Park"
 
+# Use an absolute path to avoid problems with whichever
+# directory we are executing code in.
+if test x"${SOURCEDATA}" = x; then
+    sources="/play/MapData/SourceData"
+else
+    sources="${SOURCEDATA}"
+fi
+osmdata="${sources}/wy-co-ut.osm.pbf"
+mvumtrails="${sources}/Trail_MVUM-out.geojson"
+mvumhighways="${sources}/Road_MVUM-out.geojson"
+npstrails="${sources}/National_Park_Service_Trails-out.geojson"
+topotrails="${sources}/USGS_Topo_Trails-out.geojson"
+usgstrails=
+
 # FIXME: figure why this isn't accessible in a bash function
 declare -gA datasets
 datasets["Utah"]="${utah}"
@@ -75,15 +84,23 @@ dryrun="" # echo
 
 # The git branch, usually main except when debugging
 branch="main"
-root="${HOME}/projects/HOT/osm-merge.git"
+
+if test x"${UTILITIES}" = x; then
+    root="${HOME}/projects/HOT/osm-merge.git"
+else
+    root="${UTILITIES}"
+fi
 # FIXME: gotta fix a dependency problem before these run from the
 # shell script.
+geo2poly="${dryrun} ${root}/${branch}/osm_merge/utilities/geojson2poly.py"
 tmsplitter="${dryrun} ${root}/${branch}/osm_merge/utilities/tm-splitter.py"
-osmhighway="${dryrun} ${root}/${branch}/osm_merge/utilities/osmhighways.py"
+osmhighway="${dryrun} ${root}/${branch}/osm_merge/utilities/osmhighways.py -v --clip "
 
+# Note that the option for the boundary to clip with is in this list,
+# so when invoking these variables, the boundary must be first.
 ogropts="${dryrun} ogr2ogr -t_srs EPSG:4326 -makevalid -explodecollections -clipsrc"
 osmopts="${dryrun} osmium extract -s smart --overwrite --polygon "
-osmconvert="${dryrun} osmconvert --complete-ways --drop-broken-refs -B="
+osmconvert="${dryrun} osmconvert --complete-ways --drop-broken-refs "
 
 get_path() {
     # Think of this like the Path class in python, but in bourne shell.
@@ -99,7 +116,7 @@ get_path() {
     path["short"]="$(echo ${land} | sed -e 's/_National_.*//')"
     # path["short"]="${path["dir"]}/$(echo ${land} | sed -e 's/_National_.*//')"
     path["task"]="$(echo ${file} | cut -d '/' -f 3)"
-    path["num"]="$(echo ${file} | grep -o "[0-9]*")"
+    path["num"]="$(echo ${file} | grep -o "[0-9]*" | tail -1)"
 
     declare -p path
 
@@ -172,7 +189,7 @@ get_dirname() {
 get_short_name() {
     # Drop the National_Forest or National_Park part of the path
     name="${1:?}"
-    short=$(basename ${name} | sed -e "s/_National_Forest//" -e "s/National_Park//" -e "s/Tasks/Task/")
+    short=$(basename ${name} | sed -e "s/_National.*//" -e "s/Tasks/Task/")
     echo ${short}
 
     return 0
@@ -185,13 +202,6 @@ extract_data() {
     clipsrc="${1:?}"
     intype="${2:?}"
     subtask="${3:-no}"
-
-    # Use an absolute path to avoid problems with whichever
-    # directory we are executing code in.
-    sources="/play/MapData/SourceData"
-    mvumtrails="${sources}/Trail_MVUM-out.geojson"
-    topotrails="${sources}/USGS_Topo_Trails-out.geojson"
-    usgstrails=
 
     declare -Ag data
     data["OSM_Highways"]="${sources}/wy-co-ut.osm.pbf"
@@ -209,22 +219,29 @@ extract_data() {
 	    echo "Top level forest or park"
 	fi
 	if test x"${subtask}" = x"yes"; then
-	    outfile="${path["dir"]}/${intype}_Task_${path["num"]}"
+	    # FIXME: clipping seems to work better with the larger
+	    # OSM data extract than the small task sized one.
+	    # indata="${path["dir"]}/${intype}_Task_${path["num"]}.osm"
+	    indata="${path["dir"]}/${path["short"]}_${intype}"
+	    outfile="${path["dir"]}/${path["task"]}/${intype}_Sub_Task_${path["num"]}"
 	else
+	    indata="${path["dir"]}/${path["short"]}_${intype}"
 	    outfile="${path["dir"]}/${intype}_Task_${path["num"]}"
 	fi
-	declare -p path
+	# FIXME: this is just for debugging
+	# declare -p path
 
-	indata="${path["dir"]}/${path["short"]}_${intype}.osm"
 	if test $(echo ${intype} | grep -c "OSM") -eq 0; then
 	    # It's a GeoJson file
-	    ${ogropts} -nlt LINESTRING ${task} ${outfile}.geojson ${indata}
+	    ${ogropts} ${task} -nlt LINESTRING ${outfile}.geojson ${indata}.geojson
 	else
-	    # It's an OSM XML file
-	    # ${osmhighway} --clip ${task} -v -o ${outfile}.osm -i ${indata}
+	    # It's an OSM XML file. osmconvert can only use poly files,
+	    # so convert the GeoJson that's generated from task splitting.
+	    ${geo2poly} -v -i ${task}
+	    poly="$(echo ${task} | sed -e "s/.geojson/.poly/")"
+	    ${osmconvert} -B=${poly} -o=${outfile}.osm ${indata}.osm
+	    # ${osmhighway} ${task} -o ${outfile}.osm -i ${indata}
 	    # ${osmopts} ${task} -o ${outfile}.osm ${indata}
-	    foo=$(echo ${task} | sed -e 's/.geojson/.poly/')
-	    ${osmconvert}${foo} ${indata} > ${outfile}.osm 
 	fi
 
     done
@@ -338,10 +355,14 @@ make_sub_mvum() {
     for state in ${region}; do
 	echo "Processing public lands in ${state}..."
 	for land in ${datasets["${state}"]}; do
+	    if test $(echo ${land} | grep -c Park) -gt 0; then
+		continue
+	    fi
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
-	    short=$(basename ${land} | sed -e "s/_National_Forest//" -e "s/National_Park//")
+	    short="$(get_short_name ${land})"
+	    infiles="${state}/${land}_Tasks/${short}_Task_*/*.geojson"
 	    extract_data "${state}/${land}_Tasks/${short}_Task_*/*.geojson" MVUM_Highways yes
 	done
     done
@@ -361,8 +382,9 @@ make_sub_osm() {
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
-	    short=$(basename ${land} | sed -e "s/_National_Forest//" -e "s/National_Park//")
-	    extract_data "${state}/${land}_Tasks/${short}_Task_*/*.geojson" OSM_Highways yes
+	    short="$(get_short_name ${land})"
+	    infiles="${state}/${land}_Tasks/${short}_Task_*/*.geojson"
+	    extract_data "${infiles}" OSM_Highways yes
 	done
     done
 }
@@ -371,9 +393,15 @@ make_nps_extract() {
     # Make the data extract for the public land from MVUM
     # $1 is whether to make the huge data extract for all tasks
     # $2 is whether to make smaller task extracts from the big one
-    base="${1-yes}"
-    tasks="${2-yes}"
-    basedata="no" # this makes the base dataset for the forest or park
+    # $1 is an optional state to be the only one processed
+    # $2 is an optional nartional forest or park to be the only one processed
+    # These are mostly useful for debugging, by default everything is processed
+    region="${1:-${states}}"
+    dataset="${2:-all}"
+    # base=${3:-no}
+    baseset="yes"
+    # tasks=${4:-no}
+    tasks="yes"
 
     # Make the data extract from the NPS Trail data
     for state in ${states}; do
@@ -385,10 +413,11 @@ make_nps_extract() {
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
-	    if test x"${basedata}" == x"yes"; then
+	    if test x"${baseset}" == x"yes"; then
 		echo "    Making ${land}_NPS_Trails.geojson"
 		rm -f ${state}/${land}_Tasks/${land}_NPS_Trails.geojson
-		${ogropts} -nlt LINESTRING ${boundaries}/NationalParks/${land}.geojson ${state}/${land}_Tasks/${land}_NPS_Trails.geojson ${npstrails}
+		short="$(get_short_name ${land})"
+		${ogropts} ${boundaries}/NationalParks/${land}.geojson  -nlt LINESTRING ${state}/${land}_Tasks/${short}_NPS_Trails.geojson ${npstrails}
 	    fi
 	    dir="${state}/${land}_Tasks"
 	    extract_data "${dir}/${land}_Tasks_*.geojson" NPS_Trails
@@ -449,8 +478,9 @@ make_sub_nps() {
 		continue
 	    fi
 	    echo "Processing public lands in ${state}..."
-	    short=$(get_short_name ${land})
-	    extract_data "${state}/${land}_Tasks/${land}_Tasks_*/*.geojson" NPS_Trails yes
+	    short="$(get_short_name ${land})"
+	    infiles="${state}/${land}_Tasks/${short}_Task_*/*.geojson"
+	    extract_data "${infiles}" NPS_Trails yes
 	done
     done
 }
@@ -469,18 +499,21 @@ make_mvum_extract() {
     region="${1:-${states}}"
     dataset="${2:-all}"
     # base=${3:-no}
-    baseset="no"
+    baseset="yes"
     # tasks=${4:-no}
     tasks="yes"
 
     for state in ${region}; do
      	echo "Processing MVUM data in ${state}..."
      	for land in ${datasets["${state}"]}; do
+	    if test $(echo ${land} | grep -c Park) -gt 0; then
+		continue
+	    fi
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
 	    tasks=$(get_tasks ${state} ${land})
-	    echo $tasks
+	    # echo $tasks
 	    for i in ${tasks}; do
 		subtasks=$(get_subtasks ${state} ${land} ${i})
 		echo $subtasks
@@ -497,8 +530,9 @@ make_mvum_extract() {
 	    fi
 	    if test x"${baseset}" == x"yes"; then
 		rm -f ${state}/${land}_Tasks/${land}_MVUM_Highways.geojson
+		short=$(get_short_name ${land})
 		echo "    Making ${land}_MVUM_Highways.geojson"
-		${ogropts} -nlt LINESTRING ${boundaries}/${clip}/${land}.geojson ${state}/${land}_Tasks/${land}_MVUM_Highways.geojson ${mvumhighways}
+		${ogropts} ${boundaries}/${clip}/${land}.geojson -nlt LINESTRING ${state}/${land}_Tasks/${short}_MVUM_Highways.geojson ${mvumhighways}
 		# ${tmsplitter} -v -complete -e ${boundaries}/${clip}/${land}.geojson -o ${state}/${land}_Tasks/${land}_MVUM_Highways.geojson -i ${mvumhighways}
 
 		# echo "    Making ${land}_MVUM_Trails.geojson"
@@ -527,7 +561,7 @@ make_osm_extract() {
     # These are mostly useful for debugging, by default everything is processed
     region="${1:-${states}}"
     dataset="${2:-all}"
-    basedata="yes" # this makes the base dataset for the forest or park
+    baseset="yes" # this makes the base dataset for the forest or park
 
     # Clipping is not done on state boundaries since National Forests often
     # cross state lines.
@@ -537,26 +571,27 @@ make_osm_extract() {
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
-	    # get_path ${task}
-	    # if test ! -e ${base}_Tasks; then
-	    # 	mkdir -p ${state}/${land}_Tasks
-	    # fi
-	    if test x"${basedata}" == x"yes"; then
+	    if test x"${baseset}" == x"yes"; then
 		short=$(get_short_name ${land})
 		# echo "    Clipping OSM data for ${land}..."
 		if test $(echo ${land} | grep -c "_Park" ) -gt 0; then
-		    ${osmhighways} -v --clip ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm -i ${osmdata}
-		    # ${osmopts} --polygon ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm ${osmdata}
+		    # There's 3 ways to clip an OSM XML file
+		    # ${osmhighway} ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm -i ${osmdata}
+		    # FIXME: osmium 1.16.0 with libosmium 2.20.0 core dumps
+		    # ${osmopts} ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm ${osmdata}
+		    # FIXME: osmconvert somehow drops refs, breaking the way
+		    # geometry.
+		    ${osmconvert}${boundaries}/NationalParks/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
 		else
-		    ${osmhighways} -v --clip ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${short}_OSM_Highways.osm -i ${osmdata}
-		    # ${osmopts} --polygon ${boundaries}/NationalForests/${land}.geojson -o ${base}_OSM_Highways.osm  ${osmdata}
+		    # ${osmhighway} ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${short}_OSM_Highways.osm -i ${osmdata}
+		    # ${osmopts} ${boundaries}/NationalForests/${land}.geojson -o ${base}_OSM_Highways.osm  ${osmdata}
+		    ${osmconvert}${boundaries}/NationalForests/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
 		fi
 		# Fix the names & refs in the OSM data
 		# ${dryrun} ${fixnames} -v -i ${base}_OSM_Highways.osm
 		# ${dryrun} mv out-out.osm ${base}_OSM_Highways.osm
 	    fi
 
-	    # tasks=${base}*_Tasks_*.geojson
 	    extract_data "${state}/${land}_Tasks/*_Task_[0-9]*.geojson" OSM_Highways
 	done
     done
@@ -659,11 +694,11 @@ while test $# -gt 0; do
 	-e|--extract)
 	    # This may run for a long time.
 	    make_osm_extract ${region} ${dataset} ${basedata}
-	    # make_sub_osm ${region} ${dataset} ${basedata}
-	    # make_mvum_extract ${region} ${dataset} ${basedata}
-	    # make_sub_mvum ${region} ${dataset}
-	    # make_nps_extract ${region} ${dataset} ${basedata}
-	    # make_sub_nps ${region} ${dataset} ${basedata}
+	    make_sub_osm ${region} ${dataset} ${basedata}
+	    make_mvum_extract ${region} ${dataset} ${basedata}
+	    make_sub_mvum ${region} ${dataset}
+	    make_nps_extract ${region} ${dataset} ${basedata}
+	    make_sub_nps ${region} ${dataset} ${basedata}
 	    # make_topo_extract ${region} ${dataset} ${basedata}
 	    # make_sub_topo ${region} ${dataset} ${basedata}
 	    break
@@ -695,3 +730,6 @@ while test $# -gt 0; do
     esac
     shift
 done
+
+# Cleanup temp files
+rm -f osmconvert_tempfile*
