@@ -1,0 +1,3 @@
+[submodule "osmium-tool"]
+	path = osmium-tool
+	url = https://github.com/osmcode/osmium-tool.git
