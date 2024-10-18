@@ -39,8 +39,6 @@ OSMIUM_FILES = $(shell find osmium-tool/src/ -type f -name '*.cpp' | sed -e 's/o
 # FIXME: need to comment out line 319 so it'll compile
 # osmium-tool/include/rapidjson/document.h
 
-# Edit the cmake file for osmium-tool so it'll produce a shared library
-# so it can be used in this project.
 fixjson:
 	status=$(shell cd osmium-tool && git status -s include/rapidjson/document.h | grep -c ' M '); \
 	if test $$status -gt 0; then \
@@ -49,6 +47,8 @@ fixjson:
 	    sed '319d' include/rapidjson/document.h; \
 	fi
 
+# Edit the cmake file for osmium-tool so it'll produce a shared library
+# so it can be used in this project.
 libosmium-tool: fixjson
 	if test ! -e osmium-tool; then \
 	    echo "You need to checkout the osmium-tools sources"; \
