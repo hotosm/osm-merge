@@ -23,6 +23,10 @@
 
 states="Utah Colorado Wyoming"
 
+# This is a more complete list of national forests and parks, but aren't
+# included due to lack of disk space. Someday...
+source states.txt
+
 # Top level for boundaries, allow to set via env variable
 if test x"${BOUNDARIES}" = x; then
     boundaries="/play/MapData/Boundaries/"
@@ -42,11 +46,16 @@ utah="Dixie_National_Forest \
       Ashley_National_Forest"
 
 colorado="Arapaho_and_Roosevelt_National_Forests \
-          Medicine_Bow_Routt_National_Forest \
+          Medicine_Bow_Routt_National_Forests \
           Grand_Mesa_Uncompahgre_and_Gunnison_National_Forests \
           Rio_Grande_National_Forest \
           San_Juan_National_Forest \
-          Rocky_Mountain_National_Park"
+	  White_River_National_Forest \
+	  Pike_and_San_Isabel_National_Forests \
+          Rocky_Mountain_National_Park \
+	  Great_Sand_Dunes_National_Park \
+	  Mesa_Verde_National_Park \
+	  Black_Canyon_of_the_Gunnison_National_Park"
 
 wyoming="Bighorn_National_Forest \
          Bridger_Teton_National_Forest \
@@ -279,7 +288,7 @@ split_aoi() {
 	    # Make a multipolygon even if just one task
 	    ${ogropts} ${aoi} ${dir}/${short}_Tasks.geojson output.geojson
 	    # rm -f output.geojson
-	    echo "Wrote tsak ${dir}/${short}_Tasks.geojson"
+	    echo "Wrote task ${dir}/${short}_Tasks.geojson"
 	done
     done
 }
@@ -528,8 +537,9 @@ make_mvum_extract() {
 		clip="NationalForests"
 
 	    fi
-	    if test x"${baseset}" == x"yes"; then
-		rm -f ${state}/${land}_Tasks/${land}_MVUM_Highways.geojson
+	    outdata="${state}/${land}_Tasks/${land}_MVUM_Highways.geojson"
+	    if test ! -e ${outdata}; then
+	    	# rm -f ${outdata}
 		short=$(get_short_name ${land})
 		echo "    Making ${land}_MVUM_Highways.geojson"
 		${ogropts} ${boundaries}/${clip}/${land}.geojson -nlt LINESTRING ${state}/${land}_Tasks/${short}_MVUM_Highways.geojson ${mvumhighways}
@@ -561,7 +571,7 @@ make_osm_extract() {
     # These are mostly useful for debugging, by default everything is processed
     region="${1:-${states}}"
     dataset="${2:-all}"
-    baseset="yes" # this makes the base dataset for the forest or park
+    baseset="no" # this makes the base dataset for the forest or park
 
     # Clipping is not done on state boundaries since National Forests often
     # cross state lines.
@@ -585,7 +595,7 @@ make_osm_extract() {
 		else
 		    # ${osmhighway} ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${short}_OSM_Highways.osm -i ${osmdata}
 		    # ${osmopts} ${boundaries}/NationalForests/${land}.geojson -o ${base}_OSM_Highways.osm  ${osmdata}
-		    ${osmconvert}${boundaries}/NationalForests/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
+		    ${osmconvert} -B=${boundaries}/NationalForests/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
 		fi
 		# Fix the names & refs in the OSM data
 		# ${dryrun} ${fixnames} -v -i ${base}_OSM_Highways.osm
@@ -693,12 +703,12 @@ while test $# -gt 0; do
 	    ;;
 	-e|--extract)
 	    # This may run for a long time.
-	    make_osm_extract ${region} ${dataset} ${basedata}
-	    make_sub_osm ${region} ${dataset} ${basedata}
+	    # make_osm_extract ${region} ${dataset} ${basedata}
+	    # make_sub_osm ${region} ${dataset} ${basedata}
 	    make_mvum_extract ${region} ${dataset} ${basedata}
-	    make_sub_mvum ${region} ${dataset}
-	    make_nps_extract ${region} ${dataset} ${basedata}
-	    make_sub_nps ${region} ${dataset} ${basedata}
+	    # make_sub_mvum ${region} ${dataset}
+	    # make_nps_extract ${region} ${dataset} ${basedata}
+	    # make_sub_nps ${region} ${dataset} ${basedata}
 	    # make_topo_extract ${region} ${dataset} ${basedata}
 	    # make_sub_topo ${region} ${dataset} ${basedata}
 	    break
