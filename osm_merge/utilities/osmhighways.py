@@ -234,15 +234,18 @@ def clip(boundary: str,
     for obj in osmium.FileProcessor(infile, osmium.osm.WAY | osmium.osm.NODE).with_filter(way_filter).with_locations():
         spin.next()
         if obj.is_node() and obj.id in nodes:
+            # We don't want POIs for barrier or crossing, just LineStrings
+            if len(obj.tags) > 0:
+                continue
             wkt = fab.create_point(obj)
             geom = shape(geojson.loads(wkt))
             # Add a node if it exists within the boundary
             if contains(task, geom) or intersects(task, geom):
-                writer.add(obj)
+                # writer.add(obj)
                 # log.debug(f"Adding {obj.id}")
                 continue
-            # Strip the object of tags along the way
-            writer.add_node(obj.replace(tags={}))
+                # Strip the object of tags along the way
+            # writer.add_node(obj.replace(tags={}))
         elif obj.is_way() and "highway" in obj.tags:
             wkt = fab.create_linestring(obj.nodes)
             geom = shape(geojson.loads(wkt))
