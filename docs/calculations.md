@@ -17,6 +17,13 @@ calculations are between OSM data and that segment of the external
 data. Since this may product multiple values, those need to be
 evaluated and the most likely one returned.
 
+It gets more fun as sometimes the MVUM dataset is missing entire
+segments. Course sometimes OSM is too. conflation sucessfully merges
+the MVUM dataset tags for the segments if they match onto the single
+OSM way.
+
+![Screenshot\ from\ 2024-10-19\ 14-06-00.png])
+
 ## Distance
 
 A simple distance calculation is performed after transforming the
@@ -41,6 +48,10 @@ highway, and the spur road that splits off from that.
 If the highway is a GeometryCollection or MultiLineString, then it's
 split into segments, and each one is checked for the angle. The
 closest one is what is returned.
+
+Sometimes the geometry of the feaure in OSM was imported from the same
+external dataset. At that point it's an exact match, so the distance,
+the slope, and the angle will all be 0.0.
 
 ## Tag Checking
 

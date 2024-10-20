@@ -21,10 +21,9 @@ CXXFLAGS = -std=c++11 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DBOOST_LOG_DYN
 BOOST_LIB=-lboost_program_options -lboost_log -lboost_log_setup -lboost_thread 
 LDFLAGS = $(BOOST_LIBS) -lpthread -lz -lexpat -lbz2
 
-all: fastclip
+all: 
 
 apidoc: force
 	cd docs && doxygen
 	cd tm_admin && $(MAKE) docs
 
-fastclip: fastclip.cc fastclip.hh

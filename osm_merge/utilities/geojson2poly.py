@@ -78,7 +78,7 @@ many of the bugs with names that are actually a reference number.
     # First line is the file name
     index = 1
     outfs.write(f"{args.infile}\n")
-    log.debug(f"There are {len(data["features"])} features")
+    # log.debug(f"There are {len(data["features"])} features")
     for poly in data["features"]:
         outfs.write(f"{index}\n")
         regions = poly["geometry"]["coordinates"]
@@ -110,7 +110,7 @@ many of the bugs with names that are actually a reference number.
             index += 1
 
     outfs.write("END\n")
-    outfs.close()
+    # log.info("Wrote f{outfile} ...")
     
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""

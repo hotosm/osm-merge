@@ -216,6 +216,7 @@ class MVUM(object):
                     props["seasonal"] = "yes"
 
             if geom is not None:
+                props["highway"] = "unclassified"
                 highways.append(Feature(geometry=geom, properties=props))
             # print(props)
 
