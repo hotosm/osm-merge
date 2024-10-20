@@ -77,6 +77,28 @@ the surface, and other access data like are ATVs allowed ?
 To support conflation, even OSM data needs to be chopped into smaller
 pieces. While osmium and osmfilter could so this, I've had problmes
 with the other tools when the task polygon is small. The
-osmhighways.py program also clips files. Since it's OSM data, we can't
-really use shapely, or geopandas, just osmium. It's a bit slow, being
-pure python.
+osmhighways.py program also clips files. Since it's in an OSM data
+format, we can't really use shapely, or geopandas, just osmium. It's a
+bit slow, being pure python. If it's a continuing problem I'll
+refactor it into C++.
+
+There is a question as to whether it's better to clip a highway at the
+bundary, or include ther part of it's geometry tha's outside the
+boundary. I'm experimenting with both, and seeing how it effects
+conflation.
+
+# Options
+
+	-h, --help                     show this help message and exit
+	-v, --verbose                  verbose output
+	-i INFILE, --infile INFILE     Input data file
+	-o OUTFILE, --outfile OUTFILE  Output filename
+	-c CLIP, --clip CLIP           Clip data extract by polygon
+	-s SMALL, --small SMALL        Small dataset
+
+This program extracts all the highways from an OSM file, and correct as
+many of the bugs with names that are actually a reference number.
+
+    For Example:
+        osmhighways.py -v -i colorado-latest.osm.pbf -o co-highways.osm
+
