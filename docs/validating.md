@@ -55,7 +55,7 @@ screenshot shows the other layers under the conflated data and show as
 black lines. It's easy to see which layer it came from by toggling the
 layers on and off.
 
-[![Blank Sign](assets/validation/small-mvum-osm.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images//mvum-osm.png)
+[![Missed highways screenshot](assets/validation/small-mvum-osm.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images/mvum-osm.png)
 
 The conflation software can also produce a data file of highways in
 the MVUM dataset that aren't in OSM. Importing those is a different
@@ -71,7 +71,7 @@ on top of an OSM basemap. The MVUM highway is missing the middle
 segment. The conflation software sucessfully merges the tags from the
 external dataset to the complete OSM highway feature.
 
-[![Blank Sign](assets/validation/small-missingsegments.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images//missingsegments.png)
+[![Missing segments screenshot](assets/validation/small-missingsegments.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images/missingsegments.png)
 
 ## Reference Numbers Don't Match
 
@@ -80,7 +80,7 @@ it for the official reference number. Often the reference numbers in
 the basemap are truncated, so you may think there is a problem. The
 reference number in the MVUM dataset is the correct one.
 
-[![Blank Sign](assets/validation/badtopo2.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images//badtopo2.png)
+[![Bad Topo reference numbers](assets/validation/badtopo2.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images/badtopo2.png)
 
 The other issue with reference numbers is also related to them being
 truncated. Older versions of the external datasets are often missing
@@ -132,7 +132,7 @@ tags into the OSM feature, which currently is only *highway=track*. At
 some point it'd be good to go back through and fix the geometry, but
 for now we're just focused on improving the tags.
 
-[![Blank Sign](assets/validation/small-wayoff.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images//wayoff.png)
+[![Way off highways that matched](assets/validation/small-wayoff.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images/wayoff.png)
 
 When highways are traced from satellite imagery, sometimes they don't
 match the geometry in the external dataset. While too much differences
@@ -140,8 +140,7 @@ in geometry can lead to false positives, we don't want to only
 identify an exact match. There are steering paramaters on how much
 difference is acceptable.
 
-[![Blank Sign](assets/validation/small-geommatch.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images//geommatch.png)
-
+[![Poor geometry matched](assets/validation/small-geommatch.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images/geommatch.png)
 
 ## Splitting Forks
 
@@ -154,7 +153,7 @@ the highway continues on the wrong branch of the fork. This obviously
 gets flagged by the conflation process, but needs to be fixed
 manually.
 
-[![Blank Sign](assets/validation/small-splitfork.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images//splitfork.png)
+[![Split highway at fork](assets/validation/small-splitfork.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images/splitfork.png)
 
 I try to fix these as I come across them as I'm validating the
 conflation results. Since conflation is not fast, I have time between
