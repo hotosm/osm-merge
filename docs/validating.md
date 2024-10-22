@@ -5,17 +5,23 @@ OpenStreetMap. OSM discourages machine editing without human
 intervention. This software doesn't make any geometry changes, just
 tags. At it's core, conflation is just merging tags between datasets
 to avoid tedious cut & paste. But this still needs to be validated as
-bug in the datasets can sneak in.
+bugs and inconsistencies in the datasets can sneak in.
 
 [![Highways in QGIS](assets/validation/small-qgishighways.png){width=300 height=200}]()
 
 ## My Process
 
 I have the two datasets that I was conflating loaded as layers in
-JOSM, so I can check the original sources easily if needed. Since these
-are remote highways and trails, I have a USGS topographical
-basemap. Course that can also lead to confusion as sometimes the
-reference number in the basemap has been truncated.
+JOSM so I can check the original sources easily if needed. Since these
+are remote highways and trails, I use the USGS topographical
+basemap in JOSM. Course that can also lead to confusion as sometimes
+the reference number in the basemap has been truncated. When in doubt,
+I reference the latest dataset from the national forest service, which
+is the most correct. [That
+dataset](https://usfs.maps.arcgis.com/home/group.html?id=1c9d890b197c4b2f9d72604b77ea43cb#overview)
+is in
+[vtpk](https://usfs.maps.arcgis.com/home/group.html?id=1c9d890b197c4b2f9d72604b77ea43cb#overview)
+format, so doesn't work in JOSM, so I run it in QGIS.
 
 ### Debug Tags
 
@@ -50,6 +56,12 @@ black lines. It's easy to see which layer it came from by toggling the
 layers on and off.
 
 [![Blank Sign](assets/validation/small-mvum-osm.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/mvum-osm.png)
+
+The conflation software can also produce a data file of highways in
+the MVUM dataset that aren't in OSM. Importing those is a different
+process, so not discussed here. The conflation software can also
+produce a data file of all the trails in OSM that are not in any
+official sources.
 
 ## Missing Segments
 
@@ -122,7 +134,7 @@ for now we're just focused on improving the tags.
 
 [![Blank Sign](assets/validation/small-wayoff.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/wayoff.png)
 
-When highways are traced from satellite imnagery, sometimes they don't
+When highways are traced from satellite imagery, sometimes they don't
 match the geometry in the external dataset. While too much differences
 in geometry can lead to false positives, we don't want to only
 identify an exact match. There are steering paramaters on how much
@@ -137,10 +149,10 @@ While this project is focused on conflating metadata, and not making
 geometry changes, sometimes when validating the conflation results I
 come across problems. Usually in OSM these are just tagged with
 *highway=track*, and were obviously traced from satellite
-imagery. Unfortunately without another dataset to reference, at a
-fork, sometimes the highway continues on the wrong branch of the
-fork. This obviously gets flagged by the conflation process, but needs
-to be fixed manually.
+imagery. Unfortunately without another dataset to reference, sometimes
+the highway continues on the wrong branch of the fork. This obviously
+gets flagged by the conflation process, but needs to be fixed
+manually.
 
 [![Blank Sign](assets/validation/small-splitfork.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/splitfork.png)
 
