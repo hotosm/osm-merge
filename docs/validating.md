@@ -41,14 +41,15 @@ validating conflation results.
 
 ## Missed Highway
 
-Sometimes you see a highway in the basemap that is not in the
+Sometimes you see an external trail or highway that is not in the
 conflated data. This is because that highway is not currently in OSM,
-so we ignore it since we're focused on existing features.
+so we ignore it since we're focused on existing features. When you
+have the external dataset and OSM loaded in JOSM as layers, this
+screenshot shows the other layers under the conflated data and show as
+black lines. It's easy to see which layer it came from by toggling the
+layers on and off.
 
-![Blank Sign](assets/missedroad.png){width=300 height=200}
-
-## 
-![Blank Sign](assets/badref.png){width=300 height=200}
+[![Blank Sign](assets/validation/small-mvum-osm.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/mvum-osm.png)
 
 ## Missing Segments
 
@@ -121,23 +122,37 @@ for now we're just focused on improving the tags.
 
 [![Blank Sign](assets/validation/small-wayoff.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/wayoff.png)
 
+When highways are traced from satellite imnagery, sometimes they don't
+match the geometry in the external dataset. While too much differences
+in geometry can lead to false positives, we don't want to only
+identify an exact match. There are steering paramaters on how much
+difference is acceptable.
+
+[![Blank Sign](assets/validation/small-geommatch.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/geommatch.png)
+
+
 ## Splitting Forks
 
-While this project is focused on conflating metadata, and not mnaking
-geometry changes, sometimes when validating the conflation results you
+While this project is focused on conflating metadata, and not making
+geometry changes, sometimes when validating the conflation results I
 come across problems. Usually in OSM these are just tagged with
 *highway=track*, and were obviously traced from satellite
 imagery. Unfortunately without another dataset to reference, at a
-fork, sometimes the highway continutes on the wrong branch of the
-fork. This obviously gets flagged by the conflation process.
+fork, sometimes the highway continues on the wrong branch of the
+fork. This obviously gets flagged by the conflation process, but needs
+to be fixed manually.
 
 [![Blank Sign](assets/validation/small-splitfork.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/splitfork.png)
 
-I try to fix these as I come across them as non-conflation task. I fix
-these in OSM as I'm waiting for other tasks to finish. Since I can
-regenerate all the OSM data extracts for conflation, this will improve
-the results in the future. If I add the tags too, when conflating
-it'll be a perfect match, so ignored.
+I try to fix these as I come across them as I'm validating the
+conflation results. Since conflation is not fast, I have time between
+conflation runs as I improve the algorythm. Fixing these takes a few
+minutes per feature, and you have to be careful you don't break
+navigation. I work on these in JOSM while waiting for other tasks to
+finish. Since I can regenerate all the OSM data extracts for
+conflation, this will improve the results in the future. If I add the
+tags too, when conflating later it'll be a perfect match, so won't be
+in the results.
 
 To fix this I select the node at the fork, and split the highway that
 is wrong. Then I have to manually cut & paste the tags to the correct

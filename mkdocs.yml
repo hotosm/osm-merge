@@ -76,6 +76,7 @@ nav:
       - ODK: odkconflation.md
       - Highways: highways.md
       - Calculations: calculations.md
+      - Validating: validating.md
   - Utilities:
       - OSM Merge: osm-merge.md
       - Utilities: utilities.md
