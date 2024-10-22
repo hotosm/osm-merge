@@ -66,7 +66,7 @@ project then supports conflating that field collected data with
 current OpenStreetMap. Otherwise this is a time-consuming process to
 do manually.
 
-![Women field mapping](assets/small-zanzibar.jpg){width=300 height=200}
+![Women field mapping](https://github.com/hotosm/osm-merge/blob/main/docs/assets/small-zanzibar.jpg){width=300 height=200}
 
 The other goal is focused on emergency and recreational access in
 remote areas. This is using the Motor Vehicle Use Map (MVUM) datasets
