@@ -66,7 +66,7 @@ project then supports conflating that field collected data with
 current OpenStreetMap. Otherwise this is a time-consuming process to
 do manually.
 
-![Women field mapping](https://github.com/hotosm/osm-merge/blob/main/docs/assets/small-zanzibar.jpg){width=300 height=200}
+![Women field mapping](https://github.com/hotosm/osm-merge/blob/main/docs/assets/small-zanzibar.jpg)
 
 The other goal is focused on emergency and recreational access in
 remote areas. This is using the Motor Vehicle Use Map (MVUM) datasets
@@ -77,8 +77,7 @@ dataset, or the only details are *highway=track*. All of these have a
 US forest service reference number and name. Adding those makes it
 much easier to communicate a location.
 
-![Way up Rollins Pass](assets/small-rollinspass.png){width=300 height=200}
-
+![Way up Rollins Pass](https://github.com/hotosm/osm-merge/blob/main/docs/assets/small-rollinspass.png)
 
 This project uses a huge amount of data (and disk space) if you start
 from the original nation wide datasets, which are too large to
@@ -103,7 +102,7 @@ development and debugging. I've been processing large amounts of data
 to track down all the obscure bugs in the original datasets, or the
 conflation process.
 
-![MVUM Signs](assets/20210913_113539.jpg){width=300 height=200}
+![MVUM Signs](https://github.com/hotosm/osm-merge/blob/main/docs/assets/20210913_113539.jpg)
 
 ### The Data
 
@@ -118,5 +117,5 @@ have been conflated yet, but the data is there for others that may
 wish to try. The processed map data is available [from
 here](http://5.78.72.214/fieldmapper/).
 
-![Skipped highway segments](assets/skippedsegments.png){width=300 height=200}
+![Skipped highway segments](https://github.com/hotosm/osm-merge/blob/main/docs/assets/skippedsegments.png)
 
