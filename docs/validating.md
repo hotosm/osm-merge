@@ -7,7 +7,7 @@ tags. At it's core, conflation is just merging tags between datasets
 to avoid tedious cut & paste. But this still needs to be validated as
 bugs and inconsistencies in the datasets can sneak in.
 
-[![Highways in QGIS](assets/validation/small-qgishighways.png){width=300 height=200}]()
+[![Highways in QGIS](assets/validation/small-qgishighways.png){width=300 height=200}](https://github.com/hotosm/osm-merge/blob/main/docs/assets/validation/qgishighways.png)
 
 ## My Process
 
