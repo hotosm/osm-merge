@@ -16,7 +16,7 @@ updating existing features with a focus on improved
 navigation. Importing new features from these datasets uses a
 different process, so it's better to not mix the two.
 
-![Blank Sign](assets/video.png){width=300 height=200}
+![Video Screenshot](assets/video.png){width=300 height=200}
 
 While there are details in the the datasets that would be useful, the
 initial set is the name, the reference number, and the vehicle class
@@ -183,7 +183,7 @@ The names and reference number in OSM now have a wide variety of
 tagging](https://wiki.openstreetmap.org/wiki/United_States_roads_tagging#National_Forest_Road_System)
 when it comes to names. *"Forest Service Road 123.4A"* is not a name,
 it is a reference number. Same for *"County Road 43"*.  The
-[fixname.py](https://github.com/hotosm/osm-merge/blob/tagging/utilities/fixnames.py)
+[fixname.py](https://github.com/hotosm/osm-merge/blob/tagging/utilities/osmhighways.py)
 utility scan the OSM extract and when it see incorrect tagging,
 correct it to the OSM standard. Since the external datasets already
 follow the same guidelines, this increases the chance of a good match
@@ -202,7 +202,6 @@ detail, so included when updating the reference numbers.
 
 A minor note, the USGS Topographical basemap for JOSM also sometimes
 lacks the *.1* suffix, so can't be used to validate it.
-
 
 #### TIGER Tag Deletion
 
@@ -421,7 +420,8 @@ between the MVUM data, the topographical data, and OSM data.
 * smoothness=good
 * surface=gravel
 
-Note that the name is spelled wrong.
+Note that the name is spelled wrong. Here is a document on how to
+[validating in JOSM](validating.md) for much more detail.
 
 #### Splitting Highways
 
