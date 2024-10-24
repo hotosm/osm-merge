@@ -25,7 +25,7 @@ states="Utah Colorado Wyoming"
 
 # This is a more complete list of national forests and parks, but aren't
 # included due to lack of disk space. Someday...
-source states.txt
+source states.sh
 
 # Top level for boundaries, allow to set via env variable
 if test x"${BOUNDARIES}" = x; then
@@ -85,6 +85,42 @@ declare -gA datasets
 datasets["Utah"]="${utah}"
 datasets["Colorado"]="${colorado}"
 datasets["Wyoming"]="${wyoming}"
+datasets["Nevada"]="${nevada}"
+datasets["Arizona"]="${arizona}"
+datasets["Idaho"]="${idaho}"
+datasets["Oregon"]="${oregon}"
+datasets["Washington"]="${washington}"
+datasets["California"]="${california}"
+datasets["Montana"]="${montana}"
+datasets["New_Mexico"]="${newmexico}"
+datasets["North_Dakota"]="${northdakota}"
+datasets["South_Dakota"]="${southdakota}"
+datasets["Tennesse"]="${tennessee}"
+datasets["North_Carolina"]="${northcarolina}"
+datasets["South_Carolina"]="${southcarolina}"
+datasets["Wisconson"]="${wisconson}"
+datasets["Puerto_Rico"]="${puertorico}"
+datasets["Alaska"]="${alaska}"
+datasets["Arkansas"]="${arkansas}"
+datasets["Georgia"]="${georgia}"
+datasets["Illinois"]="${illinois}"
+datasets["Indiana"]="${indiana}"
+datasets["Kentucky"]="${kentucky}"
+datasets["Louisiana"]="${louisiana}"
+datasets["Maine"]="${Maine}"
+datasets["Michigan"]="${michigan}"
+datasets["Minnesota"]="${minnesota}"
+datasets["Missouri"]="${missouri}"
+datasets["Nebraska"]="${nebraska}"
+datasets["New_Hampshire"]="${newhampshire}"
+datasets["New_York"]="${newyork}"
+datasets["Ohio"]="${ohio}"
+datasets["Oklahoma"]="${oklahoma}"
+datasets["Pennsylvaniah"]="${pennsylvania}"
+datasets["Vermont"]="${vermont}"
+datasets["Virginia"]="${virginia}"
+datasets["Virginia"]="${virginia}"
+
 
 # declare -p ${datasets}
 
@@ -266,6 +302,9 @@ split_aoi() {
     dataset="${2:-all}"
     tmmax=70000
     for state in ${region}; do
+	if test ! -e ${state}; then
+	    mkdir ${state}
+	fi
 	echo "Splitting ${state} into squares with ${tmmax} per side"
 	for land in ${datasets["${state}"]}; do
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
@@ -279,6 +318,9 @@ split_aoi() {
 		aoi="${boundaries}/NationalParks/${land}.geojson"
 	    else
 		aoi="${boundaries}/NationalForests/${land}.geojson"
+	    fi
+	    if test ! -e ${dir}; then
+		mkdir ${dir}
 	    fi
 	    # This generates a grid of roughly 5000sq km tasks,
 	    # which is the maximum TM supports. Some areas are
@@ -521,12 +563,12 @@ make_mvum_extract() {
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
 	       continue
 	    fi
-	    tasks=$(get_tasks ${state} ${land})
+	    # tasks=$(get_tasks ${state} ${land})
 	    # echo $tasks
-	    for i in ${tasks}; do
-		subtasks=$(get_subtasks ${state} ${land} ${i})
-		echo $subtasks
-	    done
+	    # for i in ${tasks}; do
+	    # 	subtasks=$(get_subtasks ${state} ${land} ${i})
+	    # 	echo $subtasks
+	    # done
 
 	    if test x"${dataset}" != x"all" -a x"${dataset}" != x"${land}"; then
 	       continue
@@ -571,7 +613,7 @@ make_osm_extract() {
     # These are mostly useful for debugging, by default everything is processed
     region="${1:-${states}}"
     dataset="${2:-all}"
-    baseset="no" # this makes the base dataset for the forest or park
+    baseset="yes" # this makes the base dataset for the forest or park
 
     # Clipping is not done on state boundaries since National Forests often
     # cross state lines.
@@ -703,11 +745,11 @@ while test $# -gt 0; do
 	    ;;
 	-e|--extract)
 	    # This may run for a long time.
-	    # make_osm_extract ${region} ${dataset} ${basedata}
+	    make_osm_extract ${region} ${dataset} ${basedata}
 	    # make_sub_osm ${region} ${dataset} ${basedata}
 	    make_mvum_extract ${region} ${dataset} ${basedata}
 	    # make_sub_mvum ${region} ${dataset}
-	    # make_nps_extract ${region} ${dataset} ${basedata}
+	    make_nps_extract ${region} ${dataset} ${basedata}
 	    # make_sub_nps ${region} ${dataset} ${basedata}
 	    # make_topo_extract ${region} ${dataset} ${basedata}
 	    # make_sub_topo ${region} ${dataset} ${basedata}
