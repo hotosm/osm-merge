@@ -115,9 +115,9 @@ what is the building used for ? What is it made of ? Does it have AC
 or DC power ? Water available ? All of these details improve the map
 to make it more useful to others.
 
-### Field Mapping Camping Manager
+### Field Mapping Tasking Manager
 
-The [Field Mapping Camping Manager](fmtm.hotosm.org) (FMTM) is a
+The [Field Mapping Tasking Manager](fmtm.hotosm.org) (FMTM) is a
 project to oprganize large scale data collection using ODK Collect and
 ODK Central. It uses the osm-fieldwork project for much of the backend
 processing of the ODK data,  but is designed for large scale field
