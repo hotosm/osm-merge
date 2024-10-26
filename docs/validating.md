@@ -73,6 +73,11 @@ external dataset to the complete OSM highway feature.
 
 [![Missing segments screenshot](assets/validation/small-missingsegments.png){width=300 height=200}](http://5.78.72.214/fieldmapper/images/missingsegments.png)
 
+Currently any features that are an exact match between the external
+dataset and OSM are not in the conflated output to reduce the data
+that needs to be validated. If you have OSM loaded into a layer in
+JOSM, the matched segments will be black lines.
+
 ## Reference Numbers Don't Match
 
 If you are using the USGS topographical basemap, you can't depend on
