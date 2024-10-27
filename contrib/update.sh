@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2024 Humanitarian OpenstreetMap Team
+# Copyright (C) 2024 OpenSTreetMap US
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,8 @@
 # would have probably written this in python, but since most of this
 # is executing external command line utilities, Bourne shell works better.
 
-states="Utah Colorado Wyoming"
+states="Utah Colorado Wyoming \
+Louisiana New_Mexico South_Dakota Arkansaw Oklahoma New_York Virginia Michigan Maine Minnesota .git Oregon North_Carolina Illinois North_Dakota Utah Wyoming Arizona West_Virginia Nebraska California Tennesse Nevada Idaho Washington Vermont Puerto_Rico Indiana Kentucky Pennsylvania Alaska Colorado Georgia Montana New_Hampshire Ohio South_Carolina Missouri"
 
 # This is a more complete list of national forests and parks, but aren't
 # included due to lack of disk space. Someday...
@@ -73,18 +74,20 @@ if test x"${SOURCEDATA}" = x; then
 else
     sources="${SOURCEDATA}"
 fi
-osmdata="${sources}/wy-co-ut.osm.pbf"
+# osmdata="${sources}/wy-co-ut.osm.pbf"
+osmdata="${sources}/us-highways.pbf"
 mvumtrails="${sources}/Trail_MVUM-out.geojson"
 mvumhighways="${sources}/Road_MVUM-out.geojson"
 npstrails="${sources}/National_Park_Service_Trails-out.geojson"
 topotrails="${sources}/USGS_Topo_Trails-out.geojson"
-usgstrails=
+usfstrails="${sources}/USFS_Trails-out.geojson"
 
 # FIXME: figure why this isn't accessible in a bash function
 declare -gA datasets
 datasets["Utah"]="${utah}"
 datasets["Colorado"]="${colorado}"
 datasets["Wyoming"]="${wyoming}"
+
 datasets["Nevada"]="${nevada}"
 datasets["Arizona"]="${arizona}"
 datasets["Idaho"]="${idaho}"
@@ -101,7 +104,7 @@ datasets["South_Carolina"]="${southcarolina}"
 datasets["Wisconson"]="${wisconson}"
 datasets["Puerto_Rico"]="${puertorico}"
 datasets["Alaska"]="${alaska}"
-datasets["Arkansas"]="${arkansas}"
+datasets["Arkansaw"]="${arkansaw}"
 datasets["Georgia"]="${georgia}"
 datasets["Illinois"]="${illinois}"
 datasets["Indiana"]="${indiana}"
@@ -116,13 +119,10 @@ datasets["New_Hampshire"]="${newhampshire}"
 datasets["New_York"]="${newyork}"
 datasets["Ohio"]="${ohio}"
 datasets["Oklahoma"]="${oklahoma}"
-datasets["Pennsylvaniah"]="${pennsylvania}"
+datasets["Pennsylvania"]="${pennsylvania}"
 datasets["Vermont"]="${vermont}"
+datasets["West_Virginia"]="${westvirginia}"
 datasets["Virginia"]="${virginia}"
-datasets["Virginia"]="${virginia}"
-
-
-# declare -p ${datasets}
 
 # Debugging help
 dryrun="" # echo
@@ -583,7 +583,7 @@ make_mvum_extract() {
 	    if test ! -e ${outdata}; then
 	    	# rm -f ${outdata}
 		short=$(get_short_name ${land})
-		echo "    Making ${land}_MVUM_Highways.geojson"
+		echo "    Making ${short}_MVUM_Highways.geojson ..."
 		${ogropts} ${boundaries}/${clip}/${land}.geojson -nlt LINESTRING ${state}/${land}_Tasks/${short}_MVUM_Highways.geojson ${mvumhighways}
 		# ${tmsplitter} -v -complete -e ${boundaries}/${clip}/${land}.geojson -o ${state}/${land}_Tasks/${land}_MVUM_Highways.geojson -i ${mvumhighways}
 
@@ -757,18 +757,13 @@ while test $# -gt 0; do
 	    ;;
 	-a|--all)
 	    # The kitchen sink, do everything
-	    split_aoi
-	    make_tasks
-	    make_sub_tasks
-	    make_osm_extract ${basesets} yes
-	    make_sub_osm ${basesets} yes
-	    make_mvum_extract ${basesets} yes
-	    make_sub_mvum
-	    make_nps_extract
-	    make_sub_nps
-	    make_topo_extract
-	    make_sub_topo
-	    break
+	    split_aoi ${region} ${dataset}
+	    make_tasks ${region} ${dataset}
+	    make_sub_tasks ${region} ${dataset}
+	    make_osm_extract ${region} ${dataset} ${basedata}
+	    make_mvum_extract ${region} ${dataset} ${basedata}
+	    make_nps_extract ${region} ${dataset} ${basedata}
+	    exit
 	    ;;
 	-w)
 	    # FIXME: this is just for testing
