@@ -277,6 +277,81 @@ class GeoSupport(object):
 
         return True
 
+    # async def initInputDB(self,
+    #                     config: str = None,
+    #                     dburi: str = None,
+    #                     ) -> bool:
+    #     """
+    #     When async, we can't initialize the async database connection,
+    #     so it has to be done as an extrat step.
+
+    #     Args:
+    #         dburi (str, optional): The database URI
+    #         config (str, optional): The config file from the osm-rawdata project
+    #     Returns:
+    #         (bool): Whether it initialiized
+    #     """
+    #     db = GeoSupport(dburi, config)
+    #     await db.initialize()
+    #     self.postgres.append(db)
+
+    #     return True
+
+    # async def initOutputDB(self,
+    #                     dburi: str = None,
+    #                     ):
+    #     """
+    #     When async, we can't initialize the async database connection,
+    #     so it has to be done as an extrat step.
+
+    #     Args:
+    #         dburi (str, optional): The database URI
+    #         config (str, optional): The config file from the osm-rawdata project
+    #     """
+    #     if dburi:
+    #         self.dburi = dburi
+    #         await self.createDBThreads(dburi, config)
+    #     elif self.dburi:
+    #         await self.createDBThreads(self.dburi, config)
+
+    # async def createDBThreads(self,
+    #                     uri: str = None,
+    #                     config: str = None,
+    #                     execs: int = cores,
+    #                     ) -> bool:
+    #     """
+    #     Create threads for writting to the primary datatbase to avoid
+    #     problems with corrupting data.
+
+    #     Args:
+    #         uri (str): URI for the primary database
+    #         config (str, optional): The config file from the osm-rawdata project
+    #         threads (int, optional): The number of threads to create
+
+    #     Returns:
+    #         (bool): Whether the threads were created sucessfully
+    #     """
+    #     # Each thread needs it's own connection to postgres to avoid problems
+    #     # when inserting or updating the primary database.
+    #     if uri:
+    #         for thread in range(0, execs + 1):
+    #             db = GeoSupport(uri)
+    #             await db.initialize(uri, config)
+    #             if not db:
+    #                 return False
+    #             self.postgres.append(db)
+    #         if self.boundary:
+    #             if 'features' in self.boundary:
+    #                 poly = self.boundary["features"][0]["geometry"]
+    #             else:
+    #                 poly = shape(self.boundary['geometry'])
+
+    #             # FIXME: we only need to clip once to create the view, this is not
+    #             # confirmed yet.
+    #             await db.clipDB(poly, self.postgres[0])
+
+    #         return True
+
 async def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(

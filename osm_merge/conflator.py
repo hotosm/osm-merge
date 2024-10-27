@@ -32,7 +32,6 @@ from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
 from osm_fieldwork.convert import escape
 from osm_fieldwork.parsers import ODKParsers
-#from osm_merge.geosupport import GeoSupport
 import pyproj
 import asyncio
 from codetiming import Timer
@@ -177,45 +176,71 @@ def conflateThread(primary: list,
                 log.error(f"getDistance() just had a weird error")
                 log.error(f"ENTRY: {entry["properties"]}")
                 log.error(f"EXISTING: {existing["properties"]}")
-                breakpoint()
+                # breakpoint()
                 continue
 
             # log.debug(f"ENTRY: {dist}: {entry["properties"]}")
             # log.debug(f"EXISTING: {existing["properties"]}")
             if dist <= threshold:
-                if "name" in entry["properties"]:
-                    if entry["properties"]["name"] == "Continental Divide Road":
-                        breakpoint()
-                # slope, angle = cutils.getSlope(entry, existing)
                 angle = 0.0
-                if "name" in entry["properties"]["name"]:
-                    if entry["properties"]["name"] == "Doane Peak Spur 1A Road":
-                        breakpoint()
                 try:
                     slope, angle = cutils.getSlope(entry, existing)
                 except:
                     log.error(f"getSlope() just had a weird error")
                     log.error(f"ENTRY: {entry["properties"]}")
                     log.error(f"EXISTING: {existing["properties"]}")
-                    breakpoint()
-                    slope, angle = cutils.getSlope(entry, existing)
-                    continue
+                    # breakpoint()
+                    # slope, angle = cutils.getSlope(entry, existing)
+                    break
                 # log.debug(f"DIST: {dist}, ANGLE: {angle}, SLOPE: {slope}")
                 # log.debug(f"PRIMARY: {entry["properties"]}")
                 # log.debug(f"SECONDARY: {existing["properties"]}")
                 hits, tags = cutils.checkTags(entry, existing)
                 # log.debug(f"HITS2: {hits}")
-                angle_threshold = 4.0
-                slope_threshold = 3.0
+                angle_threshold = 20.0
+                slope_threshold = 4.0
+                name1 = None
+                name2 = None
+                if "name" in existing["properties"]:
+                    name2 = existing["properties"]["name"]
+                if "name" in entry["properties"]:
+                    name1 = entry["properties"]["name"]
+                log.debug(f"DIST: {dist}, SLOPE: {slope:.3f}, Angle: {angle:.3f} - {name1} == {name2}")
+                # if name1 == "West Fork Road":
+                # breakpoint()
                 if hits == 0 and (abs(angle) > angle_threshold or abs(slope) > slope_threshold):
                     continue
-                if hits == 1 and abs(angle) < 20 and abs(slope) < 1:
-                    print(f"Name matched, not geom")
+                if hits == 1 and abs(angle) < 15 and abs(slope) < 1:
+                    log.debug(f"Name matched, not geom")
+                    log.error(f"ENTRY: {entry["properties"]}")
+                    log.error(f"EXISTING: {existing["properties"]["id"]}")
                     # FIXME parallel roads
-                    continue
+                    break
+                if hits == 2 and abs(angle) < angle_threshold and abs(slope) < slope_threshold:
+                    if tags["ratio"] == 100:
+                        log.debug(f"Name matched and ref matched")
+                        log.error(f"ENTRY: {entry["properties"]}")
+                        log.error(f"EXISTING: {existing["properties"]["id"]}")
+                        break
                 if hits == 0 and angle == 0.0 and slope == 0.0 and dist == 0.0:
                     print(f"Geometry matched, not name")
+                    log.error(f"ENTRY: {entry["properties"]}")
+                    log.error(f"EXISTING: {existing["properties"]["id"]}")
                     hits += 1
+                    break
+
+                if hits == 3:
+                    if entry['properties'] != existing['properties']:
+                        # Only add the feature to the output if there are
+                        # differences in the tags. If they are identical,
+                        # ignore it as no changes need to be made.
+                        data.append(Feature(geometry=geom, properties=entry["properties"]))
+                        log.error(f"ENTRY: {entry["properties"]}")
+                        log.error(f"EXISTING: {existing["properties"]["id"]}")
+                        break
+                    else:
+                        log.debug(f"Perfect match! {entry['properties']}")
+                        break
 
                 maybe.append({"hits": hits, "dist": dist, "angle": angle, "slope": slope, "odk": entry, "osm": existing})
                 tags["hits"] = str(hits)
@@ -230,18 +255,20 @@ def conflateThread(primary: list,
                 # maybe.append({"hits": hits, "dist": dist, "slope": slope, "angle": angle, "hits": hits, "odk": entry, "osm": existing})
                 # don't keep checking every highway, although testing seems
                 # to show 99% only have one distance match within range.
-                if hits == 3:
-                    # log.debug(f"ENTRY: {entry["properties"]}")
-                    # log.debug(f"Perfect match! {entry['properties']}")
-                    tags = dict()
-                    break
                 if len(maybe) >= 5:
+                    # FIXME: it turns out sometimes the other nearby highways are
+                    # segments of the same highway, but the tags only get added
+                    # to the closest segment.
                     log.debug(f"Have enough matches.")
                     break
 
         hits = 0
         threshold = 2
         if len(maybe) > 0:
+            # FIXME: Sometimes all the maybes are segment of the same
+            # highways. Right now only one gets the tags merged, this
+            # should be fixed so all nearby segmernts get tagged.
+
             # cache the refs to use in the OSM XML output file
             refs = list()
             odk = dict()
@@ -291,11 +318,12 @@ def conflateThread(primary: list,
             # entry["properties"]["slope"] = slope
             # entry["properties"]["dist"] = dist
             # log.debug(f"FOO({dist}): {entry}")
-            # data.append(entry)
+            newdata.append(entry)
 
         # timer.stop()
 
-    return data  #, newdata
+    log.debug(f"NEW: {len(newdata)}")
+    return [data, newdata]
 
 class Conflator(object):
     def __init__(self,
@@ -387,6 +415,8 @@ class Conflator(object):
                 log.debug(f"The geometries are identical!")
                 return 0.0, 0.0
 
+            if (x2 - x1) == 0.0:
+                return 0.0, 0.0
             slope2 = (y2 - y1) / (x2 - x1)
             # timer.stop()
             slope = slope1 - slope2
@@ -401,7 +431,6 @@ class Conflator(object):
                 name1 = newdata["properties"]["name"]
             if "name" in olddata["properties"]:
                 name2 = olddata["properties"]["name"]
-            print(f"SLOPE: {slope:.3f}, Angle: {angle:.3f} - {name1} == {name2}")
             try:
                 if math.isnan(slope):
                     slope = 0.0
@@ -692,82 +721,7 @@ class Conflator(object):
 
         return alldata
 
-    async def initInputDB(self,
-                        config: str = None,
-                        dburi: str = None,
-                        ) -> bool:
-        """
-        When async, we can't initialize the async database connection,
-        so it has to be done as an extrat step.
-
-        Args:
-            dburi (str, optional): The database URI
-            config (str, optional): The config file from the osm-rawdata project
-        Returns:
-            (bool): Whether it initialiized
-        """
-        db = GeoSupport(dburi, config)
-        await db.initialize()
-        self.postgres.append(db)
-
-        return True
-
-    async def initOutputDB(self,
-                        dburi: str = None,
-                        ):
-        """
-        When async, we can't initialize the async database connection,
-        so it has to be done as an extrat step.
-
-        Args:
-            dburi (str, optional): The database URI
-            config (str, optional): The config file from the osm-rawdata project
-        """
-        if dburi:
-            self.dburi = dburi
-            await self.createDBThreads(dburi, config)
-        elif self.dburi:
-            await self.createDBThreads(self.dburi, config)
-
-    async def createDBThreads(self,
-                        uri: str = None,
-                        config: str = None,
-                        execs: int = cores,
-                        ) -> bool:
-        """
-        Create threads for writting to the primary datatbase to avoid
-        problems with corrupting data.
-
-        Args:
-            uri (str): URI for the primary database
-            config (str, optional): The config file from the osm-rawdata project
-            threads (int, optional): The number of threads to create
-
-        Returns:
-            (bool): Whether the threads were created sucessfully
-        """
-        # Each thread needs it's own connection to postgres to avoid problems
-        # when inserting or updating the primary database.
-        if uri:
-            for thread in range(0, execs + 1):
-                db = GeoSupport(uri)
-                await db.initialize(uri, config)
-                if not db:
-                    return False
-                self.postgres.append(db)
-            if self.boundary:
-                if 'features' in self.boundary:
-                    poly = self.boundary["features"][0]["geometry"]
-                else:
-                    poly = shape(self.boundary['geometry'])
-
-                # FIXME: we only need to clip once to create the view, this is not
-                # confirmed yet.
-                await db.clipDB(poly, self.postgres[0])
-
-            return True
-
-    async def conflateData(self,
+    def conflateData(self,
                     odkspec: str,
                     osmspec: str,
                     threshold: float = 3.0,
@@ -791,17 +745,17 @@ class Conflator(object):
         osmdata = list()
 
         result = list()
-        if odkspec[:3].lower() == "pg:":
-            db = GeoSupport(odkspec[3:])
-            result = await db.queryDB()
-        else:
-            odkdata = self.parseFile(odkspec)
+        # if odkspec[:3].lower() == "pg:":
+        #     db = GeoSupport(odkspec[3:])
+        #     result = await db.queryDB()
+        # else:
+        odkdata = self.parseFile(odkspec)
 
-        if osmspec[:3].lower() == "pg:":
-            db = GeoSupport(osmspec[3:])
-            result = await db.queryDB()
-        else:
-            osmdata = self.parseFile(osmspec)
+        # if osmspec[:3].lower() == "pg:":
+        #     db = GeoSupport(osmspec[3:])
+        #     result = await db.queryDB()
+        # else:
+        osmdata = self.parseFile(osmspec)
 
         entries = len(odkdata)
         chunk = round(entries / cores)
@@ -1078,7 +1032,7 @@ class Conflator(object):
 
             return Feature(geometry=geom, properties=props)
 
-async def main():
+def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
         prog="conflator",
@@ -1146,26 +1100,30 @@ osm-rawdata project on pypi.org or https://github.com/hotosm/osm-rawdata.
         toplevel = Path(args.source)
 
     conflate = Conflator(args.secondary, args.boundary)
-    if args.secondary[:3].lower() == "pg:":
-        await conflate.initInputDB(args.config, args.secondary[3:])
+    # if args.secondary[:3].lower() == "pg:":
+    #     await conflate.initInputDB(args.config, args.secondary[3:])
 
-    if args.primary[:3].lower() == "pg:":
-        await conflate.initInputDB(args.config, args.secondary[3:])
+    # if args.primary[:3].lower() == "pg:":
+    #     await conflate.initInputDB(args.config, args.secondary[3:])
 
-    data = await conflate.conflateData(args.primary, args.secondary, float(args.threshold), args.informal)
+    data = conflate.conflateData(args.primary, args.secondary, float(args.threshold), args.informal)
 
     # path = Path(args.outfile)
-    jsonout = args.outfile.replace(".geojson", "-out.geojson")
     osmout  = args.outfile.replace(".geojson", "-out.osm")
 
-    conflate.writeOSM(data, osmout)
-    conflate.writeGeoJson(data, jsonout)
-
+    conflate.writeOSM(data[0], osmout)
     log.info(f"Wrote {osmout}")
+
+    jsonout = args.outfile.replace(".geojson", "-out.geojson")
+    conflate.writeGeoJson(data[0], jsonout)
     log.info(f"Wrote {jsonout}")
+
+    jsonout = args.outfile.replace(".geojson", "-new.geojson")
+    conflate.writeGeoJson(data[1], jsonout)
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
+    main()
+    #loop = asyncio.new_event_loop()
+    #asyncio.set_event_loop(loop)
+    #loop.run_until_complete(main())
