@@ -82,7 +82,7 @@ many of the bugs with names that are actually a reference number.
     for poly in data["features"]:
         outfs.write(f"{index}\n")
         regions = poly["geometry"]["coordinates"]
-        log.debug(f"There is {len(regions)} coordinates {poly["geometry"]["type"]}")
+        # log.debug(f"There is {len(regions)} coordinates {poly["geometry"]["type"]}")
         counter = 0
         if poly["geometry"]["type"] == "MultiPolygon":
             # It's a MultiPolygon if it has inners. The first
