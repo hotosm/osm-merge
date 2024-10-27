@@ -17,24 +17,24 @@ montana="Glacier_National_Park \
        Kootenai_National_Forest \
        Lolo_National_Forest"
 
-oregon="SiuslSiuslaw_National_Forest \
+oregon="Siuslaw_National_Forest \
 	Willamette_National_Forest \
 	Deschutes_National_Forest \
-	Fremont-Winema_National_Forest \
+	Fremont_Winema_National_Forest \
 	Malheur_National_Forest \
 	Siuslaw_National_Forest \
 	Wallowa-Whitman_National_Forest \
-	Rogue_River-Siskiyou_National_Forests \
+	Rogue_River_Siskiyou_National_Forests \
 	Crater_Lake_National_Park"
 
 california="Channel_Islands_National_Park\_
 	Death_Valley_National_Park_\
 	Joshua_Tree_National_Park_\
 	Kings_Canyon_National_Park_\
-	Lassen_Volcanic_National_Park_\
-	Pinnacles_National_Park_\
-	Redwood_National_Park_\_
-	Sequoia_National_Park_\
+	Lassen_Volcanic_National_Park \
+	Pinnacles_National_Park \
+	Redwood_National_Park \
+	Sequoia_National_Park \
 	Yosemite_National_Park \
 	Angeles_National_Forest \
 	Cleveland_National_Forest \
@@ -102,7 +102,7 @@ alaska="Chugach_National_Forest \
 Tongass_National_Forest"
 
 arkansaw="Ouachita_National_Forest \
-Ozark-St._Francis_National_Forest"
+Ozark_St_Francis_National_Forest"
 
 georgia="Chattahoochee-Oconee_National_Forests"
 
