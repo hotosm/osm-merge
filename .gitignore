@@ -19,6 +19,7 @@ docs/*.png
 *.html
 *.mbtiles
 *.sqlitedb
+*.log
 
 # Prerequisites
 *.d
@@ -65,3 +66,13 @@ dist
 # Docs
 site
 .cache
+
+# Autotools
+Makefile
+fastclip/autom4te.cache
+fastclip/.deps
+fastclip/Makefile
+config.log
+config.status
+.gdbinit
+fastclip/fastclip
