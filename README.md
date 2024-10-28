@@ -30,7 +30,7 @@ There is also access information in the datasets that is useful. This
 includes access for vehicle types, horses, public/private, etc... that
 is useful for OpenStreetMap.
 
-![Way up Rollins Pass](https://github.com/hotosm/osm-merge/blob/main/docs/assets/small-rollinspass.png)
+![Way up Rollins Pass](https://github.com/osm-merge/osm-merge/blob/main/docs/assets/small-rollinspass.png)
 
 The other goal of this project is to support field data collection
 using OpenDataKit. The
@@ -43,7 +43,7 @@ current OpenStreetMap. Otherwise this is a time-consuming process to
 do manually. This can be used with the [Field Mapping Tasking Manager (FMTM)](fmtm.hotosm.org) to process the collected data for validation
 and uploading to OpenStreetMap.
 
-![Women field mapping](https://github.com/hotosm/osm-merge/blob/main/docs/assets/small-zanzibar.jpg)
+![Women field mapping](https://github.com/osm-merge/osm-merge/blob/main/docs/assets/small-zanzibar.jpg)
 
 ## External Datasets
 
@@ -86,7 +86,7 @@ here](http://5.78.72.214/osm-merge/). Please note the website is work
 in progress. Feedback on the data conversion to OpenStreetMap tagging
 is appreciated.
 
-![Skipped highway segments](https://github.com/hotosm/osm-merge/blob/main/docs/assets/skippedsegments.png)
+![Skipped highway segments](https://github.com/osm-merge/osm-merge/blob/main/docs/assets/skippedsegments.png)
 
 ## Programs
 
@@ -130,7 +130,7 @@ debugging. I've been processing large amounts of data to track down
 all the obscure bugs in the original datasets, or the conflation
 process.
 
-![MVUM Signs](https://github.com/hotosm/osm-merge/blob/main/docs/assets/20210913_113539.jpg)
+![MVUM Signs](https://github.com/osm-merge/osm-merge/blob/main/docs/assets/20210913_113539.jpg)
 
 ## Contributing
 
