@@ -1,4 +1,4 @@
-# Copyright (c) 2022, 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2022, 2023 OpenStreetMap US
 # This file is part of osm-merge.
 #
 #     This program is free software: you can redistribute it and/or modify

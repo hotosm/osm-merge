@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2022 Humanitarian OpenStreetMap Team
+# Copyright (c) 2022 OpenStreetMap US
 #
 # This program is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -93,7 +93,7 @@ footer()
   <p>
 
   <font size=-2>
-    <i>Copyright &copy; ${year} <a href=https://www.hotosm.org</a>Humanitarian OpenStreetMap Team</br>
+    <i>Copyright &copy; ${year} <a href=https://www.hotosm.org</a>OpenStreetMap US</br>
   </font>
  
 </body>

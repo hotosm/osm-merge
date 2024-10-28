@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023 OpenStreetMap US
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,14 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Humanitarian OpenStreetmap Team
-# 1100 13th Street NW Suite 800 Washington, D.C. 20005
-# <info@hotosm.org>
-#
-
-PACKAGE := org.tm-admin.py
-NAME := tm-admin
-VERSION := 0.1.0
+PACKAGE := org.osm-mergepy
+NAME := osm-merge
+VERSION := 0.2.0
 
 all:
 	@cd osm_merge ; $(MAKE)
