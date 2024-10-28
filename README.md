@@ -1,8 +1,8 @@
 # OSM Merge, a Community Project of OpenStreetMap US
 
-📖 **Documentation**: <a href="https://hotosm.github.io/osm-merge/" target="_blank">https://hotosm.github.io/osm-merge/</a>
+📖 **Documentation**: <a href="https://osm-merge.github.io/osm-merge/" target="_blank">https://osm-merge.github.io/osm-merge/</a>
 
-🖥️ **Source Code**: <a href="https://github.com/hotosm/osm-merge" target="_blank">https://github.com/hotosm/osm-merge</a>
+🖥️ **Source Code**: <a href="https://github.com/osm-merge/osm-merge" target="_blank">https://github.com/osm-merge/osm-merge</a>
 
 ---
 
