@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-PACKAGE := org.osm-mergepy
+PACKAGE := org.osm-merge.py
 NAME := osm-merge
 VERSION := 0.2.0
 
@@ -24,10 +24,10 @@ apidoc: force
 	cd docs && doxygen
 
 clean:
-	@cd tm_admin ; make clean
+	@cd fastclip ; make clean
 
-realclean:
-	@cd tm_admin ; make clean
+fastclip: force
+	cd fastclip && ./configure && make
 
 OSMIUM_FILES = $(shell find osmium-tool/src/ -type f -name '*.cpp' | sed -e 's/osmium-tool/../')
 
