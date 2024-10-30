@@ -193,10 +193,10 @@ public:
         
         try {
             // tell it to only read nodes and ways.
-            osmium::io::Reader reader{infile, osmium::osm_entity_bits::way};
-            osmium::io::Header header = reader.header();
-            header.set("generator", "fastclip");
-            osmium::io::Writer writer{"foobar.osm", header,
+            osmium::io::Reader reader1{infile, osmium::osm_entity_bits::way};
+            osmium::io::Header header1 = reader1.header();
+            header1.set("generator", "fastclip");
+            osmium::io::Writer writer1{"foobar.osm", header1,
                 osmium::io::overwrite::allow};
 
             osmium::TagsFilter hfilter{false};
@@ -210,41 +210,44 @@ public:
             hfilter.add_rule(true, "highway", "secondary");
 
             // Get all ways matching the highway filter
-            osmium::ProgressBar progress_bar1{reader.file_size(), display_progress()};
-            while (osmium::memory::Buffer buffer = reader.read()) {
-                progress_bar1.update(reader.offset());
+            osmium::ProgressBar progress_bar1{reader1.file_size(), display_progress()};
+            while (osmium::memory::Buffer buffer = reader1.read()) {
+                progress_bar1.update(reader1.offset());
                 // for (const auto& object : buffer.select<osmium::OSMObject>()) {
                 for (const auto& way : buffer.select<osmium::Way>()) {
                     if (osmium::tags::match_any_of(way.tags(), hfilter)) {
                         // Cache the node refs
                         add_nodes(way);
-                        writer(way);
+                        writer1(way);
                     }
                 }
             }
-            writer.close();
+            writer1.close();
             // FIXME: I'm not sure if we can reuse the reader
-            reader.close();
+            reader1.close();
             progress_bar1.done();
 
             // Now get the nodes that are referenced by the ways.
-            osmium::ProgressBar progress_bar2{reader.file_size(), display_progress()};
-            const auto& map_factory = osmium::index::MapFactory<osmium::unsigned_object_id_type, osmium::Location>::instance();
-            std::string default_index_type{ map_factory.has_map_type("sparse_mmap_array") ? "sparse_mmap_array" : "sparse_mem_array" };
+            osmium::ProgressBar progress_bar2{reader1.file_size(), display_progress()};
+            const auto& map_factory = osmium::index::MapFactory<osmium::unsigned_object_id_type,
+                                                                osmium::Location>::instance();
+            std::string default_index_type{ map_factory.has_map_type("sparse_mmap_array") ?
+                "sparse_mmap_array" : "sparse_mem_array" };
 
-            osmium::io::Reader reader2{"foobar.osm", osmium::osm_entity_bits::way};
             const int fd = ::open(infile.c_str(), O_RDWR);
             if (fd == -1) {
                 BOOST_LOG_TRIVIAL(error) << "Can not open location cache file '" << infile << "': " << std::strerror(errno);
                 return 1;
             }            
+
             index_type index{fd};
             location_handler_type location_handler{index};
             MyHandler handler;
+            osmium::io::Reader reader2{"foobar.osm", osmium::osm_entity_bits::way};
             osmium::apply(reader2, location_handler, handler);
 
             // Explicitly close input so we get notified of any errors.
-            reader.close();
+            reader1.close();
 #if 0
             osmium::io::Reader nreader{outfile, osmium::osm_entity_bits::node};
             while (osmium::memory::Buffer buffer = nreader.read()) {
@@ -269,8 +272,8 @@ public:
             progress_bar2.done();
 
 #endif
-            writer.close();
-            reader.close();
+            writer1.close();
+            reader1.close();
             BOOST_LOG_TRIVIAL(info) << "Wrote " << outfile;
         } catch (const std::exception& e) {
             // All exceptions used by the Osmium library derive from std::exception.
