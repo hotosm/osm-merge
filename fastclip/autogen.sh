@@ -7,9 +7,6 @@ test -z "$srcdir" && srcdir=.
 
 DIE=0
 
-#Always use our macros
-#ACLOCAL_FLAGS="-I macros $ACLOCAL_FLAGS"
-
 if test "`uname`" = "Darwin"; then
 LIBTOOLIZE=glibtoolize
 fi
@@ -116,36 +113,12 @@ do
     echo processing $dr
     ( cd $dr
 
-     if test -d macros; then
+     if test -d m4; then
         aclocalinclude="-I m4 $ACLOCAL_FLAGS"
      else
         aclocalinclude="$ACLOCAL_FLAGS"
      fi
 
-     if test -d cygnal; then
-        aclocalinclude="-I cygnal ${aclocalinclude}"
-     fi
-
-     if grep "^AM_GLIB_GNU_GETTEXT" configure.ac >/dev/null; then
-       echo "Creating $dr/aclocal.m4 ..."
-       test -r $dr/aclocal.m4 || touch $dr/aclocal.m4
-       echo "Making $dr/aclocal.m4 writable ..."
-       test -r $dr/aclocal.m4 && chmod u+w $dr/aclocal.m4
-     fi
-     if grep "^AC_PROG_INTLTOOL" configure.ac >/dev/null; then
-       echo "Running intltoolize --copy --force --automake ..."
-       ${INTLTOOLIZE:-intltoolize} --copy --force --automake
-     fi
-     if grep "^AM_PROG_XML_I18N_TOOLS" configure.ac >/dev/null; then
-       echo "Running xml-i18n-toolize --copy --force --automake..."
-       xml-i18n-toolize --copy --force --automake
-     fi
-#       if grep "^AC_PROG_LIBTOOL" configure.ac >/dev/null; then
-# 	if test -z "$NO_LIBTOOLIZE" ; then 
-# 	  echo "Running libtoolize --force --copy ..."
-# 	  ${LIBTOOLIZE:-libtoolize} --force --copy
-# 	fi
-#       fi
       echo "Running aclocal $aclocalinclude ..."
       ${ACLOCAL:-aclocal} ${aclocalinclude}
       if grep "^A[CM]_CONFIG_HEADER" configure.ac >/dev/null; then
