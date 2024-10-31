@@ -26,7 +26,7 @@ from geojson import Point, Feature, FeatureCollection, dump, Polygon, load
 import geojson
 from shapely.geometry import shape, LineString, MultiLineString, Polygon, mapping
 import shapely
-from shapely.ops import transform, nearest_points
+from shapely.ops import transform, nearest_points, linemerge
 from shapely import wkt
 from progress.bar import Bar, PixelBar
 from progress.spinner import PixelSpinner
@@ -132,11 +132,15 @@ def conflateThread(primary: list,
     # Progress bar
     pbar = tqdm.tqdm(primary)
     for entry in pbar:
-    # for entry in primary:
+        # for entry in primary:
         i += 1
         # timer.start()
         confidence = 0
         maybe = list()
+        # If an OSM file is the primary, ignore the nodes that comprise the
+        # LineString.
+        if entry["geometry"]["type"] == "Point":
+            continue
 
         for existing in secondary:
             odktags = dict()
@@ -182,6 +186,8 @@ def conflateThread(primary: list,
             # log.debug(f"ENTRY: {dist}: {entry["properties"]}")
             # log.debug(f"EXISTING: {existing["properties"]}")
             if dist <= threshold:
+                if "id" not in existing["properties"]:
+                    existing["properties"]["id"] = -1
                 angle = 0.0
                 try:
                     slope, angle = cutils.getSlope(entry, existing)
@@ -205,9 +211,7 @@ def conflateThread(primary: list,
                     name2 = existing["properties"]["name"]
                 if "name" in entry["properties"]:
                     name1 = entry["properties"]["name"]
-                log.debug(f"DIST: {dist}, SLOPE: {slope:.3f}, Angle: {angle:.3f} - {name1} == {name2}")
-                # if name1 == "West Fork Road":
-                # breakpoint()
+                # log.debug(f"DIST: {dist}, SLOPE: {slope:.3f}, Angle: {angle:.3f} - {name1} == {name2}")
                 if hits == 0 and (abs(angle) > angle_threshold or abs(slope) > slope_threshold):
                     continue
                 if hits == 1 and abs(angle) < 15 and abs(slope) < 1:
@@ -480,6 +484,8 @@ class Conflator(object):
         # FIXME: we shouldn't ever get here...
         if oldobj.type == "MultiLineString":
             log.error(f"MultiLineString unsupported!")
+            # FIXME: this returns a MultiLineString, so nee to track down why
+            newline = linemerge(oldobj)
 
         if newobj.type == "MultiLineString":
             lines = newobj.geoms
@@ -722,8 +728,8 @@ class Conflator(object):
         return alldata
 
     def conflateData(self,
-                    odkspec: str,
-                    osmspec: str,
+                    primaryspec: str,
+                    secondaryspec: str,
                     threshold: float = 3.0,
                     informal: bool = False,
                     ) -> list:
@@ -731,8 +737,8 @@ class Conflator(object):
         Open the two source files and contlate them.
 
         Args:
-            odkspec (str): The external data uri
-            osmspec (str): The existing OSM data uri
+            primaryspec (str): The primary dataset filespec
+            secondary pec (str): The secondary dataset filespec
             threshold (float): Threshold for distance calculations in meters
             informal (bool): Whether to dump features in OSM not in external data
 
@@ -749,35 +755,35 @@ class Conflator(object):
         #     db = GeoSupport(odkspec[3:])
         #     result = await db.queryDB()
         # else:
-        odkdata = self.parseFile(odkspec)
+        primarydata = self.parseFile(primaryspec)
 
         # if osmspec[:3].lower() == "pg:":
         #     db = GeoSupport(osmspec[3:])
         #     result = await db.queryDB()
         # else:
-        osmdata = self.parseFile(osmspec)
+        secondarydata = self.parseFile(secondaryspec)
 
-        entries = len(odkdata)
+        entries = len(primarydata)
         chunk = round(entries / cores)
 
         alldata = list()
         tasks = list()
 
-        log.info(f"The primary dataset has {len(odkdata)} entries")
-        log.info(f"The secondary dataset has {len(osmdata)} entries")
+        log.info(f"The primary dataset has {len(primarydata)} entries")
+        log.info(f"The secondary dataset has {len(secondarydata)} entries")
 
         # Make threading optional for easier debugging
         single = False
 
         if single:
-            alldata = conflateThread(odkdata, osmdata)
+            alldata = conflateThread(primarydata, secondarydata)
         else:
             futures = list()
             with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
                 for block in range(0, entries, chunk):
                     future = executor.submit(conflateThread,
-                            odkdata[block:block + chunk - 1],
-                            osmdata,
+                            primarydata[block:block + chunk - 1],
+                            secondarydata,
                             informal
                             )
                     futures.append(future)
@@ -814,30 +820,30 @@ class Conflator(object):
         Returns:
             (list): The parsed data from the file
         """
-        odkpath = Path(filespec)
-        odkdata = list()
-        if odkpath.suffix == '.geojson':
+        path = Path(filespec)
+        data = list()
+        if path.suffix == '.geojson':
             # FIXME: This should also work for any GeoJson file, not
-            # only ODK ones, but this has yet to be tested.
-            log.debug(f"Parsing GeoJson files {odkpath}")
-            odkfile = open(odkpath, 'r')
-            features = geojson.load(odkfile)
-            odkdata = features['features']
-        elif odkpath.suffix == '.osm':
-            log.debug(f"Parsing OSM XML files {odkpath}")
-            osmfile = OsmFile()
-            odkdata = self.loadFile(odkpath)
-        elif odkpath.suffix == ".csv":
-            log.debug(f"Parsing csv files {odkpath}")
+            # only  ones, but this has yet to be tested.
+            log.debug(f"Parsing GeoJson files {path}")
+            file = open(path, 'r')
+            features = geojson.load(file)
+            data = features['features']
+        elif path.suffix == '.osm':
+            log.debug(f"Parsing OSM XML files {path}")
+            # osmfile = OsmFile()
+            data = self.loadFile(path)
+        elif path.suffix == ".csv":
+            log.debug(f"Parsing csv files {path}")
             odk = ODKParsers()
-            for entry in odk.CSVparser(odkpath):
-                odkdata.append(odk.createEntry(entry))
-        elif odkpath.suffix == ".json":
-            log.debug(f"Parsing json files {odkpath}")
-            odk = ODKParsers()
-            for entry in odk.JSONparser(odkpath):
-                odkdata.append(odk.createEntry(entry))
-        return odkdata
+            for entry in odk.CSVparser(path):
+                data.append(odk.createEntry(entry))
+        elif path.suffix == ".json":
+            log.debug(f"Parsing json files {path}")
+            odk  = ODKParsers()
+            for entry in odk.JSONparser(path):
+                data.append(odk.createEntry(entry))
+        return data
 
     def conflateDB(self,
                      source: str,
