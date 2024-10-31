@@ -633,7 +633,7 @@ make_osm_extract() {
 		    # ${osmopts} ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm ${osmdata}
 		    # FIXME: osmconvert somehow drops refs, breaking the way
 		    # geometry.
-		    ${osmconvert}${boundaries}/NationalParks/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
+		    ${osmconvert} -B=${boundaries}/NationalParks/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
 		else
 		    # ${osmhighway} ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${short}_OSM_Highways.osm -i ${osmdata}
 		    # ${osmopts} ${boundaries}/NationalForests/${land}.geojson -o ${base}_OSM_Highways.osm  ${osmdata}
