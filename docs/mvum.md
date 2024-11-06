@@ -15,6 +15,15 @@ Clearinghouse](https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=tr
 
 ## Dataset Bugs
 
+### Bad Geometry
+
+There are many instances where a highway in the MVUM data is a
+MultiLineString instead of just a LineString. The problem with these 
+are sometimes the segments are far apart, with long sections with
+no data. These are all the same highway, just bad data. To me it looks
+like somebodies's GPS had a dropped signal in places when they were
+recording a track.
+
 ### Bad Reference Numbers
 
 In some areas the MVUM data has had an 5 or a 7 prefixed to the actual
