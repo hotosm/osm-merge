@@ -43,6 +43,10 @@ from pathlib import Path
 from tqdm import tqdm
 import tqdm.asyncio
 from progress.bar import Bar, PixelBar
+from osm_merge.yamlfile import YamlFile
+
+import osm_merge as om
+rootdir = om.__path__[0]
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -57,11 +61,30 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class MVUM(object):
     def __init__(self,
-                 filespec: str = None,
+                 dataspec: str = None,
+                 yamlspec: str = "utilities/mvum.yaml",
                  ):
+        """
+        This class processes the MVUM dataset.
+
+        Args:
+            dataspec (str): The input data to convert
+            yamlspec (str): The YAML config file for converting data
+
+        Returns:
+            (MVUM): An instance of this class
+        """
         self.file = None
-        if filespec is not None:
-            self.file = open(filespec, "r")
+        if dataspec is not None:
+            self.file = open(dataspec, "r")
+
+        yaml = f"{rootdir}/{yamlspec}"
+        if not os.path.exists(yaml):
+            log.error(f"{yaml} does not exist!")
+            quit()
+        
+        file = open(yaml, "r")
+        self.yaml = YamlFile(f"{yaml}")
 
     def convert(self,
                 filespec: str = None,
@@ -78,6 +101,7 @@ class MVUM(object):
         spin = Bar('Processing...', max=len(data['features']))
 
         highways = list()
+        config = self.yaml.getEntries()
         for entry in data["features"]:
             spin.next()
 
@@ -100,46 +124,13 @@ class MVUM(object):
                 name = str()
                 # Fix some common abbreviations
                 for word in title.split():
-                    if "Cr" == word:
-                        name += "Creek "
-                    elif "Cr." == word:
-                        name += "Creek "
-                    elif "Ck." == word:
-                        name += "Creek "
-                    elif "Crk" == word:
-                        name += "Creek "
-                    elif "Cg" == word:
-                        name += "Campground "
-                    elif "Rd" == word:
-                        name += "Road"
-                    elif "Disp" == word:
-                        name += "Dispersed "
-                    elif "Rd." == word:
-                        name += "Road"
-                    elif "Mt" == word:
-                        name += "Mountain "
-                    elif "Mtn." == word:
-                        name += "Mountain "
-                    elif "Lk" == word:
-                        name += "Lake"
-                    elif "Resvr" == word:
-                        name += "Reservoir"
-                    elif "N" == word:
-                        name += "North"
-                    elif "W" == word:
-                        name += "West"
-                    elif "Spg" == word:
-                        name += "Spring"
-                    elif "E" == word:
-                        name += "East"
-                    elif "S" == word:
-                        name += "South"
-                    elif "Mtn" == word:
-                        name += "Mountain"
+                    category = config["columns"]["NAME"]
+                    if word in config[category]:
+                        name += config[category][word]
                     else:
                         name += f" {word} "
                 if len(name) == 0:
-                    name = title
+                    name = title.title()
                 newname = str()
                 if name.find(" Road") <= 0:
                     newname = f"{name} Road".replace('  ', ' ').strip()
@@ -150,20 +141,14 @@ class MVUM(object):
                 # log.debug(f"NAME: {props["name"]}")
 
             # https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf
-
             if "OPER_MAINT_LEVEL" in entry["properties"] and entry["properties"]["OPER_MAINT_LEVEL"] is not None:
                 if entry["properties"]["OPER_MAINT_LEVEL"][:3] != "NA ":
+                    # breakpoint()
                     op = int(entry["properties"]["OPER_MAINT_LEVEL"][:1])
-                    if op == 1:
-                        props["access"] = "no"
-                    elif op == 2:
-                        props["smoothness"] = "very_bad"
-                    elif op == 3:
-                        props["smoothness"] = "good"
-                    elif op == 4:
-                        props["smoothness"] = "bad"
-                    elif op == 5:
-                        props["smoothness"] = "excellent"
+                    log.debug(f"OP: {op}")
+                    smoothness = config["tags"]["smoothness"][op]
+                    pair = smoothness.split('=')
+                    props[pair[0]] = pair[1]
 
             if "PRIMARY_MAINTAINER" in entry["properties"] and  entry["properties"]["PRIMARY_MAINTAINER"] is not None:
                 if entry["properties"]["PRIMARY_MAINTAINER"] == "FS - FOREST SERVICE":
@@ -175,51 +160,25 @@ class MVUM(object):
                 if entry["properties"]["SYMBOL_NAME"] is None:
                     continue
                 op = entry["properties"]["SYMBOL_NAME"][:4]
-                if op == "Road":
-                    props["smoothness"] = "very bad"
-                elif op == "Pave":
-                    props["smoothness"] = "good"
-                elif op == "High":
-                    props["smoothness"] = "excellent"
-                elif op == "Dirt":
-                    props["surface"] = "dirt"
-                elif op == "Grav":
-                    props["surface"] = "gravel"
-                elif op == "Pave":
-                    props["surface"] = "paved"
+                symbol = config["tags"]["symbol"][op]
+                pair = symbol.split('=')
+                props[pair[0]] = pair[1]
 
-            # if "SBS_SYMBOL" in entry["properties"] and op is None:
-            #     if "Not Maintained for" in entry["properties"]["SBS_SYMBOL"]:
-            #         props["smoothness"] = "very bad"
-            #     else:
-            #         sym = entry["properties"]
             if "SURFACE_TYPE" in entry["properties"]:
                 surface = entry["properties"]["SURFACE_TYPE"]
-                if surface is not None:
-                    if surface[:3] == "NAT":
-                        props["surface"] = "dirt"
-                    elif surface[:3] == "IMP" or surface[:5] == "CSOIL":
-                        props["surface"] = "compacted"
-                    elif surface[:3] == "AGG":
-                        props["surface"] = "gravel"
-                    elif surface[:2] == "AC":
-                        props["surface"] = "gravel"
-                    elif surface[:3] == "BST" or surface[:2] == "P ":
-                        props["surface"] = "paved"
+                op = entry["properties"]["SYMBOL_NAME"][:4]
+                symbol = config["tags"]["symbol"][op]
+                pair = symbol.split('=')
+                props[pair[0]] = pair[1]
 
             if "HIGH_CLEARANCE_VEHICLE" in entry["properties"]:
                 if entry["properties"]["HIGH_CLEARANCE_VEHICLE"] is not None:
                     props["4wd_only"] = "yes"
 
-            if "SEASONAL" in entry["properties"]:
-                if entry["properties"]["SEASONAL"] is None:
-                    continue
-                elif "yearlong" == entry["properties"]["SEASONAL"]:
-                    props["seasonal"] = "no"
-                elif "seasonal" == entry["properties"]["SEASONAL"].lower():
-                    props["seasonal"] = "yes"
-                else:
-                    props["seasonal"] = "yes"
+            if "SEASONAL" in entry["properties"] and entry["properties"]["SEASONAL"] is not None:
+                seasonal = config["tags"]["seasonal"][entry["properties"]["SEASONAL"]]
+                pair = seasonal.split('=')
+                props[pair[0]] = pair[1]
 
             if geom is not None:
                 props["highway"] = "unclassified"
