@@ -112,6 +112,7 @@ class MVUM(object):
             surface = str()
             name = str()
             props = dict()
+            format = 1
             # print(entry["properties"])
             if entry["properties"] is None or entry is None:
                 continue
@@ -139,9 +140,15 @@ class MVUM(object):
                 # the < causes osmium to choke...
                 props["name"] = newname.replace("<50", "&lt;50")
 
+            if format == 1:
+                keyword = "OPERATIONALMAINTLEVEL"
+            else:
+                keyword = "OPER_MAINT_LEVEL"
             # https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf
-            if "OPER_MAINT_LEVEL" in entry["properties"] and entry["properties"]["OPER_MAINT_LEVEL"] is not None:
-                field = entry["properties"]["OPER_MAINT_LEVEL"].split()[0]
+            if keyword in entry["properties"] and entry["properties"][keyword] is not None:
+                if len(entry["properties"][keyword]) <= 1:
+                    continue
+                field = entry["properties"][keyword].split()[0]
                 if field != "NA":
                     smoothness = config["tags"]["smoothness"][int(field)]
                     pair = smoothness.split('=')
@@ -152,40 +159,60 @@ class MVUM(object):
 
             if "PRIMARY_MAINTAINER" in entry["properties"] and entry["properties"]["PRIMARY_MAINTAINER"]:
                 field = entry["properties"]["PRIMARY_MAINTAINER"].split()[0]
+                breakpoint()
                 if field in config["tags"]["operator"]:
                     operator = config["tags"]["operator"][field]
                     props["operator"] = operator
                     # props["operator:type"] = "government"
+            else:
+                props["operator"] = "US Forest Service"
 
-            if "SURFACE_TYPE" in entry["properties"] and entry["properties"]["SURFACE_TYPE"]:
+            if format == 1:
+                keyword = "SURFACETYPE"
+            else:
+                keyword = "SURFACE_TYPE"
+            if keyword in entry["properties"] and entry["properties"][keyword]:
                 if "surface" not in props:
                     # Only add a value for surface if it doesn't exist
-                    field = entry["properties"]["SURFACE_TYPE"].split()[0]
+                    if entry["properties"][keyword] == " ":
+                        continue
+                    field = entry["properties"][keyword].split()[0]
                     if field in config["tags"]["surface"]:
                         surface = config["tags"]["surface"][field]
                         pair = surface.split('=')
                         props[pair[0]] = pair[1]
 
-            if "SYMBOL_NAME" in entry["properties"] and entry["properties"]["SYMBOL_NAME"]:
-                field = entry["properties"]["SYMBOL_NAME"][:4]
+            if format == 1:
+                keyword = "SBS_SYMBOL_NAME"
+            else:
+                keyword = "SYMBOL_NAME"
+            if keyword in entry["properties"] and entry["properties"][keyword]:
+                field = entry["properties"][keyword][:4]
                 symbol = config["tags"]["symbol"][field]
                 pair = symbol.split('=')
                 props[pair[0]] = pair[1]
-                # if field == "Road":
+                if len(props["ref:usfs"].split()) <= 1:
+                    continue
                 ref = props["ref:usfs"].split()[1].replace(' ', '')
                 if ref.isnumeric():
                     if len(ref) == 5 and ref.find('.') < 0:
                         props["ref:usfs"] = f"FR {ref[2:]}"
                         props["note"] = f"Validate this changed ref!"
 
-            if "HIGH_CLEARANCE_VEHICLE" in entry["properties"]:
-                if entry["properties"]["HIGH_CLEARANCE_VEHICLE"] is not None:
+            if format == 1:
+                keyword = "HIGHCLEARANCEVEHICLE"
+            else:
+                keyword = "HIGH_CLEARANCE_VEHICLE"
+            if keyword in entry["properties"] and entry["properties"][keyword]:
+                if entry["properties"][keyword] is not None:
                     props["4wd_only"] = "yes"
 
             if "SEASONAL" in entry["properties"] and entry["properties"]["SEASONAL"]:
-                seasonal = config["tags"]["seasonal"][entry["properties"]["SEASONAL"]]
-                pair = seasonal.split('=')
-                props[pair[0]] = pair[1]
+                    field = entry["properties"]["SEASONAL"]
+                    if field in config["tags"]["seasonal"]:
+                        seasonal = config["tags"]["seasonal"][field]
+                        pair = seasonal.split('=')
+                        props[pair[0]] = pair[1]
 
             if geom is not None:
                 props["highway"] = "unclassified"
