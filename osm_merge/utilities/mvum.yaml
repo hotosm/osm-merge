@@ -13,10 +13,12 @@
     - Lk: Lake
     - Resvr: Reservoir
     - Spg: Spring
+    - Br: Bridge
     - N: North
     - W: West
     - E: East
     - S: South
+    - So: South
     - Mtn: Mountain
 
 - tags:
