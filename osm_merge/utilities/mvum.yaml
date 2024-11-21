@@ -41,12 +41,12 @@
     - Grav: surface=gravel
 
   - surface:
-      - NAT: surface=dirt
-      - AGG: surface=gravel
-      - AC: surface=gravel
-      - BST: surface=paved
-      - IMP: surface=compacted
-      - CSOIL: surface=compacted
+    - NAT: surface=dirt
+    - AGG: surface=gravel
+    - AC: surface=gravel
+    - BST: surface=paved
+    - IMP: surface=compacted
+    - CSOIL: surface=compacted
 
 # These are the data fields to convert.
 - columns:
@@ -55,4 +55,3 @@
     - SURFACE_TYPE: tags.surface
     - SEASONAL: tags.seasonal
     - OPER_MAINT_LEVEL: tags.smoothness
-

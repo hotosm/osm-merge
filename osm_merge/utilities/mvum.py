@@ -138,15 +138,12 @@ class MVUM(object):
                     newname = name.replace('  ', ' ').strip()
                 # the < causes osmium to choke...
                 props["name"] = newname.replace("<50", "&lt;50")
-                # log.debug(f"NAME: {props["name"]}")
 
             # https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprd3793545.pdf
             if "OPER_MAINT_LEVEL" in entry["properties"] and entry["properties"]["OPER_MAINT_LEVEL"] is not None:
-                if entry["properties"]["OPER_MAINT_LEVEL"][:3] != "NA ":
-                    # breakpoint()
-                    op = int(entry["properties"]["OPER_MAINT_LEVEL"][:1])
-                    log.debug(f"OP: {op}")
-                    smoothness = config["tags"]["smoothness"][op]
+                field = entry["properties"]["OPER_MAINT_LEVEL"].split()[0]
+                if field != "NA":
+                    smoothness = config["tags"]["smoothness"][int(field)]
                     pair = smoothness.split('=')
                     props[pair[0]] = pair[1]
 
@@ -156,18 +153,18 @@ class MVUM(object):
                 else:
                     props["operator"] = entry["properties"]["PRIMARY_MAINTAINER"].title()
 
-            if "SYMBOL_NAME" in entry["properties"]:
-                if entry["properties"]["SYMBOL_NAME"] is None:
-                    continue
-                op = entry["properties"]["SYMBOL_NAME"][:4]
-                symbol = config["tags"]["symbol"][op]
-                pair = symbol.split('=')
-                props[pair[0]] = pair[1]
+            if "SURFACE_TYPE" in entry["properties"] and entry["properties"]["SURFACE_TYPE"]:
+                if "surface" not in props:
+                    # Only add a value for surface if it doesn't exist
+                    field = entry["properties"]["SURFACE_TYPE"].split()[0]
+                    if field in config["tags"]["surface"]:
+                        surface = config["tags"]["surface"][field]
+                        pair = surface.split('=')
+                        props[pair[0]] = pair[1]
 
-            if "SURFACE_TYPE" in entry["properties"]:
-                surface = entry["properties"]["SURFACE_TYPE"]
-                op = entry["properties"]["SYMBOL_NAME"][:4]
-                symbol = config["tags"]["symbol"][op]
+            if "SYMBOL_NAME" in entry["properties"] and entry["properties"]["SYMBOL_NAME"]:
+                field = entry["properties"]["SYMBOL_NAME"][:4]
+                symbol = config["tags"]["symbol"][field]
                 pair = symbol.split('=')
                 props[pair[0]] = pair[1]
 
@@ -175,7 +172,7 @@ class MVUM(object):
                 if entry["properties"]["HIGH_CLEARANCE_VEHICLE"] is not None:
                     props["4wd_only"] = "yes"
 
-            if "SEASONAL" in entry["properties"] and entry["properties"]["SEASONAL"] is not None:
+            if "SEASONAL" in entry["properties"] and entry["properties"]["SEASONAL"]:
                 seasonal = config["tags"]["seasonal"][entry["properties"]["SEASONAL"]]
                 pair = seasonal.split('=')
                 props[pair[0]] = pair[1]
