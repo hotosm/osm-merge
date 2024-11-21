@@ -105,7 +105,6 @@ class MVUM(object):
         config = self.yaml.getEntries()
         for entry in data["features"]:
             spin.next()
-
             geom = entry["geometry"]
             id = 0
             sym = 0
@@ -151,11 +150,12 @@ class MVUM(object):
                     if int(field) == 2:
                         props["4wd_only"] = "yes"
 
-            if "PRIMARY_MAINTAINER" in entry["properties"] and  entry["properties"]["PRIMARY_MAINTAINER"] is not None:
-                if entry["properties"]["PRIMARY_MAINTAINER"] == "FS - FOREST SERVICE":
-                    props["operator"] = "US Forest Service"
-                else:
-                    props["operator"] = entry["properties"]["PRIMARY_MAINTAINER"].title()
+            if "PRIMARY_MAINTAINER" in entry["properties"] and entry["properties"]["PRIMARY_MAINTAINER"]:
+                field = entry["properties"]["PRIMARY_MAINTAINER"].split()[0]
+                if field in config["tags"]["operator"]:
+                    operator = config["tags"]["operator"][field]
+                    props["operator"] = operator
+                    # props["operator:type"] = "government"
 
             if "SURFACE_TYPE" in entry["properties"] and entry["properties"]["SURFACE_TYPE"]:
                 if "surface" not in props:
