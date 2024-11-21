@@ -48,6 +48,19 @@
     - IMP: surface=compacted
     - CSOIL: surface=compacted
 
+  - operator:
+    - BLM: Bureau Of Land Management
+    - L: Local
+    - S: State
+    - SLR: State Lands Roads
+    - FS: Forest Service
+    - P: Private
+    - OF: Other Federal Agencies
+    - CU: Commercial
+    - C: County, Parish, or Borough
+    - OGM: Ol, Gas, Mineral
+    - PGE: Pacific Gas And Electric
+
 # These are the data fields to convert.
 - columns:
     - NAME: abbreviations
@@ -55,3 +68,4 @@
     - SURFACE_TYPE: tags.surface
     - SEASONAL: tags.seasonal
     - OPER_MAINT_LEVEL: tags.smoothness
+    - PRIMARY_MAINTAINER: tags.operator
