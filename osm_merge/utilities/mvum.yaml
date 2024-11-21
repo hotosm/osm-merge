@@ -48,20 +48,16 @@
     - IMP: surface=compacted
     - CSOIL: surface=compacted
 
+  # There's a bunch of other values for the PRIMARY_MAINTAINER field
+  # in the MVUM dataset, but those really fit in operator:type
+  # instead. Since we're focused on remote trails and highways, there
+  # are the only two we care about.
   - operator:
     - BLM: Bureau Of Land Management
-    - L: Local
-    - S: State
-    - SLR: State Lands Roads
     - FS: Forest Service
-    - P: Private
-    - OF: Other Federal Agencies
-    - CU: Commercial
-    - C: County, Parish, or Borough
-    - OGM: Ol, Gas, Mineral
-    - PGE: Pacific Gas And Electric
 
-# These are the data fields to convert.
+# FIXME: These the data fields to convert, currentl;y unsupport for
+# now.
 - columns:
     - NAME: abbreviations
     - SYMBOL_NAME: tags.symbol
