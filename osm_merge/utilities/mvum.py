@@ -25,6 +25,7 @@ import argparse
 import logging
 import sys
 import os
+import re
 from sys import argv
 from osm_fieldwork.osmfile import OsmFile
 from geojson import Point, Feature, FeatureCollection, dump, Polygon, load
@@ -146,6 +147,9 @@ class MVUM(object):
                     smoothness = config["tags"]["smoothness"][int(field)]
                     pair = smoothness.split('=')
                     props[pair[0]] = pair[1]
+                    # High Clearance vehicles only
+                    if int(field) == 2:
+                        props["4wd_only"] = "yes"
 
             if "PRIMARY_MAINTAINER" in entry["properties"] and  entry["properties"]["PRIMARY_MAINTAINER"] is not None:
                 if entry["properties"]["PRIMARY_MAINTAINER"] == "FS - FOREST SERVICE":
@@ -167,6 +171,12 @@ class MVUM(object):
                 symbol = config["tags"]["symbol"][field]
                 pair = symbol.split('=')
                 props[pair[0]] = pair[1]
+                # if field == "Road":
+                ref = props["ref:usfs"].split()[1].replace(' ', '')
+                if ref.isnumeric():
+                    if len(ref) == 5 and ref.find('.') < 0:
+                        props["ref:usfs"] = f"FR {ref[2:]}"
+                        props["note"] = f"Validate this changed ref!"
 
             if "HIGH_CLEARANCE_VEHICLE" in entry["properties"]:
                 if entry["properties"]["HIGH_CLEARANCE_VEHICLE"] is not None:
