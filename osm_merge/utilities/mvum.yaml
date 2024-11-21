@@ -1,0 +1,58 @@
+# Commen abbreviations found in the MVUM dataset
+- abbreviations:
+    - Cr: Creek
+    - Cr\.: Creek
+    - Ck\.: Creek
+    - Crk: Creek
+    - Cg: Campground
+    - Rd: Road
+    - Disp: Dispersed 
+    - Rd.: Road
+    - Mt: Mountain 
+    - Mtn.: Mountain 
+    - Lk: Lake
+    - Resvr: Reservoir
+    - Spg: Spring
+    - N: North
+    - W: West
+    - E: East
+    - S: South
+    - Mtn: Mountain
+
+- tags:
+  - seasonal:
+    - yearlong: seasonal=no
+    - "yes": seasonal=yes
+    - "no": seasonal=no
+
+  - smoothness:
+    - 0: access=unknown
+    - 1: access=no
+    - 2: smoothness=very_bad
+    - 3: smoothness=good
+    - 4: smoothness=bad
+    - 5: smoothness=excellent
+
+  - symbol:
+    - Road: smoothness=very_bad
+    - Pave: smoothness=good
+    - High: smoothness=excellent
+    - Dirt: surface=dirt
+    - Grav: surface=gravel
+
+  - surface:
+      - NAT: surface=dirt
+      - AGG: surface=gravel
+      - AC: surface=gravel
+      - BST: surface=paved
+      - IMP: surface=compacted
+      - CSOIL: surface=compacted
+
+# These are the data fields to convert.
+- columns:
+    - NAME: abbreviations
+    - SYMBOL_NAME: tags.symbol
+    - SURFACE_TYPE: tags.surface
+    - SEASONAL: tags.seasonal
+    - OPER_MAINT_LEVEL: tags.smoothness
+
