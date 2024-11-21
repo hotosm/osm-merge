@@ -53,8 +53,12 @@ navigation on public lands.
 #### Dixie National Forest
 
 In the current MVUM dataset for this national forest, for some reason
-a *30* has been prefixed to all the IDs, making the reference numbers
-wrong.
+a *30, 31, 32, 33, 34* has been prefixed to many of the IDs, making
+the reference numbers wrong. After staring at the original data file,
+I noticed these were all 5 characters long, and lacked a letter or a
+minor number suffix. Limiting the trigger to just that case seems to
+fix the problem. A *note* is added to any feature where the
+__ref:usfs__ is changed as an aid towards validation.
 
 #### Manti-LaSal National Forest
 
