@@ -112,7 +112,10 @@ class MVUM(object):
             surface = str()
             name = str()
             props = dict()
-            format = 1
+            if "OPER_MAINT_LEVEL" in entry["properties"]:
+                format = "RoadCore"
+            else:
+                format = "MVUM"
             # print(entry["properties"])
             if entry["properties"] is None or entry is None:
                 continue
@@ -140,7 +143,7 @@ class MVUM(object):
                 # the < causes osmium to choke...
                 props["name"] = newname.replace("<50", "&lt;50")
 
-            if format == 1:
+            if format == "MVUM":
                 keyword = "OPERATIONALMAINTLEVEL"
             else:
                 keyword = "OPER_MAINT_LEVEL"
@@ -159,7 +162,6 @@ class MVUM(object):
 
             if "PRIMARY_MAINTAINER" in entry["properties"] and entry["properties"]["PRIMARY_MAINTAINER"]:
                 field = entry["properties"]["PRIMARY_MAINTAINER"].split()[0]
-                breakpoint()
                 if field in config["tags"]["operator"]:
                     operator = config["tags"]["operator"][field]
                     props["operator"] = operator
@@ -167,7 +169,7 @@ class MVUM(object):
             else:
                 props["operator"] = "US Forest Service"
 
-            if format == 1:
+            if format == "MVUM":
                 keyword = "SURFACETYPE"
             else:
                 keyword = "SURFACE_TYPE"
@@ -182,7 +184,7 @@ class MVUM(object):
                         pair = surface.split('=')
                         props[pair[0]] = pair[1]
 
-            if format == 1:
+            if format == "MVUM":
                 keyword = "SBS_SYMBOL_NAME"
             else:
                 keyword = "SYMBOL_NAME"
@@ -199,7 +201,7 @@ class MVUM(object):
                         props["ref:usfs"] = f"FR {ref[2:]}"
                         props["note"] = f"Validate this changed ref!"
 
-            if format == 1:
+            if format == "MVUM":
                 keyword = "HIGHCLEARANCEVEHICLE"
             else:
                 keyword = "HIGH_CLEARANCE_VEHICLE"
