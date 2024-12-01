@@ -60,7 +60,7 @@ update_changelog_on_bump = true
 [tool.pdm]
 version = {from = "osm_merge/__version__.py"}
 [tool.pdm.build]
-includes = ["osm-merge"]
+includes = ["osm_merge"]
 source-includes = ["tests", "LICENSE.md", "README.md"]
 [tool.pdm.dev-dependencies]
 dev = [
