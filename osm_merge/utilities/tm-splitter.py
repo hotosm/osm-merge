@@ -40,7 +40,7 @@ import numpy as np
 from geojson import Feature, FeatureCollection, GeoJSON
 from shapely.geometry import Polygon, shape, LineString, MultiPolygon
 from shapely.prepared import prep
-from shapely.ops import split
+from shapely.ops import split, transform
 from cpuinfo import get_cpu_info
 import shapely
 from functools import partial
@@ -220,25 +220,59 @@ def make_extract(infile: str,
         log.debug(f"Wrote task {outfile} ...")
 
 def make_tasks(infile: str,
-               template: str,
+               outdir: str,
                ):
     """
     Make the task files, one for each polygon in the input file.
 
     Args:
         infile (str): The filespec of the input file.
-        template (str): Template for the output files
+        outdir (str): Output directory for the output files
     """
     file = open(infile, 'r')
     data = geojson.load(file)
     file.close()
 
     index = 0
-    for task in data["features"]:
-        fd = open(f"{template}_Task_{index}.geojson", "w")
-        geojson.dump(task, fd)
-        fd.close()
-        index += 1
+    if "name" in data:
+        # Adminstriative boundaries use FeatureCollection
+        for task in data["features"]:
+            geom = task["geometry"]
+            if "FORESTNAME" in task["properties"]:
+                name = task["properties"]["FORESTNAME"].replace(" ", "_").replace(".", "").replace("-", "_")
+                outfile = f"{outdir}/{name}.geojson"
+                fd = open(outfile, "w")
+                feat = Feature(geometry=geom, properties= {"name": name})
+                geojson.dump(feat, fd)
+                log.debug(f"Wrote {outfile}")
+                fd.close()
+    else:
+        # The forest or park output files are a MultiPolygon feature
+        index = 1
+        name = os.path.basename(infile).replace("s.geojson", "")
+        for task in data["features"]:
+            geom = shape(task["geometry"])
+            if type(geom) == Polygon:
+                fd = open(f"{outdir}/{name}_{index}.geojson", "w")
+                properties = {"name": f"{name}_Task_{index}", "area": area}
+                feat = Feature(geometry=task, properties=properties)
+                geojson.dump(Feature(geometry=task, properties=properties), fd)
+                log.debug(f"Wrote {outdir}/{name}_Task_{index}.geojson")
+                fd.close()
+                index += 1
+            else:
+                for poly in geom.geoms:
+                    area = poly.area
+                    # Ignore really small polygons, which are often administrative
+                    # offices not in the forest or park boundary.
+                    if area < 0.00001:
+                        continue
+                    fd = open(f"{outdir}/{name}_{index}.geojson", "w")
+                    properties = {"name": f"{name}_Task_{index}", "area": area}
+                    geojson.dump(Feature(geometry=poly, properties=properties), fd)
+                    log.debug(f"Wrote {outdir}/{name}_Task_{index}.geojson")
+                    fd.close()
+                    index += 1
 
 # def make_tasks_GDAL(infile: str,
 #                outfile: str,
@@ -297,7 +331,7 @@ def make_tasks(infile: str,
 #         # feature["boundary"] = "administrative"
 #         log.debug(f"Wrote task {taskfile} ...")
 
-async def main():
+def main():
     """This main function lets this class be run standalone by a bash script"""
     parser = argparse.ArgumentParser(
         prog="tm-splitter",
@@ -338,8 +372,7 @@ problems with conflation.
                         help="Generate the task grid")
     parser.add_argument("-s", "--split", default=False, action="store_true",
                         help="Split Multipolygon")
-    parser.add_argument("-o", "--outfile", default="output.geojson",
-                        help="Output filename")
+    parser.add_argument("-o", "--outfile", default=".", help="Output filename")
     parser.add_argument("-e", "--extract", default=False, help="Split Dataset with Multipolygon")
     parser.add_argument("-c", "--complete",  action="store_true", help="Complete all LineStrings")
     parser.add_argument("-t", "--threshold", default=0.1,
@@ -416,6 +449,4 @@ problems with conflation.
 
 if __name__ == "__main__":
     """This is just a hook so this file can be run standlone during development."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(main())
+    main()
