@@ -220,61 +220,82 @@ def make_extract(infile: str,
         log.debug(f"Wrote task {outfile} ...")
 
 def make_tasks(infile: str,
-               outfile: str,
+               template: str,
                ):
     """
     Make the task files, one for each polygon in the input file.
 
     Args:
         infile (str): The filespec of the input file.
-        outfile (str): Template for the output files
+        template (str): Template for the output files
     """
-    index = 0
-    name = str()
-    driver = ogr.GetDriverByName("GeoJson")
-    indata = driver.Open(infile, 0)
-    inlayer = indata.GetLayer()
-    for feature in inlayer:
-        # This is only in the USDA administrative boundaries file.
-        # for feature in inlayer:
-        # if "FORESTNAME" in feature["properties"]:
-        #     name = feature["properties"]["FORESTNAME"].replace(' ', '_')
-        # elif "UNIT_NAME" in feature["properties"]:
-        #     name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
+    file = open(infile, 'r')
+    data = geojson.load(file)
+    file.close()
 
-        # There's only one field in the grid multipolygon, the task number.
-        # FIXME: it turns out there may be multipolygons, so they all wind
-        # up with the same task name, so use an index here instead.
-        # task = feature.GetField(0)
-        taskfile = f"{outfile}_Task_{index}.geojson"
+    index = 0
+    for task in data["features"]:
+        fd = open(f"{template}_Task_{index}.geojson", "w")
+        geojson.dump(task, fd)
+        fd.close()
         index += 1
-        task = Path(taskfile).stem.replace("Tasks", "Task")
-        if os.path.exists(taskfile):
-            os.remove(taskfile)
-        outdata = driver.CreateDataSource(taskfile)
-        outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbMultiPolygon)
-        featureDefn = outlayer.GetLayerDefn()
-        outFeature = ogr.Feature(featureDefn)
-        poly = feature.GetGeometryRef()
-        # Make a polygon if it's closed, which it should be. Using ogr2ogr to
-        # clip the grid to the boundary, it sets some task as a LineString
-        # instead of a polygon. Since the first and last points are the same,
-        # it's actually a polygon, so convert it to a Polygon.
-        if poly.GetGeometryName() == "LINESTRING":
-            ring = ogr.Geometry(ogr.wkbLinearRing)
-            for i in range(0, poly.GetPointCount()):
-                pt = poly.GetPoint(i)
-                ring.AddPoint(pt[0], pt[1])
-            poly = ogr.Geometry(ogr.wkbPolygon)
-            poly.AddGeometry(ring)
-        outFeature.SetGeometry(poly)
-        name = ogr.FieldDefn("name", ogr.OFTString)
-        # outlayer.CreateField(name)
-        # outFeature.SetField("name", outfile)
-        outlayer.CreateFeature(outFeature)
-        # feature["properties"]["name"] = name
-        # feature["boundary"] = "administrative"
-        log.debug(f"Wrote task {taskfile} ...")
+
+# def make_tasks_GDAL(infile: str,
+#                outfile: str,
+#                ):
+#     """
+#     Make the task files, one for each polygon in the input file.
+
+#     Args:
+#         infile (str): The filespec of the input file.
+#         outfile (str): Template for the output files
+#     """
+#     index = 0
+#     name = str()
+#     driver = ogr.GetDriverByName("GeoJson")
+#     indata = driver.Open(infile, 0)
+#     inlayer = indata.GetLayer()
+#     for feature in inlayer:
+#         # This is only in the USDA administrative boundaries file.
+#         # for feature in inlayer:
+#         # if "FORESTNAME" in feature["properties"]:
+#         #     name = feature["properties"]["FORESTNAME"].replace(' ', '_')
+#         # elif "UNIT_NAME" in feature["properties"]:
+#         #     name = feature["properties"]["UNIT_NAME"].replace(' ', '_').replace('/', '_')
+
+#         # There's only one field in the grid multipolygon, the task number.
+#         # FIXME: it turns out there may be multipolygons, so they all wind
+#         # up with the same task name, so use an index here instead.
+#         # task = feature.GetField(0)
+#         taskfile = f"{outfile}_Task_{index}.geojson"
+#         index += 1
+#         task = Path(taskfile).stem.replace("Tasks", "Task")
+#         if os.path.exists(taskfile):
+#             os.remove(taskfile)
+#         outdata = driver.CreateDataSource(taskfile)
+#         outlayer = outdata.CreateLayer(task, geom_type=ogr.wkbMultiPolygon)
+#         featureDefn = outlayer.GetLayerDefn()
+#         outFeature = ogr.Feature(featureDefn)
+#         poly = feature.GetGeometryRef()
+#         # Make a polygon if it's closed, which it should be. Using ogr2ogr to
+#         # clip the grid to the boundary, it sets some task as a LineString
+#         # instead of a polygon. Since the first and last points are the same,
+#         # it's actually a polygon, so convert it to a Polygon.
+#         if poly.GetGeometryName() == "LINESTRING":
+#             ring = ogr.Geometry(ogr.wkbLinearRing)
+#             for i in range(0, poly.GetPointCount()):
+#                 pt = poly.GetPoint(i)
+#                 ring.AddPoint(pt[0], pt[1])
+#             poly = ogr.Geometry(ogr.wkbPolygon)
+#             poly.AddGeometry(ring)
+#         outFeature.SetGeometry(poly)
+#         name = ogr.FieldDefn("name", ogr.OFTString)
+#         # outlayer.CreateField(name)
+#         # outFeature.SetField("name", outfile)
+#         outlayer.CreateFeature(outFeature)
+#         # feature["properties"]["name"] = name
+#         # feature["boundary"] = "administrative"
+#         log.debug(f"Wrote task {taskfile} ...")
 
 async def main():
     """This main function lets this class be run standalone by a bash script"""
