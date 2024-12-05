@@ -74,7 +74,7 @@ if test x"${SOURCEDATA}" = x; then
 else
     sources="${SOURCEDATA}"
 fi
-osmdata="${sources}/wy-co-ut.osm.pbf"
+osmdata="${sources}/us-highways.pbf"
 mvumtrails="${sources}/Trail_MVUM-out.geojson"
 mvumhighways="${sources}/Road_MVUM-out.geojson"
 roadcore="${sources}/RoadCore-out.geojson"
@@ -248,15 +248,6 @@ extract_data() {
     intype="${2:?}"
     subtask="${3:-no}"
 
-    declare -Ag data
-    data["OSM_Highways"]="${sources}/wy-co-ut.osm.pbf"
-    data["MVUM_Highways"]="${sources}/Road_MVUM-out.geojson"
-    data["MVUM_Trails"]="${sources}/Trail_MVUM-out.geojson"
-    data["USGS_Highways"]="${sources}/USGS_Topo_Roads-out.geojson"
-    data["NPS_Trails"]="${sources}/National_Park_Service_Trails-out.geojson"
-    # data["OSM_Trails"]="${sources}/OSM_Trails.geojson"
-    # data["USGS_Trails"]="${sources}/USFS_Trails-out.geojson"
-
     for task in ${clipsrc}; do
 	echo "    Extracting data from ${dataset} task ${task} ..."
 	get_path ${task}
@@ -278,15 +269,10 @@ extract_data() {
 
 	if test $(echo ${intype} | grep -c "OSM") -eq 0; then
 	    # It's a GeoJson file
+	    echo "YES"
 	    ${ogropts} ${task} -nlt LINESTRING ${outfile}.geojson ${indata}.geojson
 	else
-	    # It's an OSM XML file. osmconvert can only use poly files,
-	    # so convert the GeoJson that's generated from task splitting.
-	    # ${geo2poly} -v -i ${task}
-	    # poly="$(echo ${task} | sed -e "s/.geojson/.poly/")"
-	    # ${osmconvert} -B=${poly} -o=${outfile}.osm ${indata}.osm
-	    # ${osmhighway} ${task} -o ${outfile}.osm -i ${indata}
-	    ${osmopts} ${task} -o ${outfile}.osm ${indata}
+	    ${osmopts} ${task} -o ${outfile}.osm ${indata}.osm
 	fi
 
     done
@@ -327,7 +313,7 @@ split_aoi() {
 	    # smaller than this, so only one polygon.
 	    # ${tmsplitter} --grid --infile ${aoi} --threshold 0.7 -o ${dir}/${short}_Tasks.geojson
 	    # ${tmsplitter} --grid --infile ${aoi} --threshold 0.7
-	    fmtm-splitter -b ${aoi} --meters 70000
+	    fmtm-splitter -b ${aoi} --meters 50000
 	    mv fmtm.geojson ${dir}/${short}_Tasks.geojson
 	    # Make a multipolygon even if just one task
 	    # ${ogropts} ${aoi} ${dir}/${short}_Tasks.geojson output.geojson
@@ -355,7 +341,7 @@ make_tasks() {
 	    for task in ${state}/${land}_Tasks/${short}_Tasks.geojson; do
 		get_path ${task}
 		echo "    Making task boundaries for clipping to ${land}"
-		${tmsplitter} -v -s -i ${task} -o ${path["dir"]}
+		${tmsplitter} -v -i ${task} -o ${path["dir"]}
 	     	echo "Wrote tasks for ${task} ..."
 	    done
 	done
@@ -605,7 +591,7 @@ make_mvum_extract() {
 	    fi
 
 	    dir="${state}/${land}_Tasks"
-	    extract_data "${dir}/*_Task_*.geojson" MVUM_Highways
+	    extract_data "${dir}/*_Task_*.geojson" RoadCore_Highways
     	done
     done
 }
@@ -632,14 +618,11 @@ make_osm_extract() {
 		# echo "    Clipping OSM data for ${land}..."
 		if test $(echo ${land} | grep -c "_Park" ) -gt 0; then
 		    # There's 3 ways to clip an OSM XML file
-		    # ${osmhighway} ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm -i ${osmdata}
-		    # FIXME: osmium 1.16.0 with libosmium 2.20.0 core dumps
-		    # ${osmopts} ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm ${osmdata}
-		    # FIXME: osmconvert somehow drops refs, breaking the way
-		    # geometry.
-		    ${osmconvert} -B=${boundaries}/NationalParks/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
+		    ${osmopts} ${boundaries}/NationalParks/${land}.geojson -o ${state}/${short}_OSM_Highways.osm ${osmdata}
+		    continue
 		else
 		    # ${osmhighway} ${boundaries}/NationalForests/${land}.geojson -o ${state}/${land}_Tasks/${short}_OSM_Highways.osm -i ${osmdata}
+		    base="${state}/${land}_Tasks/${short}"
 		    ${osmopts} ${boundaries}/NationalForests/${land}.geojson -o ${base}_OSM_Highways.osm  ${osmdata}
 		    # ${osmconvert} -B=${boundaries}/NationalForests/${land}.poly ${osmdata} -o=${state}/${land}_Tasks/${short}_OSM_Highways.osm
 		fi
