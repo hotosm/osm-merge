@@ -1,15 +1,18 @@
-# MVUM Conversion
+# MVUM & RodCore Conversion
 
-The MVUM dataset is all of the motor vehicle roads in a national
-forest. These are primarily remote dirt roads, often just a jeep
-track. These are heavily used for back country access for wildland
-fires and rescues. Currently much of this data has been imported in
-the past, complete with all the bugs in the dataset.
+The MVUM and RoadCore datasets are all of the motor vehicle roads in a
+national forest. These are primarily remote dirt roads, often just a
+jeep track. These are heavily used for back country access for
+wildland fires and rescues. Currently much of this data has been
+imported in the past, complete with all the bugs in the dataset. The
+RoadCore datasets is a superset of the MVUM data, but otherwise the
+same.
 
 This utility program normalizes the data, correcting or flagging bugs
-as an aid for better conflation.
+as an aid for better conflation. It can process both the MVUM and
+RoadCore datasets.
 
-The original dataset can be found here on the USDA 
+The original datasets can be found here on the USDA 
 [FSGeodata
 Clearinghouse](https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=transportation) website.
 
@@ -17,20 +20,21 @@ Clearinghouse](https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=tr
 
 ### Bad Geometry
 
-There are many instances where a highway in the MVUM data is a
-MultiLineString instead of just a LineString. The problem with these 
-are sometimes the segments are far apart, with long sections with
-no data. These are all the same highway, just bad data. To me it looks
-like somebodies's GPS had a dropped signal in places when they were
-recording a track.
+There are many instances where a highway in the MVUM or RoadCore data
+is a MultiLineString instead of just a LineString. The problem with
+these are sometimes the segments are far apart, with long sections
+with no data. These are all the same highway, just bad data. To me it
+looks like somebodies's GPS had a dropped signal in places when they
+were recording a track.
 
 ### Bad Reference Numbers
 
-In some areas the MVUM data has had an 5 or a 7 prefixed to the actual
-reference number. These are all usually in the same area, so I assume
-whomever was doing data entry had a sticky keyboard, it got messed up
-when converting from paper maps to digital, who really knows. But it
-makes that tag worthless.
+In some areas the MVUM and RoadCore data has extract numerals prefixed
+to the actual reference number. These are all usually in the same
+area, so I assume whomever was doing data entry had a sticky keyboard,
+it got messed up when converting from paper maps to digital, who
+really knows. But it makes that tag worthless. Utah datasets in
+particular suffer greatly from this problem.
 
 Another common problem in the reference nummbers is in some areas the
 major maintained roads have a *.1* appended. All minor part of the
@@ -41,14 +45,8 @@ dataset has the correct version without the .1 appended. Obviously
 this dataset is not used to produce the maps you can get from the
 Forest Service.
 
-I do notice that in the original MVUM datasets, whomever *emp=3.48*
-is, seems to be the main person with data entry issues. And this seems
-to apply across the entire western US. Not all highways mapped by
-*3.48* have this problem, but many do. Chances there other *emps* have
-similar issues. I'll keep track, and maybe add the employee ID as a
-temporary debugging tag in the conflation results. Cleaning up all the
-wrong reference numbers will make OSM the best map for road and trail
-navigation on public lands.
+Cleaning up all the wrong reference numbers will make OSM the best map
+for road and trail navigation on public lands.
 
 #### Dixie National Forest
 
@@ -80,7 +78,7 @@ just remote jeep tracks.
 
 ### Doesn't Match The Sign
 
-There is an issue with the MVUM reference numbers not matching the
+There is an issue with the USFS reference numbers not matching the
 sign. This is luckily limited to whether there is a *.1* appended to
 the reference number without an letter at the end. Usually a reference
 without a *.1* is a primary road, and the *.1* gets appended for a
@@ -136,7 +134,9 @@ These fields are dropped as they aren't useful for OpenStreetMap.
 
 ### Preserved Fields
 
-The field names are a bit truncated in the dataset, but these are the 
+The field names are a bit truncated in the dataset, but these are the
+ones that are converted. The MVU and RoaCore datasets uses the same
+columns names, the only difference is whether an underbar is used.
 
 * ID is id
 * NAME is name
@@ -163,6 +163,20 @@ conflation results to limit manual editing.
 * " Rd. " is " Road"
 * " Mt " is " Mountain"
 * " Mtn " is " Mountain"
+* " Disp " is " Dispersed"
+* " Rd. " is " Road"
+* "  Mt " is " Mountain"
+* " Mtn. " is " Mountain"
+* " Mtn " is " Mountain"
+* " Lk " is " Lake"
+* " Resvr " is " Reservoir"
+* " Spg " is " Spring"
+* " Br " is " Bridge"
+* " N " is " North"
+* " W " is " West"
+* " E " is " East"
+* " S " is " South"
+* " So " is " South"
 
 # Tag values
 
