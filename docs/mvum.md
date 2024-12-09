@@ -165,7 +165,7 @@ conflation results to limit manual editing.
 * " Mtn " is " Mountain"
 * " Disp " is " Dispersed"
 * " Rd. " is " Road"
-* "  Mt " is " Mountain"
+* " Mt " is " Mountain"
 * " Mtn. " is " Mountain"
 * " Mtn " is " Mountain"
 * " Lk " is " Lake"
