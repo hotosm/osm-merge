@@ -1,7 +1,7 @@
 # TM Splitter Utility
 
 This is a simple utility that splits a MultiPolygon into indivigual
-Polygons that can be used for making data extracts using ogr2ogr,
+Polygons that can be used for making data extracts using ogr2ogr or
 osmium.
 
 # Options
