@@ -7,7 +7,7 @@ into manageble pieces.
 
 ## OpenStreetMap
 
-It is possible to pull boundarie out of OpenStreetMap, but a warning,
+It is possible to pull boundaries out of OpenStreetMap, but a warning,
 many aren't very good. In OSM, some boundaries are a Way (Polygon)
 some are relations, some are missing sections. Extracting many
 boundaries is not for the faint of heart... There is a
@@ -57,4 +57,6 @@ the actual forest boundaries.
 
 Since we're only interested in using these boundaries for making data
 extracts, some have interior Polygons that have other ownership or
-public land designations.
+public land designations. Since we're using boundaries to make data
+extracts, I may drop all inner Polygons, but so far they don't see to
+cause any problems.
