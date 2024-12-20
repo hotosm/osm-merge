@@ -1,16 +1,38 @@
 # TM Splitter Utility
 
-This is a simple utility that splits a MultiPolygon into indivigual
-Polygons that can be used for making data extracts using ogr2ogr or
-osmium.
+This is a simple utility for task splitting to reduce large datasets
+into more manageble sizes. It is oriented towards generating a
+MultiPolyon or Polygons which can then be be used by ogr2ogr or osmium
+doe making data extracts.
+
+## Administrative Boundaries
+
+The administrative boundary files are a MultiPolygon of every national
+forest, park, or wilderness aea in the United States. Using the
+__--split__ option creates a MultiPolygon of each region that can be
+used to make data extracts using ogr2ogr or osmium. Each output file
+has the name of the region as the filename.
+
+## Grid Creation
+
+Once the files for each region have been generated, they are still
+large. Next a grid can be generated from each region as a
+MultiPloygon. Each task in the grid is the maximum size supported to
+create a Tasking Manager project.
+
+# Task Creation
+
+To create a file for making data extracts, the grid can be further
+split into indivigual files for to use with ogr2ogr or osmium.
 
 # Options
 
-Usage: tm-splitter [-h] [-v] [-s] -i INFILE [-o OUTFILE]
+Usage: tm-splitter [-h] [-v] [-g][-s] -i INFILE [-o OUTFILE]
 
 options:
   -h, --help                             show this help message and exit
   -v, --verbose                          verbose output
   -s, --split                            Split Multipolygon
+  -g, --grid                             Create a grid from an AOI
   -i INFILE, --infile INFILE             The input dataset
   -o OUTFILE, --outfile OUTFILE          Output filename
