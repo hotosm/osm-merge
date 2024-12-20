@@ -50,6 +50,7 @@ import numpy as np
 import os
 import shapely
 import sys
+import pyproj
 
 # Instantiate logger
 log = logging.getLogger(__name__)
@@ -84,11 +85,19 @@ def splitBySquare(
     """
     log.debug("Splitting the AOI by squares")
 
-    xmin, ymin, xmax, ymax = aoi.bounds
+    project = pyproj.Transformer.from_proj(
+        pyproj.Proj(init='epsg:4326'),
+        pyproj.Proj(init='epsg:3857')
+    )
+    newaoi = transform(project.transform, aoi)
+
+    # xmin, ymin, xmax, ymax = aoi.bounds
+    xmin, ymin, xmax, ymax = newaoi.bounds
 
     reference_lat = (ymin + ymax) / 2
-    length_deg =  0.45 #0.0000114
-    width_deg =  0.45 #0.0000114
+    # 5000km square is roughly 0.45 degrees
+    length_deg = meters # 0.44
+    width_deg = meters # 0.44
 
     # Create grid columns and rows based on the AOI bounds
     cols = np.arange(xmin, xmax + width_deg, width_deg)
@@ -101,11 +110,12 @@ def splitBySquare(
     for x in cols[:-1]:
         for y in rows[:-1]:
             grid_polygon = box(x, y, x + width_deg, y + length_deg)
-            clipped_polygon = grid_polygon.intersection(aoi)
+            clipped_polygon = grid_polygon.intersection(newaoi)
 
             if clipped_polygon.is_empty:
                 continue
 
+            log.debug(f"AREA: {clipped_polygon.area}")
             # Check intersection with extract geometries if available
             if extract_geoms:
                 if any(geom.within(clipped_polygon) for geom in extract_geoms):
@@ -212,7 +222,8 @@ for clipping with other tools like ogr2ogr, osmium, or osmconvert.
     parser.add_argument("-s", "--split", default=False, action="store_true",
                         help="Split Multipolygon")
     parser.add_argument("-o", "--outfile", required=True, help="Output filename template")
-    parser.add_argument("-m", "--meters", default=0.45, help="Grid size in kilometers")
+    parser.add_argument("-m", "--meters", default=50000, type=int,
+                        help="Grid size in kilometers")
 
     args = parser.parse_args()
     indata = None
@@ -251,6 +262,8 @@ for clipping with other tools like ogr2ogr, osmium, or osmconvert.
         grid = splitBySquare(aoi, args.meters)
         if not args.outfile:
             outfile = "tasks.geojson"
+        else:
+            outfile = "./"
         log.debug(f"Wrote {outfile}")
 
         file = open(args.outfile, "w")
