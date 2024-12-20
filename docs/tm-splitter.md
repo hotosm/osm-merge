@@ -3,7 +3,7 @@
 This is a simple utility for task splitting to reduce large datasets
 into more manageble sizes. It is oriented towards generating a
 MultiPolyon or Polygons which can then be be used by ogr2ogr or osmium
-doe making data extracts.
+for making data extracts.
 
 ## Administrative Boundaries
 
@@ -18,7 +18,7 @@ has the name of the region as the filename.
 Once the files for each region have been generated, they are still
 large. Next a grid can be generated from each region as a
 MultiPloygon. Each task in the grid is the maximum size supported to
-create a Tasking Manager project.
+create a Tasking Manager project, which is 5000square km.
 
 # Task Creation
 
@@ -27,12 +27,13 @@ split into indivigual files for to use with ogr2ogr or osmium.
 
 # Options
 
-Usage: tm-splitter [-h] [-v] [-g][-s] -i INFILE [-o OUTFILE]
+Usage: tm-splitter [-h] [-v] [-g] [-m] [-s] -i INFILE [-o OUTFILE]
 
 options:
   -h, --help                             show this help message and exit
   -v, --verbose                          verbose output
   -s, --split                            Split Multipolygon
   -g, --grid                             Create a grid from an AOI
+  -m, --meters                           Square area in meters
   -i INFILE, --infile INFILE             The input dataset
   -o OUTFILE, --outfile OUTFILE          Output filename
