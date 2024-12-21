@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2024 OpenSTreetMap US
+# Copyright (C) 2024 OpenStreetMap US
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,16 +127,16 @@ datasets["Wyoming"]="${wyoming}"
 # Debugging help
 dryrun="" # echo
 
-# The git branch, usually main except when debugging
-branch="main"
-
 if test x"${UTILITIES}" = x; then
     root="${HOME}/projects/OSM-US/osm-merge.git"
 else
     root="${UTILITIES}"
 fi
+
 # FIXME: gotta fix a dependency problem before these run from the
 # shell script.
+# The git branch, usually main except when debugging
+branch="main"
 geo2poly="${dryrun} ${root}/${branch}/osm_merge/utilities/geojson2poly.py"
 tmsplitter="${dryrun} ${root}/${branch}/osm_merge/utilities/tm-splitter.py"
 osmhighway="${dryrun} ${root}/${branch}/osm_merge/utilities/osmhighways.py -v --clip "
@@ -286,7 +286,6 @@ split_aoi() {
     # These are mostly useful for debugging, by default everything is processed
     region="${1:-${states}}"
     dataset="${2:-all}"
-    tmmax=70000
     for state in ${region}; do
 	if test ! -e ${state}; then
 	    mkdir ${state}
@@ -312,12 +311,7 @@ split_aoi() {
 	    # which is the maximum TM supports. Some areas are
 	    # smaller than this, so only one polygon.
 	    # ${tmsplitter} --grid --infile ${aoi} --threshold 0.7 -o ${dir}/${short}_Tasks.geojson
-	    # ${tmsplitter} --grid --infile ${aoi} --threshold 0.7
-	    fmtm-splitter -b ${aoi} --meters 50000
-	    mv fmtm.geojson ${dir}/${short}_Tasks.geojson
-	    # Make a multipolygon even if just one task
-	    # ${ogropts} ${aoi} ${dir}/${short}_Tasks.geojson output.geojson
-	    # rm -f output.geojson
+	    ${tmsplitter} -v --grid --infile ${aoi} -o ${dir}/${short}_Tasks.geojson
 	    echo "Wrote task ${dir}/${short}_Tasks.geojson"
 	done
     done
@@ -341,7 +335,7 @@ make_tasks() {
 	    for task in ${state}/${land}_Tasks/${short}_Tasks.geojson; do
 		get_path ${task}
 		echo "    Making task boundaries for clipping to ${land}"
-		${tmsplitter} -v -i ${task} -o ${path["dir"]}
+		${tmsplitter} -v -s -i ${task} -o ${path["dir"]}/${path["short"]}_Task
 	     	echo "Wrote tasks for ${task} ..."
 	    done
 	done
@@ -373,13 +367,10 @@ make_sub_tasks() {
 		fi
 		# echo "    Making sub task boundaries for ${task}"
 		# ${tmsplitter} --grid --infile ${task} --threshold 0.1
-		fmtm-splitter -b ${task} --meters 10000
 		# Clip to the boundary
 		indata="${path["dir"]}/${path["short"]}_SubTasks_${path["num"]}.geojson"
-		${ogropts} ${task} -nlt POLYGON ${indata} output.geojson
 		outfile=${base}/${path["short"]}_Sub
 		${tmsplitter} -v --split --infile ${indata} -o ${outfile}
-		# ${tmsplitter} -v --split --infile ${path["dir"]}/${path["short"]}_Task_${path["num"]}.geojson -o ${outfile}
 		rm -f ${indata}
 	    done
 	done
